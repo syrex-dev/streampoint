@@ -1,0 +1,538 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
+import {
+    Clock,
+    AlertCircle,
+    CheckCircle2,
+    XCircle,
+    UploadCloud,
+    Building2,
+    QrCode,
+    Wallet,
+    ArrowLeft,
+    PhoneCall,
+    ShieldAlert,
+    ExternalLink,
+} from 'lucide-react';
+import { PublicLayout } from '@/layouts/PublicLayout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { CountdownTimer } from '@/components/shop/CountdownTimer';
+import { TotalHighlight } from '@/components/shop/TotalHighlight';
+import { CopyButton } from '@/components/shop/CopyButton';
+import { CredentialBox } from '@/components/shop/CredentialBox';
+import { formatRupiah, formatDateTimeWIB } from '@/lib/format';
+import { OrderInvoiceData } from '@/types/shop';
+
+interface InvoiceShowProps {
+    storeName?: string;
+    isAuthorized: boolean;
+    serverNow: string;
+    order: OrderInvoiceData;
+    errors?: Record<string, string>;
+}
+
+export default function InvoiceShow({
+    storeName = 'NamaToko',
+    isAuthorized,
+    serverNow,
+    order,
+    errors = {},
+}: InvoiceShowProps) {
+    // Current status state (can update via polling or countdown expire)
+    const [status, setStatus] = useState(order.status);
+    const [proofFile, setProofFile] = useState<File | null>(null);
+    const [proofPreview, setProofPreview] = useState<string | null>(null);
+    const [isConfirming, setIsConfirming] = useState(false);
+    const [confirmError, setConfirmError] = useState<string | null>(null);
+
+    // Phone verification form state
+    const [verifyPhone, setVerifyPhone] = useState('');
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [verifyError, setVerifyError] = useState<string | null>(null);
+
+    // Sync status from incoming props
+    useEffect(() => {
+        setStatus(order.status);
+    }, [order.status]);
+
+    // Handle Proof selection
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Client check: max 3MB
+        if (file.size > 3 * 1024 * 1024) {
+            setConfirmError('Ukuran file bukti pembayaran maksimal 3MB.');
+            return;
+        }
+
+        setConfirmError(null);
+        setProofFile(file);
+        setProofPreview(URL.createObjectURL(file));
+    };
+
+    // Clean up preview blob
+    useEffect(() => {
+        return () => {
+            if (proofPreview) URL.revokeObjectURL(proofPreview);
+        };
+    }, [proofPreview]);
+
+    // Confirm Payment submission ("Saya Sudah Bayar")
+    const handleConfirmPayment = () => {
+        setIsConfirming(true);
+        setConfirmError(null);
+
+        const formData = new FormData();
+        if (proofFile) {
+            formData.append('proof', proofFile);
+        }
+
+        router.post(`/invoice/${order.invoice_code}/confirm`, formData, {
+            preserveScroll: true,
+            onFinish: () => {
+                setIsConfirming(false);
+            },
+            onError: (errs) => {
+                if (errs.proof) {
+                    setConfirmError(errs.proof);
+                } else if (errs.confirm) {
+                    setConfirmError(errs.confirm);
+                } else {
+                    setConfirmError('Gagal mengonfirmasi pembayaran. Silakan coba lagi.');
+                }
+            },
+        });
+    };
+
+    // Verify WhatsApp number submission
+    const handleVerifyPhone = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!verifyPhone.trim()) return;
+
+        setIsVerifying(true);
+        setVerifyError(null);
+
+        router.post(
+            `/invoice/${order.invoice_code}/verify`,
+            { phone: verifyPhone },
+            {
+                preserveScroll: true,
+                onFinish: () => {
+                    setIsVerifying(false);
+                },
+                onError: (errs) => {
+                    setVerifyError(errs.phone || 'Verifikasi gagal. Pastikan nomor WhatsApp sesuai pesanan.');
+                },
+            }
+        );
+    };
+
+    // 10s status polling (stops on terminal statuses: PAID, EXPIRED, CANCELLED)
+    const isTerminal = status === 'PAID' || status === 'EXPIRED' || status === 'CANCELLED';
+    useEffect(() => {
+        if (isTerminal) return;
+
+        const intervalId = setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                router.reload({ only: ['order', 'isAuthorized'] });
+            }
+        }, 10000);
+
+        return () => clearInterval(intervalId);
+    }, [isTerminal, order.invoice_code]);
+
+    // When Countdown expires
+    const handleCountdownExpire = () => {
+        setStatus('EXPIRED');
+    };
+
+    // Status Badge config
+    const getBadgeVariant = (st: typeof status) => {
+        switch (st) {
+            case 'PENDING':
+                return 'warning';
+            case 'VERIFYING':
+                return 'info';
+            case 'PAID':
+                return 'accent';
+            case 'EXPIRED':
+            case 'CANCELLED':
+            default:
+                return 'danger';
+        }
+    };
+
+    return (
+        <PublicLayout storeName={storeName} currentInvoiceCode={order.invoice_code}>
+            <Head title={`Invoice #${order.invoice_code} - ${storeName}`} />
+
+            <div className="w-full max-w-3xl mx-auto pb-20 pt-2 space-y-5">
+                {/* Back to Home Link */}
+                <div className="flex items-center justify-between">
+                    <Link
+                        href="/"
+                        className="inline-flex items-center gap-1.5 text-xs text-text-2 hover:text-text transition-colors"
+                    >
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        <span>Katalog Layanan</span>
+                    </Link>
+
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs text-text-2">Status:</span>
+                        <Badge variant={getBadgeVariant(status)}>
+                            {order.status_label}
+                        </Badge>
+                    </div>
+                </div>
+
+                {/* Status Banners */}
+                {status === 'VERIFYING' && (
+                    <div className="bg-info/10 border border-info/30 rounded-lg p-4 flex items-start gap-3 text-info">
+                        <Clock className="w-5 h-5 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                            <h3 className="text-sm font-bold text-text">
+                                Pembayaran Sedang Diverifikasi
+                            </h3>
+                            <p className="text-xs text-text-2 leading-relaxed">
+                                Bukti transfer kamu telah diterima dan sedang diverifikasi oleh admin. Halaman ini akan otomatis diperbarui begitu pesanan disetujui.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {status === 'PAID' && (
+                    <div className="bg-accent/10 border border-accent/30 rounded-lg p-4 flex items-start gap-3 text-accent-text">
+                        <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                            <h3 className="text-sm font-bold text-text">
+                                Pembayaran Berhasil — Akun Aktif
+                            </h3>
+                            <p className="text-xs text-text-2 leading-relaxed">
+                                Pesanan kamu telah lunas. Kredensial akun streaming dapat dilihat di bawah ini.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {status === 'EXPIRED' && (
+                    <div className="bg-danger/10 border border-danger/30 rounded-lg p-4 flex items-start gap-3 text-danger">
+                        <XCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                            <h3 className="text-sm font-bold text-text">
+                                Pesanan Kedaluwarsa
+                            </h3>
+                            <p className="text-xs text-text-2 leading-relaxed">
+                                Batas waktu pembayaran telah habis. Pesanan ini telah dibatalkan secara otomatis oleh sistem. Silakan lakukan pemesanan ulang.
+                            </p>
+                            <div className="pt-2">
+                                <Link href="/" className="inline-block text-xs font-semibold text-accent-text hover:underline">
+                                    Pesan Ulang di Katalog &rarr;
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {status === 'CANCELLED' && (
+                    <div className="bg-danger/10 border border-danger/30 rounded-lg p-4 flex items-start gap-3 text-danger">
+                        <XCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                            <h3 className="text-sm font-bold text-text">
+                                Pesanan Dibatalkan
+                            </h3>
+                            <p className="text-xs text-text-2 leading-relaxed">
+                                {order.status_note || 'Pesanan ini telah dibatalkan. Jika kamu sudah melakukan transfer, silakan hubungi admin.'}
+                            </p>
+                            <div className="pt-2">
+                                <Link href="/" className="inline-block text-xs font-semibold text-accent-text hover:underline">
+                                    Kembali ke Beranda &rarr;
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* PENDING State: Countdown + Payment Card */}
+                {status === 'PENDING' && (
+                    <div className="space-y-5">
+                        {/* Countdown */}
+                        <CountdownTimer
+                            expiresAt={order.payment_expires_at}
+                            serverNow={serverNow}
+                            onExpire={handleCountdownExpire}
+                        />
+
+                        {/* Total Highlight with Accent Unique Code */}
+                        <TotalHighlight
+                            totalAmount={order.total_amount}
+                            uniqueCode={order.unique_code}
+                        />
+
+                        {/* Payment Method Details */}
+                        <div className="bg-surface border border-border rounded-lg p-4 sm:p-5 space-y-4">
+                            <div className="flex items-center gap-2 pb-3 border-b border-border">
+                                {order.payment_method.type === 'QRIS' && <QrCode className="w-4 h-4 text-accent-text" />}
+                                {order.payment_method.type === 'BANK' && <Building2 className="w-4 h-4 text-info" />}
+                                {order.payment_method.type === 'EWALLET' && <Wallet className="w-4 h-4 text-warning" />}
+                                <h3 className="text-sm font-bold text-text">
+                                    Tujuan Pembayaran: {order.payment_method.label}
+                                </h3>
+                            </div>
+
+                            {/* QRIS Image if available */}
+                            {order.payment_method.type === 'QRIS' && order.payment_method.qris_image_path && (
+                                <div className="flex flex-col items-center justify-center p-4 bg-surface-2 rounded-lg border border-border space-y-3">
+                                    <div className="p-3 bg-white rounded-lg border border-border max-w-[260px] mx-auto">
+                                        <img
+                                            src={order.payment_method.qris_image_path}
+                                            alt="QRIS Pembayaran"
+                                            className="w-full h-auto object-contain aspect-square"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-text-2 text-center max-w-xs">
+                                        Pindai QRIS di atas memakai aplikasi BCA, Mandiri, GoPay, OVO, Dana, atau mobile banking kamu.
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Bank / E-Wallet Account Info */}
+                            {order.payment_method.account_number && (
+                                <div className="space-y-2.5">
+                                    <div className="bg-surface-2 p-3.5 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                        <div>
+                                            <div className="text-[11px] text-text-2 font-medium mb-0.5">
+                                                Nomor Rekening / E-Wallet
+                                            </div>
+                                            <div className="font-mono text-base font-bold text-text select-all">
+                                                {order.payment_method.account_number}
+                                            </div>
+                                            {order.payment_method.account_holder && (
+                                                <div className="text-xs text-text-2 mt-0.5">
+                                                    a.n. {order.payment_method.account_holder}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="shrink-0">
+                                            <CopyButton text={order.payment_method.account_number} label="Salin Nomor" />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Instructions text if present */}
+                            {order.payment_method.instructions && (
+                                <div className="text-xs text-text-2 leading-relaxed bg-surface-2/60 p-3 rounded-md border border-border/60 whitespace-pre-line">
+                                    {order.payment_method.instructions}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Upload Proof & Confirm Form */}
+                        <div className="bg-surface border border-border rounded-lg p-4 sm:p-5 space-y-4">
+                            <div className="pb-3 border-b border-border">
+                                <h3 className="text-sm font-bold text-text">Konfirmasi Pembayaran</h3>
+                                <p className="text-xs text-text-2 mt-0.5">
+                                    Setelah mentransfer, unggah bukti bayar (opsional) lalu klik tombol konfirmasi di bawah.
+                                </p>
+                            </div>
+
+                            {/* Error inline */}
+                            {confirmError && (
+                                <div className="p-3 rounded-md bg-danger/10 border border-danger/30 text-xs text-danger flex items-center gap-2">
+                                    <AlertCircle className="w-4 h-4 shrink-0" />
+                                    <span>{confirmError}</span>
+                                </div>
+                            )}
+
+                            {/* Upload Area */}
+                            <div>
+                                <label
+                                    htmlFor="proof-upload"
+                                    className="block text-xs font-medium text-text-2 mb-2"
+                                >
+                                    Bukti Transfer <span className="text-text-muted">(JPG, PNG, WEBP, maks 3MB)</span>
+                                </label>
+
+                                <div className="border border-dashed border-border-strong rounded-lg p-4 text-center bg-surface-2 hover:bg-surface-hover transition-colors cursor-pointer relative">
+                                    <input
+                                        id="proof-upload"
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp"
+                                        onChange={handleFileChange}
+                                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                    />
+                                    {proofPreview ? (
+                                        <div className="space-y-2">
+                                            <img
+                                                src={proofPreview}
+                                                alt="Preview Bukti"
+                                                className="max-h-40 mx-auto rounded border border-border object-contain"
+                                            />
+                                            <p className="text-xs text-accent-text font-medium">
+                                                {proofFile?.name} (klik untuk mengganti)
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center gap-1.5 py-2">
+                                            <UploadCloud className="w-6 h-6 text-text-muted" />
+                                            <span className="text-xs text-text font-medium">
+                                                Pilih file foto atau tangkapan layar transfer
+                                            </span>
+                                            <span className="text-[11px] text-text-2">
+                                                Maksimal 3MB
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <Button
+                                type="button"
+                                variant="primary"
+                                size="lg"
+                                disabled={isConfirming}
+                                loading={isConfirming}
+                                onClick={handleConfirmPayment}
+                                className="w-full h-11 text-sm font-semibold"
+                            >
+                                Saya Sudah Bayar
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
+                {/* PAID State: Credential Box or WhatsApp Verification Card */}
+                {status === 'PAID' && (
+                    <div className="space-y-4">
+                        {isAuthorized ? (
+                            <CredentialBox
+                                credentials={order.credentials}
+                                orderType={order.order_type}
+                                accessStartsAt={order.access_starts_at}
+                                accessExpiresAt={order.access_expires_at}
+                            />
+                        ) : (
+                            /* Unauthorized Card */
+                            <div className="bg-surface border border-warning/40 rounded-lg p-5 space-y-4">
+                                <div className="flex items-center gap-2 text-warning">
+                                    <ShieldAlert className="w-5 h-5 shrink-0" />
+                                    <h3 className="text-sm font-bold text-text">
+                                        Kredensial Terlindungi
+                                    </h3>
+                                </div>
+                                <p className="text-xs text-text-2 leading-relaxed">
+                                    Kredensial akun disembunyikan untuk menjaga keamanan pembeli. Masukkan nomor WhatsApp yang kamu gunakan saat checkout untuk membuka akses akun.
+                                </p>
+
+                                {verifyError && (
+                                    <div className="p-3 rounded-md bg-danger/10 border border-danger/30 text-xs text-danger flex items-center gap-2">
+                                        <AlertCircle className="w-4 h-4 shrink-0" />
+                                        <span>{verifyError}</span>
+                                    </div>
+                                )}
+
+                                <form onSubmit={handleVerifyPhone} className="space-y-3">
+                                    <div>
+                                        <label
+                                            htmlFor="verify-phone"
+                                            className="block text-xs font-medium text-text-2 mb-1.5"
+                                        >
+                                            Nomor WhatsApp Terdaftar
+                                        </label>
+                                        <Input
+                                            id="verify-phone"
+                                            type="tel"
+                                            inputMode="tel"
+                                            value={verifyPhone}
+                                            onChange={(e) => setVerifyPhone(e.target.value)}
+                                            placeholder="Contoh: 081234567890"
+                                            hasError={!!verifyError}
+                                        />
+                                    </div>
+
+                                    <Button
+                                        type="submit"
+                                        variant="primary"
+                                        size="default"
+                                        loading={isVerifying}
+                                        disabled={isVerifying || !verifyPhone.trim()}
+                                        className="w-full"
+                                    >
+                                        Buka Kredensial Akun
+                                    </Button>
+                                </form>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Order Summary & Customer Info Card */}
+                <div className="bg-surface border border-border rounded-lg p-4 sm:p-5 space-y-3.5">
+                    <div className="pb-3 border-b border-border flex items-center justify-between">
+                        <h3 className="text-sm font-bold text-text">Rincian Pesanan</h3>
+                        <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-xs text-text-2">#{order.invoice_code}</span>
+                            <CopyButton text={order.invoice_code} label="Salin Kode" />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2 text-xs text-text-2">
+                        <div className="flex justify-between items-center">
+                            <span>Layanan</span>
+                            <span className="font-semibold text-text">{order.product.name}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span>Paket</span>
+                            <span className="font-semibold text-text">{order.variant.name}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span>Tipe Pesanan</span>
+                            <span className="font-semibold text-text">
+                                {order.order_type === 'RENT' ? 'Sewa Harian' : 'Beli Akun'}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span>Nomor WhatsApp</span>
+                            <span className="font-mono font-medium text-text">{order.customer_phone}</span>
+                        </div>
+                        {order.customer_note && (
+                            <div className="flex justify-between items-start gap-4">
+                                <span className="shrink-0">Catatan</span>
+                                <span className="text-text text-right">{order.customer_note}</span>
+                            </div>
+                        )}
+                        <div className="flex justify-between items-center">
+                            <span>Waktu Pemesanan</span>
+                            <span className="font-mono text-text">
+                                {formatDateTimeWIB(order.created_at)}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span>Harga Paket</span>
+                            <span className="font-mono text-text tabular-nums">
+                                {formatRupiah(order.base_price)}
+                            </span>
+                        </div>
+                        {order.unique_code > 0 && (
+                            <div className="flex justify-between items-center">
+                                <span>Kode Unik</span>
+                                <span className="font-mono text-accent-text tabular-nums">
+                                    +{order.unique_code}
+                                </span>
+                            </div>
+                        )}
+                        <div className="pt-2 border-t border-border flex justify-between items-baseline">
+                            <span className="text-sm font-semibold text-text">Total Pembayaran</span>
+                            <span className="font-mono text-base font-bold text-accent-text tabular-nums">
+                                {formatRupiah(order.total_amount)}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </PublicLayout>
+    );
+}

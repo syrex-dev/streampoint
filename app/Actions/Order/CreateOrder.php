@@ -1,0 +1,99 @@
+<?php
+
+namespace App\Actions\Order;
+
+use App\Enums\AccountStatus;
+use App\Enums\OrderStatus;
+use App\Enums\OrderType;
+use App\Exceptions\OutOfStockException;
+use App\Exceptions\QuotaFullException;
+use App\Jobs\SendAdminNotification;
+use App\Models\Order;
+use App\Models\PaymentMethod;
+use App\Models\ProductAccount;
+use App\Models\ProductVariant;
+use App\Models\Setting;
+use App\Services\InvoiceCodeGenerator;
+use App\Services\QuotaService;
+use App\Services\UniqueAmountGenerator;
+use App\Support\Phone;
+use Illuminate\Support\Facades\DB;
+
+class CreateOrder
+{
+    public function __construct(
+        protected QuotaService $quota,
+        protected InvoiceCodeGenerator $invoice,
+        protected UniqueAmountGenerator $uniqueAmount
+    ) {}
+
+    public function handle(CreateOrderData $data): Order
+    {
+        return DB::transaction(function () use ($data) {
+            $variant = ProductVariant::with('product')->where('is_active', true)->findOrFail($data->variantId);
+            abort_unless($variant->product && $variant->product->is_active, 404, 'Layanan tidak aktif.');
+
+            $paymentMethod = PaymentMethod::where('is_active', true)->findOrFail($data->paymentMethodId);
+
+            // Serialization: lock the settings row so concurrent checkouts serialize cleanly
+            Setting::current(); // ensure row exists
+            Setting::lockForUpdate()->firstOrFail();
+
+            $date = $this->quota->today();
+
+            if ($variant->type === OrderType::RENT) {
+                if ($this->quota->used($date) >= $this->quota->limitFor($date)) {
+                    throw new QuotaFullException();
+                }
+            }
+
+            // Reserve an account unit with matching kind (RENT or BUY)
+            $account = ProductAccount::where('product_id', $variant->product_id)
+                ->where('kind', $variant->type)
+                ->where('status', AccountStatus::AVAILABLE)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $account) {
+                throw new OutOfStockException();
+            }
+
+            $unique = $this->uniqueAmount->generate($variant->price);
+            $ttlMinutes = (int) env('ORDER_PAYMENT_TTL_MINUTES', 15);
+
+            $order = Order::create([
+                'invoice_code' => $this->invoice->generate(),
+                'product_id' => $variant->product_id,
+                'variant_id' => $variant->id,
+                'account_id' => $account->id,
+                'order_type' => $variant->type,
+                'customer_phone' => Phone::normalize($data->phone),
+                'customer_note' => $data->note,
+                'payment_method_id' => $paymentMethod->id,
+                'payment_method_label' => $paymentMethod->label,
+                'base_price' => $variant->price,
+                'unique_code' => $unique,
+                'total_amount' => $variant->price + $unique,
+                'status' => OrderStatus::PENDING,
+                'payment_expires_at' => now()->addMinutes($ttlMinutes),
+                'quota_date' => $date,
+            ]);
+
+            $account->update([
+                'status' => AccountStatus::RESERVED,
+                'order_id' => $order->id,
+            ]);
+
+            $order->events()->create([
+                'from_status' => null,
+                'to_status' => OrderStatus::PENDING,
+                'actor' => 'buyer',
+                'note' => 'Order dibuat.',
+            ]);
+
+            SendAdminNotification::dispatch('order.created', $order->id)->afterCommit();
+
+            return $order;
+        });
+    }
+}

@@ -127,6 +127,7 @@ Gunakan migration Laravel. Semua uang dalam **integer Rupiah**. Kolom enum disim
 | rules | text | Aturan sewa/garansi (bisa diedit admin) |
 | is_active | boolean default true | |
 | sort_order | unsigned int default 0 | |
+| brand_color | string(7) nullable | Hex `#RRGGBB` untuk tint kotak logo. Divalidasi regex. |
 | timestamps | | |
 
 ### `product_variants`
@@ -175,7 +176,7 @@ Index: `(product_id, kind, status)`, `order_id`.
 | payment_method_id | FK nullable | |
 | payment_method_label | string | Snapshot nama metode saat order |
 | base_price | unsigned int | Snapshot harga varian |
-| unique_code | unsigned smallint default 0 | 100–999 |
+| unique_code | unsigned smallint default 0 | 100–999 (selalu 3 digit) |
 | total_amount | unsigned int | `base_price + unique_code` |
 | payment_proof_path | string nullable | Disk **privat** |
 | status | string default `PENDING` | |
@@ -198,9 +199,13 @@ Index: `(quota_date, order_type, status)`, `(status, payment_expires_at)`, `cust
 
 ### `settings` (satu baris)
 
-`id, max_daily_rent_quota unsigned tinyint default 3, admin_whatsapp string nullable` (nomor kontak yang ditampilkan di invoice, footer, dan tombol bantuan), `business_hours string nullable` (mis. "Setiap hari, 09.00-21.00 WIB", tampil di footer). Keduanya dibagikan ke semua halaman publik lewat shared props Inertia (`HandleInertiaRequests`).
+`id, max_daily_rent_quota unsigned tinyint default 3, admin_whatsapp string nullable` (nomor kontak yang ditampilkan di invoice, footer, dan tombol bantuan), `business_hours string nullable` (mis. "Setiap hari, 09.00-21.00 WIB", tampil di footer). Keduanya dibagikan ke semua halaman publik lewat shared props Inertia (`HandleInertiaRequests`). Tambahan identitas toko: `store_name string nullable` (default dari `APP_NAME`), `store_logo_path string nullable` (jpg/png/webp maks 1 MB, **bukan SVG**), `accent_preset string default 'emerald'` (daftar putih: `emerald`, `teal`, `blue`, `mono`). `accent_preset` diterapkan sebagai atribut `data-accent` pada `<html>` di `app.blade.php` (server-side, tanpa kedipan).
 
 > **Tema:** mode Terang/Gelap/Sistem diimplementasikan lewat CSS variables (`DESIGN_SYSTEM.md` Bagian 2) dengan class `dark` pada `<html>`. Skrip inline di `app.blade.php` menetapkan class sebelum render agar tidak berkedip.
+
+### `banners`
+
+`id, title string(80), subtitle string(160) nullable, cta_label string(30) nullable, cta_url string(255) nullable` (hanya path internal berawalan `/` atau `https://`; tolak skema lain), `image_path string nullable` (jpg/png/webp maks 2 MB di disk public, nama acak, bukan SVG), `tone string default 'neutral'` (`neutral|accent|warning`), `is_active boolean default true, sort_order unsigned int default 0, starts_at datetime nullable, ends_at datetime nullable, timestamps`. Maksimal 5 banner aktif (validasi saat simpan). Ke publik hanya dikirim banner aktif yang sedang dalam jadwal, dengan kolom minimal.
 
 ### `daily_quota_overrides`
 
@@ -336,7 +341,7 @@ Aturan:
 
 ### 5.4 Kode unik
 
-`UniqueAmountGenerator`: pilih angka acak 100–999 sehingga `base_price + angka` belum dipakai oleh order aktif lain (`PENDING` belum expired / `VERIFYING`). Coba ulang beberapa kali, lalu lempar error jika semua terpakai (praktis tidak terjadi).
+`UniqueAmountGenerator`: pilih angka acak 100–999 (selalu 3 digit) sehingga `base_price + angka` belum dipakai oleh order aktif lain (`PENDING` belum expired / `VERIFYING`). Coba ulang beberapa kali, lalu lempar error jika semua terpakai (praktis tidak terjadi).
 
 ### 5.5 Kode invoice
 

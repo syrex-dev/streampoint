@@ -6,10 +6,17 @@ import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = typeof window !== 'undefined' && (window as any).__initialStoreName
+    ? (window as any).__initialStoreName
+    : (import.meta.env.VITE_APP_NAME || 'StreamPoint');
 
 void createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
+    title: (title) => {
+        const store = typeof window !== 'undefined' && (window as any).__initialStoreName
+            ? (window as any).__initialStoreName
+            : appName;
+        return title ? `${title} - ${store}` : store;
+    },
     layout: (name) => {
         switch (true) {
             case name === 'welcome':

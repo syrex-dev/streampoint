@@ -7,6 +7,8 @@ import { Footer } from '@/components/shop/Footer';
 import { FloatingWhatsApp } from '@/components/shop/FloatingWhatsApp';
 import { SharedSettings, SharedPendingOrder } from '@/types/shop';
 
+import { BrandMark } from '@/components/shop/BrandMark';
+
 interface PublicLayoutProps {
     storeName?: string;
     currentInvoiceCode?: string;
@@ -15,7 +17,7 @@ interface PublicLayoutProps {
 }
 
 export function PublicLayout({
-    storeName = 'NamaToko',
+    storeName,
     currentInvoiceCode,
     isProductPage = false,
     children,
@@ -72,9 +74,9 @@ export function PublicLayout({
                     <div className="flex items-center gap-6">
                         <Link
                             href="/"
-                            className="text-base font-bold tracking-tight text-text hover:text-accent-text transition-colors flex items-center gap-2 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                            className="rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
                         >
-                            <span>{storeName}</span>
+                            <BrandMark />
                         </Link>
 
                         {/* Desktop Anchor Navigation */}

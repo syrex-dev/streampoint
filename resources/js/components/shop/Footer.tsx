@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from '@inertiajs/react';
 import { MessageCircle, Clock, ShieldCheck } from 'lucide-react';
 import { SharedSettings } from '@/types/shop';
+import { BrandMark } from '@/components/shop/BrandMark';
 
 interface FooterProps {
     storeName?: string;
@@ -25,8 +26,8 @@ export function Footer({ storeName = 'NamaToko', settings }: FooterProps) {
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-8 text-xs">
                     {/* Col 1: Brand (5 cols) */}
                     <div className="md:col-span-5 space-y-2.5">
-                        <Link href="/" className="text-sm font-bold tracking-tight text-text hover:text-accent-text transition-colors">
-                            {storeName}
+                        <Link href="/" className="hover:opacity-90 transition-opacity inline-block">
+                            <BrandMark />
                         </Link>
                         <p className="text-text-2 leading-relaxed max-w-sm">
                             Platform sewa harian dan beli akun streaming terpercaya dengan kuota terbatas setiap hari dan verifikasi manual yang cepat.

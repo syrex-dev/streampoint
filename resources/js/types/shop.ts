@@ -14,6 +14,7 @@ export interface ProductCatalogItem {
     name: string;
     category: string;
     thumbnail_path: string | null;
+    brand_color?: string | null;
     description: string | null;
     min_price: number;
     status: ServiceStatus;
@@ -27,12 +28,25 @@ export interface ProductCatalogItem {
 export interface SharedSettings {
     admin_whatsapp: string | null;
     business_hours: string | null;
+    store_name?: string | null;
+    store_logo_path?: string | null;
+    accent_preset?: 'emerald' | 'teal' | 'blue' | 'mono';
 }
 
 export interface SharedPendingOrder {
     invoice_code: string;
     status: string;
     status_label: string;
+}
+
+export interface BannerData {
+    id: number;
+    title: string;
+    subtitle?: string | null;
+    cta_label?: string | null;
+    cta_url?: string | null;
+    image_path?: string | null;
+    tone: 'neutral' | 'accent' | 'warning';
 }
 
 export interface ProductVariantData {
@@ -53,6 +67,7 @@ export interface ProductDetail {
     name: string;
     category: string;
     thumbnail_path: string | null;
+    brand_color?: string | null;
     description: string | null;
     rules: string | null;
     available_rent_stock: number;

@@ -60,6 +60,9 @@ class PublicPagesAndThemeTest extends TestCase
             $page->has('settings', function (Assert $settings) {
                 $settings->where('admin_whatsapp', '081234567890')
                     ->where('business_hours', 'Setiap hari, 09.00 - 21.00 WIB')
+                    ->has('store_name')
+                    ->has('store_logo_path')
+                    ->has('accent_preset')
                     ->missing('telegram_bot_token')
                     ->missing('telegram_chat_id')
                     ->missing('id')

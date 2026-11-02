@@ -59,15 +59,20 @@ class HandleInertiaRequests extends Middleware
             }
         }
 
+        $storeName = $setting->store_name ?: config('app.name', 'StreamPoint');
+
         return [
             ...parent::share($request),
-            'name' => config('app.name', 'StreamPoint'),
+            'name' => $storeName,
             'auth' => [
                 'user' => $request->user(),
             ],
             'settings' => [
                 'admin_whatsapp' => $setting->admin_whatsapp,
                 'business_hours' => $setting->business_hours,
+                'store_name' => $storeName,
+                'store_logo_path' => $setting->store_logo_path,
+                'accent_preset' => $setting->accent_preset ?? 'emerald',
             ],
             'pendingOrder' => $pendingOrder,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

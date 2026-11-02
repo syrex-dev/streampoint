@@ -17,9 +17,11 @@ import {
 import { PublicLayout } from '@/layouts/PublicLayout';
 import { QuotaBar } from '@/components/shop/QuotaBar';
 import { ProductCard } from '@/components/shop/ProductCard';
+import { BannerSlider } from '@/components/shop/BannerSlider';
+import { BenefitsSection } from '@/components/shop/BenefitsSection';
 import { Button } from '@/components/ui/button';
 import { faqData } from '@/data/faq';
-import { ProductCatalogItem, QuotaData } from '@/types/shop';
+import { ProductCatalogItem, QuotaData, BannerData } from '@/types/shop';
 
 interface PaymentMethodSummary {
     id: number;
@@ -30,6 +32,7 @@ interface PaymentMethodSummary {
 interface StorefrontProps {
     storeName?: string;
     quota: QuotaData;
+    banners?: BannerData[];
     products: ProductCatalogItem[];
     categories?: string[];
     paymentMethods?: PaymentMethodSummary[];
@@ -38,6 +41,7 @@ interface StorefrontProps {
 export default function StorefrontIndex({
     storeName = 'NamaToko',
     quota,
+    banners = [],
     products = [],
     categories = [],
     paymentMethods = [],
@@ -146,36 +150,40 @@ export default function StorefrontIndex({
         <PublicLayout storeName={storeName}>
             <Head title={`Sewa & Beli Akun Streaming - ${storeName}`} />
 
-            <div className="w-full space-y-8 sm:space-y-12">
-                {/* 1. Pita Intro Ringkas (DESIGN_SYSTEM 6.2, maks 88px di mobile) */}
-                <section aria-label="Pengenalan Toko" className="space-y-2 pt-1 sm:pt-2">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                        <div>
-                            <h1 className="text-lg sm:text-xl font-bold text-text tracking-tight">
-                                Sewa & Beli Akun Streaming
-                            </h1>
-                            <p className="text-xs sm:text-sm text-text-2 mt-0.5">
-                                Bayar, konfirmasi, akun dikirim setelah diverifikasi admin.
-                            </p>
-                        </div>
+            <div className="w-full space-y-6 sm:space-y-8">
+                {/* 1. Banner Slider (DESIGN_SYSTEM 6.26) atau Pita Intro (6.2) */}
+                {banners && banners.length > 0 ? (
+                    <BannerSlider banners={banners} />
+                ) : (
+                    <section aria-label="Pengenalan Toko" data-testid="intro-ribbon" className="space-y-2 pt-1 sm:pt-2">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                            <div>
+                                <h1 className="text-lg sm:text-xl font-bold text-text tracking-tight">
+                                    Sewa & Beli Akun Streaming
+                                </h1>
+                                <p className="text-xs sm:text-sm text-text-2 mt-0.5">
+                                    Bayar, konfirmasi, akun dikirim setelah diverifikasi admin.
+                                </p>
+                            </div>
 
-                        {/* 3 Factual Chips on Desktop */}
-                        <div className="hidden lg:flex items-center gap-2">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-surface-2 text-[11px] text-text-2">
-                                <Clock className="w-3.5 h-3.5 text-text-muted" />
-                                <span>Slot sewa terbatas per hari</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-surface-2 text-[11px] text-text-2">
-                                <ShieldCheck className="w-3.5 h-3.5 text-accent-text" />
-                                <span>Garansi selama masa aktif</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-surface-2 text-[11px] text-text-2">
-                                <MessageCircle className="w-3.5 h-3.5 text-text-muted" />
-                                <span>Verifikasi via WhatsApp</span>
-                            </span>
+                            {/* 3 Factual Chips on Desktop */}
+                            <div className="hidden lg:flex items-center gap-2">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-surface-2 text-[11px] text-text-2">
+                                    <Clock className="w-3.5 h-3.5 text-text-muted" />
+                                    <span>Slot sewa terbatas per hari</span>
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-surface-2 text-[11px] text-text-2">
+                                    <ShieldCheck className="w-3.5 h-3.5 text-accent-text" />
+                                    <span>Garansi selama masa aktif</span>
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-surface-2 text-[11px] text-text-2">
+                                    <MessageCircle className="w-3.5 h-3.5 text-text-muted" />
+                                    <span>Verifikasi via WhatsApp</span>
+                                </span>
+                            </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
+                )}
 
                 {/* 2. Bar Kuota (Above the Fold) */}
                 <QuotaBar quota={quota} />
@@ -280,13 +288,16 @@ export default function StorefrontIndex({
                             </Button>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 min-[480px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-3.5">
+                        <div className="grid grid-cols-1 min-[360px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-3.5">
                             {filteredProducts.map((product) => (
                                 <ProductCard key={product.id} product={product} />
                             ))}
                         </div>
                     )}
                 </section>
+
+                {/* Kenapa Beli di Sini (DESIGN_SYSTEM 6.27) */}
+                <BenefitsSection />
 
                 {/* 4. Cara Pesan (DESIGN_SYSTEM 6.7) */}
                 <section id="cara-pesan" aria-labelledby="cara-pesan-title" className="scroll-mt-20 space-y-4">

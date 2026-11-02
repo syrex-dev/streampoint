@@ -59,13 +59,14 @@ class ProductController extends Controller
             ]);
 
         return Inertia::render('product/Show', [
-            'storeName' => config('app.name', 'NamaToko'),
+            'storeName' => \App\Models\Setting::current()->store_name ?: config('app.name', 'StreamPoint'),
             'product' => [
                 'id' => $product->id,
                 'slug' => $product->slug,
                 'name' => $product->name,
                 'category' => $product->category,
                 'thumbnail_path' => $product->thumbnail_path,
+                'brand_color' => $product->brand_color && preg_match('/^#[0-9A-Fa-f]{6}$/', $product->brand_color) ? $product->brand_color : null,
                 'description' => $product->description,
                 'rules' => $product->rules,
                 'available_rent_stock' => $rentStock,

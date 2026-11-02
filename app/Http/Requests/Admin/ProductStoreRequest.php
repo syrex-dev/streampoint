@@ -25,6 +25,7 @@ class ProductStoreRequest extends FormRequest
             'rules' => ['nullable', 'string'],
             'is_active' => ['required', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
+            'brand_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'thumbnail' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }
@@ -38,6 +39,7 @@ class ProductStoreRequest extends FormRequest
             'name.required' => 'Nama produk wajib diisi.',
             'slug.unique' => 'Slug sudah digunakan oleh produk lain.',
             'category.required' => 'Kategori produk wajib diisi.',
+            'brand_color.regex' => 'Format warna merek harus berupa kode HEX 6 digit (contoh: #E50914).',
             'thumbnail.image' => 'File thumbnail harus berupa gambar.',
             'thumbnail.mimes' => 'Format thumbnail yang didukung: JPG, PNG, WEBP.',
             'thumbnail.max' => 'Ukuran file thumbnail maksimal 2MB.',

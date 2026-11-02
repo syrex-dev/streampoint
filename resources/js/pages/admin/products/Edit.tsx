@@ -35,6 +35,7 @@ interface ProductDetail {
     slug: string;
     category: string;
     thumbnail_path: string | null;
+    brand_color?: string | null;
     description?: string | null;
     rules?: string | null;
     is_active: boolean;
@@ -58,6 +59,7 @@ export default function ProductEdit({ product, variants }: EditProps) {
         rules: string;
         is_active: boolean;
         sort_order: number;
+        brand_color: string;
         thumbnail: File | null;
     }>({
         _method: 'put',
@@ -68,6 +70,7 @@ export default function ProductEdit({ product, variants }: EditProps) {
         rules: product.rules || '',
         is_active: product.is_active,
         sort_order: product.sort_order,
+        brand_color: product.brand_color || '',
         thumbnail: null,
     });
 
@@ -369,11 +372,30 @@ export default function ProductEdit({ product, variants }: EditProps) {
                                 Thumbnail / Logo Produk (Maks 2MB)
                             </label>
                             <div className="flex items-center gap-4">
-                                <div className="w-14 h-14 rounded-lg bg-surface-2 border border-border flex items-center justify-center shrink-0 overflow-hidden font-mono text-xs text-text-3">
+                                <div
+                                    className="w-14 h-14 rounded-lg flex items-center justify-center shrink-0 overflow-hidden font-mono text-xs"
+                                    style={
+                                        /^#[0-9A-Fa-f]{6}$/.test(data.brand_color)
+                                            ? {
+                                                  backgroundColor: `color-mix(in srgb, ${data.brand_color} 14%, var(--surface))`,
+                                                  borderColor: `color-mix(in srgb, ${data.brand_color} 30%, var(--border))`,
+                                                  borderWidth: '1px',
+                                                  borderStyle: 'solid',
+                                              }
+                                            : {
+                                                  backgroundColor: 'var(--surface-2)',
+                                                  borderColor: 'var(--border)',
+                                                  borderWidth: '1px',
+                                                  borderStyle: 'solid',
+                                              }
+                                    }
+                                >
                                     {previewUrl ? (
-                                        <img src={previewUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+                                        <img src={previewUrl} alt="Thumbnail" className="w-full h-full object-contain p-2" />
                                     ) : (
-                                        <Upload className="w-5 h-5 text-text-3" />
+                                        <span className="font-semibold text-base text-text-2">
+                                            {data.name.trim() ? data.name.trim().slice(0, 2).toUpperCase() : <Upload className="w-5 h-5 text-text-3" />}
+                                        </span>
                                     )}
                                 </div>
                                 <div className="flex-1">
@@ -384,11 +406,56 @@ export default function ProductEdit({ product, variants }: EditProps) {
                                         className="block w-full text-xs text-text-2 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-border file:text-xs file:font-semibold file:bg-surface-2 file:text-text hover:file:bg-surface-hover cursor-pointer"
                                     />
                                     <span className="text-[11px] text-text-3 block mt-1">
-                                        Pilih gambar baru untuk mengganti thumbnail saat ini.
+                                        Pilih gambar baru untuk mengganti thumbnail saat ini (bukan SVG).
                                     </span>
                                 </div>
                             </div>
                             {errors.thumbnail && <p className="text-[11px] text-danger">{errors.thumbnail}</p>}
+                        </div>
+
+                        {/* Brand Color (Warna Merek Layanan) */}
+                        <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                                <label className="text-xs font-semibold text-text block">
+                                    Warna Merek Layanan (Hex #RRGGBB - Opsional)
+                                </label>
+                                {data.brand_color && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setData('brand_color', '')}
+                                        className="text-[11px] text-danger hover:underline"
+                                    >
+                                        Kosongkan
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="relative w-9 h-9 rounded border border-border overflow-hidden shrink-0">
+                                    <input
+                                        type="color"
+                                        value={/^#[0-9A-Fa-f]{6}$/.test(data.brand_color) ? data.brand_color : '#10B981'}
+                                        onChange={(e) => setData('brand_color', e.target.value.toUpperCase())}
+                                        className="absolute -inset-2 w-14 h-14 cursor-pointer"
+                                        title="Pilih warna merek"
+                                    />
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="#E50914"
+                                    maxLength={7}
+                                    value={data.brand_color}
+                                    onChange={(e) => {
+                                        let val = e.target.value;
+                                        if (val && !val.startsWith('#')) val = '#' + val;
+                                        setData('brand_color', val.toUpperCase());
+                                    }}
+                                    className="w-32 h-9 px-3 text-xs font-mono bg-surface-2 border border-border rounded text-text uppercase focus:outline-none focus:border-accent"
+                                />
+                                <span className="text-[11px] text-text-2">
+                                    Digunakan sebagai tint lembut kotak logo (14% terang / 18% gelap).
+                                </span>
+                            </div>
+                            {errors.brand_color && <p className="text-[11px] text-danger">{errors.brand_color}</p>}
                         </div>
 
                         {/* Description */}

@@ -25,6 +25,7 @@ class ProductFactory extends Factory
             'rules' => fake()->paragraph(),
             'is_active' => true,
             'sort_order' => 0,
+            'brand_color' => null,
         ];
     }
 }

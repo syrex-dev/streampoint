@@ -36,6 +36,9 @@ Aplikasi ini dikembangkan dan diuji menggunakan **Laravel Herd** pada Windows:
 6. **Akses Aplikasi:**
    Buka peramban di `http://streampoint.test` (atau `http://localhost:8000` jika menggunakan `php artisan serve`).
 
+> [!NOTE]
+> **Troubleshooting Tampilan Tanpa CSS:** Jika CSS tidak termuat di lokal (tampilan mentah/tanpa style), jalankan `npm run dev` atau hapus file `public/hot` lalu jalankan `npm run build`. File `public/hot` dibuat otomatis saat `npm run dev` aktif dan memberitahu Laravel untuk memuat aset dari dev server Vite. Jika dev server sudah dimatikan tetapi `public/hot` belum terhapus, browser akan gagal memuat CSS.
+
 ---
 
 ## 2. Akun Admin Default

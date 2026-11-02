@@ -158,6 +158,10 @@ Teks berikut ditampilkan di kolom kiri halaman detail dan **dapat diedit admin p
 - **Header:** tautan jangkar (Layanan, Cara Pesan, FAQ), Cek Pesanan, pengalih tema Terang/Gelap/Sistem. Menu hamburger di mobile.
 - **Pita intro** ringkas (judul + satu kalimat) boleh ada di atas bar kuota, tanpa hero besar. Bar kuota dan produk tetap harus cepat terlihat tanpa scroll (detail di `DESIGN_SYSTEM.md` Bagian 1).
 - Referensi susunan halaman: seakun.id (pola saja, bukan menyalin teks atau aset).
+- **Banner** yang dapat diedit admin (judul, subjudul, tombol, gambar opsional, jadwal) tampil di atas bar kuota. Tanpa banner aktif, tampil pita intro.
+- **Kartu produk** menampilkan logo layanan yang diunggah admin dengan tint warna merek.
+- **Seksi "Kenapa Beli di Sini"** setelah katalog (maks. 6 poin, hanya klaim yang benar sesuai kebijakan toko).
+- **Identitas toko** (nama, logo, preset warna aksen) diatur admin dan tampil di header, footer, dan judul halaman.
 
 ### 5.2 Detail Layanan & Checkout 4 Langkah (`/p/{slug}`)
 
@@ -196,7 +200,8 @@ Dua mode: **Kode Invoice + Nomor WA** (membuka invoice lengkap), atau **Nomor WA
 - **Produk & Varian:** CRUD layanan, varian, harga, aturan sewa/garansi.
 - **Stok Akun:** tambah satu per satu atau impor massal (satu baris per unit: `email|password|profil|pin`), lihat status tiap unit.
 - **Metode Pembayaran:** kelola rekening, e-wallet, dan gambar QRIS.
-- **Pengaturan:** kuota default, override kuota per tanggal, tombol uji notifikasi Telegram.
+- **Banner:** CRUD banner (judul, subjudul, label dan tautan tombol, gambar, nada warna, urutan, jadwal tayang, aktif/nonaktif). Maksimal 5 banner aktif.
+- **Pengaturan:** kuota default, override kuota per tanggal, identitas toko (nama, logo, preset warna aksen), tombol uji notifikasi Telegram.
 
 ---
 

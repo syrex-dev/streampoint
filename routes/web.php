@@ -67,6 +67,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::match(['put', 'patch', 'post'], '/payment-methods/{paymentMethod}', [\App\Http\Controllers\Admin\AdminPaymentMethodController::class, 'update'])->name('payment-methods.update');
     Route::delete('/payment-methods/{paymentMethod}', [\App\Http\Controllers\Admin\AdminPaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
 
+    // Banners
+    Route::resource('banners', \App\Http\Controllers\Admin\AdminBannerController::class);
+
     Route::get('/settings', [\App\Http\Controllers\Admin\AdminSettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [\App\Http\Controllers\Admin\AdminSettingController::class, 'update'])->name('settings.update');
     Route::post('/settings/overrides', [\App\Http\Controllers\Admin\AdminSettingController::class, 'storeOverride'])->name('settings.overrides.store');

@@ -27,6 +27,9 @@ class AdminSettingController extends Controller
                 'max_daily_rent_quota' => $setting->max_daily_rent_quota,
                 'admin_whatsapp' => $setting->admin_whatsapp,
                 'business_hours' => $setting->business_hours,
+                'store_name' => $setting->store_name,
+                'store_logo_path' => $setting->store_logo_path,
+                'accent_preset' => $setting->accent_preset ?? 'emerald',
             ],
             'overrides' => $overrides,
             'telegramConfigured' => $telegramConfigured,
@@ -39,13 +42,46 @@ class AdminSettingController extends Controller
             'max_daily_rent_quota' => ['required', 'integer', 'min:1', 'max:100'],
             'admin_whatsapp' => ['nullable', 'string', 'max:20'],
             'business_hours' => ['nullable', 'string', 'max:100'],
+            'store_name' => ['nullable', 'string', 'max:100'],
+            'accent_preset' => ['required', 'string', \Illuminate\Validation\Rule::in(['emerald', 'teal', 'blue', 'mono'])],
+            'store_logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:1024'],
+            'remove_logo' => ['nullable', 'boolean'],
         ], [
             'max_daily_rent_quota.required' => 'Batas kuota sewa harian wajib diisi.',
             'max_daily_rent_quota.min' => 'Batas kuota sewa minimal 1.',
+            'accent_preset.required' => 'Preset warna aksen wajib dipilih.',
+            'accent_preset.in' => 'Preset aksen tidak valid. Pilihan: emerald, teal, blue, mono.',
+            'store_logo.image' => 'File logo toko harus berupa gambar.',
+            'store_logo.mimes' => 'Format logo toko yang didukung: JPG, PNG, WEBP (SVG tidak diizinkan).',
+            'store_logo.max' => 'Ukuran file logo toko maksimal 1MB.',
         ]);
 
         $setting = Setting::current();
-        $setting->update($validated);
+
+        $updateData = [
+            'max_daily_rent_quota' => $validated['max_daily_rent_quota'],
+            'admin_whatsapp' => $validated['admin_whatsapp'] ?? null,
+            'business_hours' => $validated['business_hours'] ?? null,
+            'store_name' => $validated['store_name'] ?? null,
+            'accent_preset' => $validated['accent_preset'],
+        ];
+
+        if ($request->boolean('remove_logo')) {
+            if ($setting->store_logo_path && \Illuminate\Support\Str::startsWith($setting->store_logo_path, '/storage/')) {
+                $oldPath = \Illuminate\Support\Str::after($setting->store_logo_path, '/storage/');
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+            }
+            $updateData['store_logo_path'] = null;
+        } elseif ($request->hasFile('store_logo')) {
+            if ($setting->store_logo_path && \Illuminate\Support\Str::startsWith($setting->store_logo_path, '/storage/')) {
+                $oldPath = \Illuminate\Support\Str::after($setting->store_logo_path, '/storage/');
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+            }
+            $path = $request->file('store_logo')->store('store', 'public');
+            $updateData['store_logo_path'] = '/storage/' . $path;
+        }
+
+        $setting->update($updateData);
 
         return back()->with('success', 'Pengaturan berhasil diperbarui.');
     }

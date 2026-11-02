@@ -167,17 +167,28 @@ export default function ProductShow({
                         {/* Service Card */}
                         <div className="bg-surface border border-border rounded-lg p-4 sm:p-5">
                             <div className="flex items-start gap-3.5">
-                                <div className="w-12 h-12 rounded-lg bg-surface-2 border border-border flex items-center justify-center shrink-0 overflow-hidden">
+                                <div
+                                    className={`w-16 h-16 rounded-lg border flex items-center justify-center shrink-0 overflow-hidden brand-logo-box ${
+                                        product.brand_color && /^#[0-9A-Fa-f]{6}$/.test(product.brand_color)
+                                            ? 'has-brand-tint'
+                                            : ''
+                                    }`}
+                                    style={
+                                        product.brand_color && /^#[0-9A-Fa-f]{6}$/.test(product.brand_color)
+                                            ? ({ ['--brand' as any]: product.brand_color } as React.CSSProperties)
+                                            : undefined
+                                    }
+                                >
                                     {product.thumbnail_path ? (
                                         <img
                                             src={product.thumbnail_path}
                                             alt={product.name}
-                                            className="w-full h-full object-cover"
-                                            width={48}
-                                            height={48}
+                                            className="w-full h-full object-contain p-2"
+                                            width={64}
+                                            height={64}
                                         />
                                     ) : (
-                                        <span className="font-mono text-sm font-bold text-text">
+                                        <span className="font-mono text-xl font-semibold text-text tracking-wider">
                                             {initials}
                                         </span>
                                     )}

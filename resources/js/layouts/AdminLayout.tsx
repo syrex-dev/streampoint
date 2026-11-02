@@ -6,6 +6,7 @@ import {
     Package,
     KeyRound,
     CreditCard,
+    Image as ImageIcon,
     Settings as SettingsIcon, 
     LogOut, 
     Menu, 
@@ -58,6 +59,7 @@ export function AdminLayout({ title, children }: AdminLayoutProps) {
         { label: 'Produk', href: '/admin/products', icon: Package, exact: false },
         { label: 'Stok Akun', href: '/admin/accounts', icon: KeyRound, exact: false },
         { label: 'Metode Pembayaran', href: '/admin/payment-methods', icon: CreditCard, exact: false },
+        { label: 'Banner', href: '/admin/banners', icon: ImageIcon, exact: false },
         { label: 'Pengaturan', href: '/admin/settings', icon: SettingsIcon, exact: false },
     ];
 

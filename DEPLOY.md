@@ -30,6 +30,8 @@ composer install --no-dev --optimize-autoloader
 # 3. Pasang dependensi Node dan kompilasi asset frontend (React + Tailwind)
 npm ci
 npm run build
+# Pastikan file public/hot tidak ada di server (jika ada, halaman tampil tanpa CSS)
+rm -f public/hot
 
 # 4. Generate Application Key (Simpan nilai APP_KEY ini di tempat aman!)
 php artisan key:generate
@@ -274,6 +276,7 @@ Terdapat dua cara untuk menyimpannya:
 
 Setelah deployment selesai, lakukan pengujian berikut sebelum membuka toko ke publik:
 
+- [ ] **Checklist Pasca-Build Aset:** Pastikan file `public/hot` tidak ada di server (jika ada, halaman tampil tanpa CSS karena Laravel mengira Vite dev server sedang aktif).
 - [ ] Buka halaman utama `https://domainanda.com`:
   - Bar kuota tampil dengan benar (`Slot sewa hari ini: X/X tersisa`).
   - Tema terang dan gelap berfungsi tanpa kedip.

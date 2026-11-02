@@ -13,6 +13,9 @@ class Setting extends Model
         'max_daily_rent_quota',
         'admin_whatsapp',
         'business_hours',
+        'store_name',
+        'store_logo_path',
+        'accent_preset',
     ];
 
     protected function casts(): array
@@ -24,6 +27,9 @@ class Setting extends Model
 
     public static function current(): self
     {
-        return static::firstOrCreate([], ['max_daily_rent_quota' => 3]);
+        return static::firstOrCreate([], [
+            'max_daily_rent_quota' => 3,
+            'accent_preset' => 'emerald',
+        ]);
     }
 }

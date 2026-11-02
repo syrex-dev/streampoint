@@ -1,8 +1,16 @@
+@php
+    $appSetting = \App\Models\Setting::current();
+    $accentPreset = in_array($appSetting->accent_preset, ['emerald', 'teal', 'blue', 'mono']) ? $appSetting->accent_preset : 'emerald';
+@endphp
 <!DOCTYPE html>
-<html lang="id" class="{{ request()->cookie('appearance') === 'dark' ? 'dark' : '' }}" style="{{ request()->cookie('appearance') === 'dark' ? 'color-scheme: dark;' : '' }}">
+<html lang="id" data-accent="{{ $accentPreset }}" class="{{ request()->cookie('appearance') === 'dark' ? 'dark' : '' }}" style="{{ request()->cookie('appearance') === 'dark' ? 'color-scheme: dark;' : '' }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title inertia>{{ $appSetting->store_name ?: config('app.name', 'StreamPoint') }}</title>
+        <script>
+            window.__initialStoreName = @json($appSetting->store_name ?: config('app.name', 'StreamPoint'));
+        </script>
 
         <script>
             (function() {

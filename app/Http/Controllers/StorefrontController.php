@@ -62,6 +62,7 @@ class StorefrontController extends Controller
                     'name' => $product->name,
                     'category' => $product->category,
                     'thumbnail_path' => $product->thumbnail_path,
+                    'brand_color' => $product->brand_color && preg_match('/^#[0-9A-Fa-f]{6}$/', $product->brand_color) ? $product->brand_color : null,
                     'description' => $product->description,
                     'min_price' => (int) $minPrice,
                     'status' => $status,
@@ -84,9 +85,25 @@ class StorefrontController extends Controller
                 'label' => $pm->label,
             ]);
 
+        $banners = \App\Models\Banner::active()
+            ->take(5)
+            ->get()
+            ->map(fn (\App\Models\Banner $b) => [
+                'id' => $b->id,
+                'title' => $b->title,
+                'subtitle' => $b->subtitle,
+                'cta_label' => $b->cta_label,
+                'cta_url' => $b->cta_url,
+                'image_path' => $b->image_path,
+                'tone' => $b->tone,
+            ]);
+
+        $setting = \App\Models\Setting::current();
+
         return Inertia::render('storefront/Index', [
-            'storeName' => config('app.name', 'StreamPoint'),
+            'storeName' => $setting->store_name ?: config('app.name', 'StreamPoint'),
             'quota' => $quota,
+            'banners' => $banners,
             'products' => $products,
             'categories' => $categories,
             'paymentMethods' => $paymentMethods,

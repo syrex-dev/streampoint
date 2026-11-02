@@ -6,6 +6,7 @@ use App\Enums\AccountStatus;
 use App\Enums\OrderType;
 use App\Enums\PaymentMethodType;
 use App\Enums\RentDuration;
+use App\Models\Banner;
 use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\ProductAccount;
@@ -31,6 +32,7 @@ class DemoSeeder extends Seeder
                 'name' => 'Netflix Premium UHD',
                 'slug' => 'netflix-premium',
                 'category' => 'Streaming',
+                'brand_color' => '#E50914',
                 'description' => 'Nonton film & series kualitas 4K UHD, support semua device (TV, HP, Laptop).',
                 'rules' => $defaultRules,
                 'rent_prices' => [8000, 15000, 28000, 38000],
@@ -40,6 +42,7 @@ class DemoSeeder extends Seeder
                 'name' => 'YouTube Premium',
                 'slug' => 'youtube-premium',
                 'category' => 'Streaming',
+                'brand_color' => '#FF0000',
                 'description' => 'Bebas iklan, putar di latar belakang, dan akses YouTube Music Premium.',
                 'rules' => $defaultRules,
                 'rent_prices' => [5000, 10000, 18000, 25000],
@@ -49,6 +52,7 @@ class DemoSeeder extends Seeder
                 'name' => 'Spotify Premium',
                 'slug' => 'spotify-premium',
                 'category' => 'Streaming',
+                'brand_color' => '#1DB954',
                 'description' => 'Dengarkan musik tanpa jeda iklan, download lagu offline, audio kualitas tinggi.',
                 'rules' => $defaultRules,
                 'rent_prices' => [4000, 8000, 15000, 20000],
@@ -62,6 +66,7 @@ class DemoSeeder extends Seeder
                 [
                     'name' => $svc['name'],
                     'category' => $svc['category'],
+                    'brand_color' => $svc['brand_color'],
                     'description' => $svc['description'],
                     'rules' => $svc['rules'],
                     'is_active' => true,
@@ -163,6 +168,37 @@ class DemoSeeder extends Seeder
                 'instructions' => 'Transfer manual ke rekening BCA di atas sesuai nominal persis.',
                 'is_active' => true,
                 'sort_order' => 2,
+            ]
+        );
+
+        // 2 Demo Banners (text only, neutral & accent)
+        Banner::updateOrCreate(
+            ['title' => 'Promo Akhir Pekan'],
+            [
+                'subtitle' => 'Sewa akun streaming mulai dari Rp4.000 dengan garansi penuh dan aktivasi cepat.',
+                'cta_label' => 'Lihat Katalog',
+                'cta_url' => '/#katalog',
+                'image_path' => null,
+                'tone' => 'neutral',
+                'is_active' => true,
+                'sort_order' => 1,
+                'starts_at' => null,
+                'ends_at' => null,
+            ]
+        );
+
+        Banner::updateOrCreate(
+            ['title' => 'Garansi Akun Pengganti'],
+            [
+                'subtitle' => 'Akun bermasalah langsung diganti atau durasi sewa diperpanjang tanpa biaya tambahan.',
+                'cta_label' => 'Pelajari Cara Pesan',
+                'cta_url' => '/#cara-pesan',
+                'image_path' => null,
+                'tone' => 'accent',
+                'is_active' => true,
+                'sort_order' => 2,
+                'starts_at' => null,
+                'ends_at' => null,
             ]
         );
     }

@@ -28,6 +28,7 @@ class AdminProductController extends Controller
                 'slug' => $p->slug,
                 'category' => $p->category,
                 'thumbnail_path' => $p->thumbnail_path,
+                'brand_color' => $p->brand_color,
                 'is_active' => (bool) $p->is_active,
                 'sort_order' => (int) $p->sort_order,
                 'variants_count' => (int) $p->variants_count,
@@ -73,6 +74,7 @@ class AdminProductController extends Controller
             'rules' => $request->validated('rules'),
             'is_active' => (bool) $request->validated('is_active'),
             'sort_order' => (int) ($request->validated('sort_order') ?? 0),
+            'brand_color' => $request->validated('brand_color'),
             'thumbnail_path' => $thumbnailPath,
         ]);
 
@@ -108,6 +110,7 @@ class AdminProductController extends Controller
                 'slug' => $product->slug,
                 'category' => $product->category,
                 'thumbnail_path' => $product->thumbnail_path,
+                'brand_color' => $product->brand_color,
                 'description' => $product->description,
                 'rules' => $product->rules,
                 'is_active' => (bool) $product->is_active,
@@ -128,6 +131,7 @@ class AdminProductController extends Controller
             'rules' => $request->validated('rules'),
             'is_active' => (bool) $request->validated('is_active'),
             'sort_order' => (int) ($request->validated('sort_order') ?? 0),
+            'brand_color' => $request->validated('brand_color'),
         ];
 
         if ($request->hasFile('thumbnail')) {

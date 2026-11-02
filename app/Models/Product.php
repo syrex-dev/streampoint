@@ -19,6 +19,7 @@ class Product extends Model
         'rules',
         'is_active',
         'sort_order',
+        'brand_color',
     ];
 
     protected function casts(): array

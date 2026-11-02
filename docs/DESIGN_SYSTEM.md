@@ -1,6 +1,6 @@
 # Design System & UI/UX Guidelines (Anti-AI Slop)
 
-**Versi:** 3.0 (menambah mode Terang/Gelap dan struktur halaman bergaya Seakun)
+**Versi:** 3.1 (mode Terang/Gelap, struktur bergaya Seakun, dan tingkat keramaian visual Opsi A)
 **Konsep Inti:** Utilitarian Digital Storefront / Compact Top-Up Interface
 **Referensi Rasa:** Lapakgaming, Codashop, Vercel Dashboard, Raycast UI, dan **struktur halaman** seakun.id
 **Filosofi:** Kerapatan informasi tinggi, kontras tajam, nol dekorasi tanpa fungsi, nol teks marketing berbunga-bunga.
@@ -16,23 +16,25 @@ seakun.id dipakai sebagai acuan **pola dan susunan halaman**: urutan seksi, navi
 2. **Warna dan tipografi mengikuti dokumen ini**, bukan mengikuti seakun.id.
 3. **Yang tidak diambil** dari seakun.id: hero besar berilustrasi, deretan statistik pengguna, testimoni, logo partner, banner promo karusel, banner aplikasi, klaim "legal/resmi/aman", dan peringatan hak cipta. Alasannya: tidak punya data nyata untuk itu, atau bertentangan dengan Bagian 11.
 4. **Yang tetap prioritas utama** walau halaman jadi lebih lengkap: bar kuota dan grid produk harus muncul secepat mungkin (Bagian 1).
+5. **Tingkat keramaian visual: Opsi A (hangat tapi rapi).** Logo layanan lebih besar dengan tint warna merek, banner yang dapat diedit admin, seksi keunggulan, identitas toko (nama, logo, preset warna aksen). **Opsi B** (hero ilustratif buatan sendiri, statistik dari data nyata, testimoni asli) belum berlaku dan dikerjakan belakangan.
 
 ---
 
 ## 1. Prinsip Visual & Tata Letak
 
-1. **Katalog dulu.** Intro di atas katalog hanya selembar pita ringkas (Bagian 6.2). Bar kuota dan baris pertama produk harus terlihat di layar tanpa scroll pada 1366×768, dan bar kuota harus terlihat penuh pada 375×667. Tidak ada hero tinggi atau ilustrasi pembuka.
+1. **Katalog dulu.** Di atas katalog hanya ada satu banner ringkas (Bagian 6.26) atau, bila belum ada banner aktif, pita intro (6.2). Bar kuota harus terlihat penuh pada 375×667, dan bar kuota + baris produk pertama harus terlihat pada 1366×768. Ukur lewat DOM (`getBoundingClientRect`), bukan perkiraan visual. Tidak ada hero setinggi layar.
 2. **Urutan seksi di halaman utama** (atas ke bawah):
-   1. Header (navigasi, pengalih tema)
+   1. Header (BrandMark, navigasi, pengalih tema)
    2. Banner pesanan belum selesai (hanya jika ada)
-   3. Pita intro ringkas
+   3. Banner slider (atau pita intro bila tidak ada banner aktif)
    4. Bar kuota
    5. Katalog: filter + grid produk
-   6. Cara Pesan (5 langkah)
-   7. Metode Pembayaran
-   8. FAQ (akordeon)
-   9. Footer
-   10. Tombol bantuan WhatsApp mengambang
+   6. Kenapa Beli di Sini (kartu keunggulan)
+   7. Cara Pesan (5 langkah)
+   8. Metode Pembayaran
+   9. FAQ (akordeon)
+   10. Footer
+   11. Tombol bantuan WhatsApp mengambang
 3. **Checkout 2 Kolom (Desktop ≥ 1024px).** Kiri (35–40%): logo layanan, deskripsi, syarat sewa/garansi. Kanan (60–65%): 4 langkah, semuanya terlihat.
 4. **Mobile (Single Column).** Elemen tersusun vertikal. *Sticky bottom bar* menampilkan total dan tombol checkout di halaman produk.
 5. **Satu aksi utama per layar.** Hanya satu tombol berwarna aksen yang dominan dalam satu viewport.
@@ -131,7 +133,7 @@ Semua warna dipakai lewat CSS variables. **Dilarang menulis hex langsung di komp
 **Aturan warna (berlaku di kedua mode):**
 
 - Dilarang: gradasi ungu-biru neon (*AI purple-cyan glow*), gradien dekoratif, glow, glassmorphism.
-- **Satu warna aksen: emerald.** Hijau berarti "bisa diklik" atau "berhasil/tersedia". Tidak untuk dekorasi.
+- **Satu warna aksen toko** (default emerald, dapat diganti lewat preset di 2.6). Warna aksen berarti "bisa diklik", "terpilih", atau "tersedia". Tidak untuk dekorasi. Satu-satunya tambahan warna adalah tint tipis warna merek layanan pada kotak logo (2.6 B).
 - Di mode terang, teks berwarna memakai `--accent-text` (bukan `--accent`) karena `#10B981` di atas putih kontrasnya kurang dari 4.5:1. Latar tombol tetap `--accent` dengan teks `--on-accent` (kontras ≈ 8:1 di kedua mode).
 - Status tidak boleh dikomunikasikan hanya lewat warna. Selalu sertakan label teks atau ikon.
 
@@ -187,6 +189,28 @@ Petakan token ke tema Tailwind (`bg-bg`, `bg-surface`, `text-text-2`, `border-bo
 
 ---
 
+### 2.6 Aksen Toko dan Warna Merek Layanan
+
+**A. Aksen toko (preset).** Pemilik memilih satu preset di Pengaturan (default **Emerald**). Preset hanya mengganti token aksen, tidak menyentuh warna status (warning, danger, info). Diterapkan lewat atribut `data-accent` pada `<html>` yang ditetapkan **server-side sebelum render** (tanpa kedipan) dan berlaku di kedua mode.
+
+| Preset | `--accent` | `--accent-hover` (Gelap / Terang) | `--accent-text` (Gelap / Terang) | `--on-accent` |
+| :-- | :-- | :-- | :-- | :-- |
+| `emerald` | `#10B981` | `#34D399` / `#059669` | `#10B981` / `#047857` | `#09090B` |
+| `teal` | `#14B8A6` | `#2DD4BF` / `#0D9488` | `#14B8A6` / `#0F766E` | `#09090B` |
+| `blue` | `#3B82F6` | `#60A5FA` / `#60A5FA` | `#60A5FA` / `#1D4ED8` | `#09090B` |
+| `mono` | Gelap `#FAFAFA`, Terang `#18181B` | `#E4E4E7` / `#3F3F46` | `#FAFAFA` / `#18181B` | Gelap `#09090B`, Terang `#FAFAFA` |
+
+Aturan preset: kontras `--accent-text` terhadap `--bg` dan `--surface` harus ≥ 4.5:1, dan `--on-accent` terhadap `--accent` ≥ 4.5:1, di kedua mode. Hitung dengan rumus kontras WCAG dan sesuaikan nilai bila ada yang kurang. Preset `blue` mendekati warna `--info` (badge `VERIFYING`), jadi badge status selalu memakai label teks. Nilai preset divalidasi dengan daftar putih (bukan input bebas).
+
+**B. Warna merek layanan (tint).** Admin boleh mengisi `brand_color` (hex `#RRGGBB`) per layanan. Dipakai **hanya** sebagai tint kotak logo:
+
+- latar: `color-mix(in srgb, var(--brand) 14%, var(--surface))` (mode gelap 18%)
+- border: `color-mix(in srgb, var(--brand) 30%, var(--border))`
+
+Teks tidak pernah diletakkan di atas warna merek mentah. Warna merek tidak dipakai untuk tombol, status, atau teks. Tanpa `brand_color`, kotak memakai `--surface-2`. Nilai wajib lolos validasi server (`^#[0-9A-Fa-f]{6}$`) sebelum dimasukkan ke atribut `style`, agar tidak bisa disisipi CSS.
+
+---
+
 ## 3. Tipografi
 
 | Peran | Font | Catatan |
@@ -224,8 +248,8 @@ Tidak ada teks di atas 32px. Line-height: 1.5 untuk body, 1.25 untuk judul.
 
 - Ikon: `lucide-react`, 16px (inline) atau 20px (aksi), `stroke-width` 1.75, warna mengikuti teks.
 - **Tanpa emoji** di antarmuka web (emoji hanya boleh di pesan Telegram internal admin).
-- Logo layanan: kotak 40×40 (kartu) atau 48×48 (detail), radius 8px, latar `--surface-2`, border `--border`. Jika belum ada gambar: kotak inisial (mono). Gambar diperkecil, `loading="lazy"` di luar layar awal, `width`/`height` eksplisit.
-- Tanpa ilustrasi dekoratif, stock photo, atau pola latar. Elemen "Cara Pesan" dan "Manfaat" memakai ikon Lucide, bukan ilustrasi.
+- Logo layanan: kotak 56×56 (kartu) atau 64×64 (detail), radius 8px, latar tint warna merek (2.6 B) atau `--surface-2`, border sesuai tint. Logo ditampilkan `object-contain` dengan padding 8px. Jika belum ada gambar: kotak inisial (mono, 18px/600). Gambar diperkecil, `loading="lazy"` di luar layar awal, `width`/`height` eksplisit.
+- Tanpa ilustrasi dekoratif tempelan, stock photo, atau pola latar di kode. Gambar yang boleh ada: logo layanan dan gambar banner yang **diunggah admin** (6.26). Elemen "Cara Pesan" dan "Kenapa Beli di Sini" memakai ikon Lucide, bukan ilustrasi. Gambar yang diunggah tidak boleh berupa SVG (risiko skrip).
 
 ---
 
@@ -237,9 +261,12 @@ Tinggi 56px (mobile) / 56px (desktop), latar `--bg`, border bawah 1px, `position
 
 - **Desktop:** kiri nama toko. Tengah/kanan tautan jangkar: **Layanan**, **Cara Pesan**, **FAQ**, lalu **Cek Pesanan** (ikon `Search` + teks), dan **ThemeToggle** di paling kanan.
 - **Mobile:** kiri nama toko, kanan ThemeToggle dan tombol **menu** (ikon `Menu`). Menu membuka panel dari atas/samping berisi tautan yang sama dalam daftar vertikal (tinggi baris 48px), `Esc` dan tap di luar untuk menutup, fokus terkunci di panel.
+- **Kiri:** BrandMark (6.28), bukan teks polos bila logo toko diunggah.
 - Tautan jangkar menggulir ke seksi terkait (`scroll-margin-top` 72px). Di halaman selain beranda, tautan menuju `/#id-seksi`.
 
 ### 6.2 Pita Intro
+
+**Hanya tampil bila tidak ada banner aktif** (6.26). Bila ada banner, pita ini disembunyikan agar tinggi atas halaman tidak bertambah.
 
 Satu blok ringkas di atas bar kuota: judul 20px/600 (mis. "Sewa & Beli Akun Streaming"), satu kalimat faktual 14px (mis. "Bayar, konfirmasi, akun dikirim setelah diverifikasi admin."). Tinggi maks 88px di mobile. Desktop boleh menambah **tiga chip faktual** (ikon + teks 12px, mis. "Slot sewa terbatas per hari", "Garansi selama masa sewa", "Notifikasi via WhatsApp") hanya jika benar dan sesuai kebijakan toko. Tanpa tombol CTA besar, tanpa ilustrasi.
 
@@ -271,7 +298,14 @@ Di atas grid, satu baris:
 
 ### 6.6 ProductCard
 
-Grid 2 kolom (≥ 480px) hingga 4 kolom (desktop), mobile paling kecil 2 kolom bila muat, selain itu 1 kolom. Isi: logo 40px, nama (14px/600), kategori (12px, `--text-2`), `mulai Rp X` (mono), badge status di pojok kanan atas. Seluruh kartu adalah tautan. Hover: latar `--surface-hover` + border `--border-strong`, tanpa transform.
+Grid: 2 kolom pada mobile (≥ 360px; di bawahnya 1 kolom), 3 kolom ≥ 768px, 4 kolom ≥ 1024px. Seluruh kartu adalah tautan. Susunan vertikal, padding 12px:
+
+1. **Baris atas:** kotak logo 56×56 (tint merek, 2.6 B) di kiri, badge status di kanan.
+2. **Nama** (14px/600, maks 2 baris) dan **kategori** (12px, `--text-2`).
+3. **Pemisah** 1px `--border`.
+4. **Baris bawah:** `mulai` (12px) + harga (mono 14px/600), serta chip teks kecil tipe yang tersedia (`Sewa`, `Beli`, 11px, border `--border`).
+
+Hover: latar `--surface-hover` dan border `--border-strong`, tanpa transform. Fokus: ring aksen.
 
 Badge status: `Tersedia` (aksen), `Stok Menipis` (warning), `Habis` (danger), `Sewa Penuh` (warning, hanya jika layanan punya paket beli aktif). Kartu `Habis`: opacity 60%, tetap terbaca.
 
@@ -386,6 +420,35 @@ Lebar maks 420px, latar `--surface`, border `--border-strong`, overlay `--overla
 
 ---
 
+### 6.26 Banner Slider (dapat diedit admin)
+
+- **Tempat:** di atas bar kuota. Jika ada ≥ 1 banner aktif, pita intro (6.2) disembunyikan.
+- **Ukuran:** tinggi 120px (mobile) / 160px (≥ 768px), lebar penuh kontainer, radius 8px, border 1px `--border`. Maksimal 5 banner aktif.
+- **Isi:** judul (16px/600, maks 2 baris), subjudul opsional (13px, `--text-2`, maks 2 baris), tombol opsional (Secondary kecil, tinggi 32px). Gambar opsional di sisi kanan (lebar ≤ 35%, `object-cover`). **Teks tidak pernah diletakkan di atas gambar** dan tidak ada gradien/scrim. Latar banner mengikuti `tone`: `neutral` (`--surface-2`), `accent` (`--accent` 10%), `warning` (`--warning` 10%).
+- **Gerak:** geser manual dengan `scroll-snap` horizontal. **Tanpa autoplay.** Desktop: tombol panah kiri/kanan. Indikator titik (tombol dengan `aria-label` "Banner 2 dari 4"). Satu banner saja = tanpa kontrol. Navigasi keyboard dengan panah kiri/kanan.
+- **Jadwal:** banner punya `starts_at`/`ends_at` opsional. Hanya yang aktif dan dalam jadwal dikirim ke publik.
+- **Tautan:** `cta_url` hanya path internal yang diawali `/` atau `https://`. Skema lain (mis. `javascript:`) ditolak.
+- **Tanggung jawab konten:** form admin menampilkan pengingat "Jangan menulis klaim yang tidak bisa dibuktikan (mis. jumlah pengguna, 'resmi', 'termurah')".
+
+### 6.27 Kartu Keunggulan ("Kenapa Beli di Sini")
+
+Seksi setelah katalog. Judul seksi 16px/600. Grid: 1 kolom (mobile), 2 kolom ≥ 480px, 3 kolom ≥ 1024px. Kartu: kotak ikon 36px (`--surface-2`, ikon Lucide 20px `--accent-text`), judul 14px/600, satu kalimat 13px `--text-2`. Maksimal 6 kartu, tinggi kartu ≤ 96px. Isi disimpan di `resources/js/data/benefits.ts`. Default (tulis dengan kata sendiri, hanya klaim yang benar untuk toko ini, dan **sesuaikan dengan kebijakan nyata pemilik**):
+
+| Judul | Keterangan | Ikon |
+| :-- | :-- | :-- |
+| Verifikasi manual | Setiap pembayaran dicek admin sebelum akun dikirim. | `ShieldCheck` |
+| Kuota sewa terbatas | Maksimal 3 penyewa per hari agar akun tetap lancar. | `Users` |
+| Garansi selama masa aktif | Akun bermasalah diganti atau dikompensasi selama masa sewa. | `LifeBuoy` |
+| Nominal pasti | Total sudah termasuk kode unik. Transfer sesuai angka di invoice. | `Receipt` |
+| Akun di halaman invoice | Detail akun tampil setelah pembayaran diverifikasi. | `KeyRound` |
+| Tanpa daftar akun | Cukup nomor WhatsApp. Lacak pesanan kapan saja. | `SearchCheck` |
+
+### 6.28 BrandMark
+
+Nama toko (15px/600) dengan logo opsional 28×28 (radius 6, `object-contain`) di kiri nama. Dipakai di header, footer, dan halaman login. Nama dan logo berasal dari Pengaturan (`store_name`, `store_logo_path`). Tanpa logo: hanya teks. Judul tab browser (`<title>`) memakai `store_name`.
+
+---
+
 ## 7. Responsivitas
 
 | Breakpoint | Perilaku |
@@ -438,13 +501,13 @@ Aturan tambahan: tanpa emoji, tanpa tanda seru berlebihan, tanpa superlatif ("te
 ## 11. Larangan Mutlak (Anti-AI Slop)
 
 1. Gradien apa pun (terutama ungu-biru/cyan neon), glow, bayangan berwarna, glassmorphism.
-2. Hero tinggi, headline raksasa, ilustrasi dekoratif.
+2. Hero setinggi layar, headline raksasa, karusel otomatis, ilustrasi dekoratif tempelan. (Banner admin dengan tinggi terbatas dan gambar unggahan admin diperbolehkan, lihat 6.26.)
 3. Emoji di antarmuka web.
 4. Kartu "fitur" generik berisi klaim kosong, testimoni palsu, statistik karangan, logo partner yang tidak benar-benar partner.
 5. Menyalin teks, aset, atau ilustrasi dari situs referensi (seakun.id atau lainnya).
 6. Radius besar (> 12px), pil raksasa untuk aksi utama.
 7. Animasi masuk/hover berlebihan (scale, bounce, float), karusel otomatis.
-8. Lebih dari satu warna aksen, atau aksen untuk dekorasi.
+8. Lebih dari satu warna aksen toko, atau aksen untuk dekorasi. Pengecualian terbatas: tint warna merek layanan pada kotak logo (2.6 B).
 9. Warna hex langsung di komponen (wajib lewat token), dan warna tetap yang rusak di salah satu mode.
 10. Lorem ipsum atau data palsu tersisa di produksi.
 11. Toast/popup yang menutup informasi pembayaran.
@@ -467,3 +530,9 @@ Aturan tambahan: tanpa emoji, tanpa tanda seru berlebihan, tanpa superlatif ("te
 - [ ] Paket terkunci selalu menampilkan alasan tertulis. Total, rekening, dan kredensial punya tombol Salin.
 - [ ] Fokus keyboard terlihat, kontras AA di kedua mode, `prefers-reduced-motion` dihormati.
 - [ ] Teks UI dalam Bahasa Indonesia sesuai aturan copywriting.
+- [ ] Kartu produk memakai logo 56px dengan tint merek, dan tetap rapi tanpa logo (kotak inisial).
+- [ ] Banner slider: manual (tanpa autoplay), teks tidak di atas gambar, pita intro tersembunyi saat ada banner, dan fallback ke pita intro saat tidak ada.
+- [ ] Seksi "Kenapa Beli di Sini" tampil setelah katalog dengan isi yang sesuai kebijakan toko.
+- [ ] Empat preset aksen (emerald, teal, blue, mono) diperiksa di kedua mode: kontras `--accent-text` dan `--on-accent` ≥ 4.5:1 (hasil hitung dilaporkan).
+- [ ] Tinggi area atas diukur lewat DOM: bar kuota penuh di 375×667, bar kuota + baris produk pertama di 1366×768, dengan banner aktif.
+- [ ] `brand_color`, `cta_url`, dan `accent_preset` divalidasi server (tidak bisa menyisipkan CSS/skrip).

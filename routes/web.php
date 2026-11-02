@@ -46,6 +46,26 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/orders/{order}/approve', [\App\Http\Controllers\Admin\AdminOrderController::class, 'approve'])->name('orders.approve');
     Route::post('/orders/{order}/reject', [\App\Http\Controllers\Admin\AdminOrderController::class, 'reject'])->name('orders.reject');
     Route::post('/orders/{order}/reactivate', [\App\Http\Controllers\Admin\AdminOrderController::class, 'reactivate'])->name('orders.reactivate');
+    Route::post('/orders/{order}/replace-account', [\App\Http\Controllers\Admin\AdminOrderController::class, 'replaceAccount'])->name('orders.replace-account');
+
+    // Products & Variants
+    Route::resource('products', \App\Http\Controllers\Admin\AdminProductController::class);
+    Route::post('/products/{product}/variants', [\App\Http\Controllers\Admin\AdminProductVariantController::class, 'store'])->name('products.variants.store');
+    Route::put('/products/{product}/variants/{variant}', [\App\Http\Controllers\Admin\AdminProductVariantController::class, 'update'])->name('products.variants.update');
+    Route::delete('/products/{product}/variants/{variant}', [\App\Http\Controllers\Admin\AdminProductVariantController::class, 'destroy'])->name('products.variants.destroy');
+
+    // Account Stocks
+    Route::get('/accounts', [\App\Http\Controllers\Admin\AdminAccountController::class, 'index'])->name('accounts.index');
+    Route::post('/accounts', [\App\Http\Controllers\Admin\AdminAccountController::class, 'store'])->name('accounts.store');
+    Route::post('/accounts/bulk', [\App\Http\Controllers\Admin\AdminAccountController::class, 'bulkStore'])->name('accounts.bulk-store');
+    Route::patch('/accounts/{account}/status', [\App\Http\Controllers\Admin\AdminAccountController::class, 'updateStatus'])->name('accounts.update-status');
+    Route::delete('/accounts/{account}', [\App\Http\Controllers\Admin\AdminAccountController::class, 'destroy'])->name('accounts.destroy');
+
+    // Payment Methods
+    Route::get('/payment-methods', [\App\Http\Controllers\Admin\AdminPaymentMethodController::class, 'index'])->name('payment-methods.index');
+    Route::post('/payment-methods', [\App\Http\Controllers\Admin\AdminPaymentMethodController::class, 'store'])->name('payment-methods.store');
+    Route::match(['put', 'patch', 'post'], '/payment-methods/{paymentMethod}', [\App\Http\Controllers\Admin\AdminPaymentMethodController::class, 'update'])->name('payment-methods.update');
+    Route::delete('/payment-methods/{paymentMethod}', [\App\Http\Controllers\Admin\AdminPaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
 
     Route::get('/settings', [\App\Http\Controllers\Admin\AdminSettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [\App\Http\Controllers\Admin\AdminSettingController::class, 'update'])->name('settings.update');

@@ -78,6 +78,9 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
     const [isRejectOpen, setIsRejectOpen] = useState(false);
     const [rejectReason, setRejectReason] = useState('');
     const [isReactivateOpen, setIsReactivateOpen] = useState(false);
+    const [isReplaceAccountOpen, setIsReplaceAccountOpen] = useState(false);
+    const [replaceReason, setReplaceReason] = useState('');
+    const [selectedReplaceAccountId, setSelectedReplaceAccountId] = useState<number | ''>('');
 
     // Credential visibility toggle
     const [showPassword, setShowPassword] = useState(false);
@@ -93,10 +96,11 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
                 setIsApproveOpen(false);
                 setIsRejectOpen(false);
                 setIsReactivateOpen(false);
+                setIsReplaceAccountOpen(false);
             }
         };
 
-        if (isApproveOpen || isRejectOpen || isReactivateOpen) {
+        if (isApproveOpen || isRejectOpen || isReactivateOpen || isReplaceAccountOpen) {
             document.addEventListener('keydown', handleKeyDown);
             document.body.style.overflow = 'hidden';
         } else {
@@ -107,7 +111,7 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
             document.removeEventListener('keydown', handleKeyDown);
             document.body.style.overflow = '';
         };
-    }, [isApproveOpen, isRejectOpen, isReactivateOpen]);
+    }, [isApproveOpen, isRejectOpen, isReactivateOpen, isReplaceAccountOpen]);
 
     const formatRupiah = (val: number) => {
         return new Intl.NumberFormat('id-ID', {
@@ -170,6 +174,22 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
             onFinish: () => {
                 setIsSubmitting(false);
                 setIsReactivateOpen(false);
+            },
+        });
+    };
+
+    const handleReplaceAccount = () => {
+        if (!replaceReason.trim() || replaceReason.trim().length < 3) return;
+        setIsSubmitting(true);
+        router.post(`/admin/orders/${order.id}/replace-account`, {
+            reason: replaceReason.trim(),
+            new_account_id: selectedReplaceAccountId || undefined,
+        }, {
+            onFinish: () => {
+                setIsSubmitting(false);
+                setIsReplaceAccountOpen(false);
+                setReplaceReason('');
+                setSelectedReplaceAccountId('');
             },
         });
     };
@@ -296,6 +316,20 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
                             >
                                 <RefreshCw className="w-4 h-4 text-accent-text" />
                                 <span>Aktifkan Kembali</span>
+                            </button>
+                        )}
+
+                        {order.status === 'PAID' && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSelectedReplaceAccountId('');
+                                    setIsReplaceAccountOpen(true);
+                                }}
+                                className="px-3.5 py-2 bg-surface-2 hover:bg-surface-hover text-text border border-border text-xs font-semibold rounded flex items-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                                <RefreshCw className="w-4 h-4 text-warning" />
+                                <span>Ganti Akun (Garansi)</span>
                             </button>
                         )}
                     </div>
@@ -728,6 +762,82 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
                                 className="px-4 py-1.5 bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold rounded transition-colors cursor-pointer"
                             >
                                 {isSubmitting ? 'Memproses...' : 'Aktifkan Kembali'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal: Replace Account (Garansi) */}
+            {isReplaceAccountOpen && (
+                <div 
+                    className="fixed inset-0 z-50 bg-overlay flex items-center justify-center p-4"
+                    onClick={() => setIsReplaceAccountOpen(false)}
+                >
+                    <div 
+                        className="w-full max-w-md bg-surface border border-border-strong rounded-md p-5 shadow-xl space-y-4"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h3 className="text-sm font-bold text-text flex items-center gap-1.5">
+                            <RefreshCw className="w-4 h-4 text-warning" />
+                            <span>Ganti Akun (Garansi)</span>
+                        </h3>
+                        <p className="text-xs text-text-2">
+                            Unit akun lama akan dinonaktifkan (<strong className="text-text font-mono">DISABLED</strong>). Unit baru berstatus <strong className="text-text font-mono">AVAILABLE</strong> dengan produk dan jenis yang sama akan dipasangkan. Batas akses pembeli (<code className="text-text font-mono">access_expires_at</code>) tetap dipertahankan.
+                        </p>
+
+                        <div className="space-y-1.5 text-xs">
+                            <label className="font-medium text-text block">
+                                Unit Pengganti:
+                            </label>
+                            <select
+                                value={selectedReplaceAccountId}
+                                onChange={(e) => setSelectedReplaceAccountId(e.target.value ? Number(e.target.value) : '')}
+                                className="w-full h-9 px-2.5 text-xs bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
+                            >
+                                <option value="">Otomatis (Pilih unit pertama yang tersedia)</option>
+                                {availableAccounts
+                                    .filter((a) => a.id !== order.account?.id)
+                                    .map((acc) => (
+                                        <option key={acc.id} value={acc.id}>
+                                            Unit #{acc.id} {acc.note ? `(${acc.note})` : ''}
+                                        </option>
+                                    ))}
+                            </select>
+                        </div>
+
+                        <div className="space-y-1.5 text-xs">
+                            <label className="font-medium text-text block">
+                                Alasan Penggantian (Wajib) <span className="text-danger">*</span>:
+                            </label>
+                            <textarea
+                                value={replaceReason}
+                                onChange={(e) => setReplaceReason(e.target.value)}
+                                rows={3}
+                                placeholder="Contoh: Akun terkena limit screen / password salah..."
+                                className="w-full p-2.5 text-xs bg-surface-2 border border-border rounded text-text placeholder:text-text-2 focus:outline-none focus:border-accent resize-none"
+                            />
+                            {replaceReason.trim().length > 0 && replaceReason.trim().length < 3 && (
+                                <span className="text-[11px] text-danger">Alasan minimal 3 karakter.</span>
+                            )}
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+                            <button
+                                type="button"
+                                onClick={() => setIsReplaceAccountOpen(false)}
+                                className="px-3 py-1.5 text-xs text-text-2 hover:text-text rounded cursor-pointer"
+                                disabled={isSubmitting}
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleReplaceAccount}
+                                disabled={isSubmitting || replaceReason.trim().length < 3}
+                                className="px-4 py-1.5 bg-warning text-black text-xs font-semibold rounded hover:bg-warning/90 transition-colors disabled:opacity-50 cursor-pointer"
+                            >
+                                {isSubmitting ? 'Memproses...' : 'Ganti Akun Sekarang'}
                             </button>
                         </div>
                     </div>

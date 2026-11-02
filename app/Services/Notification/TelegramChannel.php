@@ -14,7 +14,11 @@ class TelegramChannel implements NotificationChannel
         $chatId = config('notify.telegram.chat_id');
 
         if (! $token || ! $chatId) {
-            Log::info('Telegram notification skipped: token or chat_id is empty.');
+            if (app()->environment(['local', 'testing'])) {
+                Log::info('Telegram notification skipped (token or chat_id is empty). Message: ' . strip_tags($message));
+            } else {
+                Log::info('Telegram notification skipped: bot_token or chat_id is not configured.');
+            }
             return;
         }
 
@@ -33,10 +37,18 @@ class TelegramChannel implements NotificationChannel
             $response = Http::timeout(8)->retry(2, 500)->post("https://api.telegram.org/bot{$token}/sendMessage", $payload);
 
             if ($response->failed()) {
-                Log::warning('Telegram notification failed with status ' . $response->status() . ': ' . $response->body());
+                if (app()->environment(['local', 'testing'])) {
+                    Log::warning('Telegram notification failed with status ' . $response->status() . ': ' . $response->body());
+                } else {
+                    Log::warning('Telegram notification failed with HTTP status ' . $response->status());
+                }
             }
         } catch (Throwable $e) {
-            Log::warning('Telegram notification error: ' . $e->getMessage());
+            if (app()->environment(['local', 'testing'])) {
+                Log::warning('Telegram notification error: ' . $e->getMessage());
+            } else {
+                Log::warning('Telegram notification error: An exception occurred during transmission.');
+            }
         }
     }
 }

@@ -3,6 +3,9 @@ import { Link, usePage, router } from '@inertiajs/react';
 import { 
     LayoutDashboard, 
     ShoppingBag, 
+    Package,
+    KeyRound,
+    CreditCard,
     Settings as SettingsIcon, 
     LogOut, 
     Menu, 
@@ -52,6 +55,9 @@ export function AdminLayout({ title, children }: AdminLayoutProps) {
     const navItems = [
         { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, exact: true },
         { label: 'Order', href: '/admin/orders', icon: ShoppingBag, exact: false },
+        { label: 'Produk', href: '/admin/products', icon: Package, exact: false },
+        { label: 'Stok Akun', href: '/admin/accounts', icon: KeyRound, exact: false },
+        { label: 'Metode Pembayaran', href: '/admin/payment-methods', icon: CreditCard, exact: false },
         { label: 'Pengaturan', href: '/admin/settings', icon: SettingsIcon, exact: false },
     ];
 

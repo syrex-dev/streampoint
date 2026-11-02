@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Actions\Order\ApproveOrder;
 use App\Actions\Order\ReactivateOrder;
 use App\Actions\Order\RejectOrder;
+use App\Actions\Order\ReplaceAccount;
 use App\Enums\AccountStatus;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
@@ -79,7 +80,7 @@ class AdminOrderController extends Controller
                 'invoice_code' => $order->invoice_code,
                 'product_id' => $order->product_id,
                 'product_name' => $order->product?->name ?? '-',
-                'product_icon' => $order->product?->icon_url,
+                'product_icon' => $order->product?->thumbnail_path,
                 'variant_id' => $order->variant_id,
                 'variant_name' => $order->variant?->name ?? '-',
                 'order_type' => $order->order_type->value,
@@ -174,4 +175,27 @@ class AdminOrderController extends Controller
             return back()->withErrors(['action' => $e->getMessage()]);
         }
     }
+
+    public function replaceAccount(Request $request, Order $order, ReplaceAccount $action): RedirectResponse
+    {
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'min:3', 'max:500'],
+            'new_account_id' => ['nullable', 'integer', 'exists:product_accounts,id'],
+        ], [
+            'reason.required' => 'Alasan penggantian akun wajib diisi.',
+            'reason.min' => 'Alasan penggantian minimal 3 karakter.',
+        ]);
+
+        $actor = 'admin:' . $request->user()->id;
+
+        try {
+            $newAccountId = ! empty($validated['new_account_id']) ? (int) $validated['new_account_id'] : null;
+            $action->handle($order, $validated['reason'], $newAccountId, $actor);
+
+            return back()->with('success', "Akun untuk pesanan {$order->invoice_code} berhasil diganti (Garansi).");
+        } catch (\Throwable $e) {
+            return back()->withErrors(['action' => $e->getMessage()]);
+        }
+    }
 }
+

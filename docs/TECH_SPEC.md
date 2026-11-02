@@ -175,7 +175,7 @@ Index: `(product_id, kind, status)`, `order_id`.
 | payment_method_id | FK nullable | |
 | payment_method_label | string | Snapshot nama metode saat order |
 | base_price | unsigned int | Snapshot harga varian |
-| unique_code | unsigned smallint default 0 | 1–999 |
+| unique_code | unsigned smallint default 0 | 100–999 |
 | total_amount | unsigned int | `base_price + unique_code` |
 | payment_proof_path | string nullable | Disk **privat** |
 | status | string default `PENDING` | |
@@ -336,7 +336,7 @@ Aturan:
 
 ### 5.4 Kode unik
 
-`UniqueAmountGenerator`: pilih angka acak 1–999 sehingga `base_price + angka` belum dipakai oleh order aktif lain (`PENDING` belum expired / `VERIFYING`). Coba ulang beberapa kali, lalu lempar error jika semua terpakai (praktis tidak terjadi).
+`UniqueAmountGenerator`: pilih angka acak 100–999 sehingga `base_price + angka` belum dipakai oleh order aktif lain (`PENDING` belum expired / `VERIFYING`). Coba ulang beberapa kali, lalu lempar error jika semua terpakai (praktis tidak terjadi).
 
 ### 5.5 Kode invoice
 

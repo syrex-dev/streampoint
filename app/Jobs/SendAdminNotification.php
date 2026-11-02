@@ -29,7 +29,7 @@ class SendAdminNotification implements ShouldQueue
 
     public function __construct(
         public string $event,
-        public int|string $orderIdOrMessage
+        public mixed $orderIdOrMessage
     ) {}
 
     public function handle(AdminNotifier $notifier, QuotaService $quotaService): void
@@ -92,8 +92,19 @@ class SendAdminNotification implements ShouldQueue
             return;
         }
 
-        if ($this->event === 'raw') {
-            $notifier->send((string) $this->orderIdOrMessage);
+        if ($this->event === 'stock.low') {
+            $data = (array) $this->orderIdOrMessage;
+            $product = \App\Models\Product::find($data['product_id'] ?? null);
+            $service = htmlspecialchars($product?->name ?? 'Layanan', ENT_QUOTES, 'UTF-8');
+            $kind = htmlspecialchars((string) ($data['kind'] ?? '-'), ENT_QUOTES, 'UTF-8');
+            $remaining = (int) ($data['remaining'] ?? 0);
+
+            $message = "⚠️ <b>Peringatan: Stok Menipis</b>\n"
+                . "Layanan: {$service}\n"
+                . "Kategori: {$kind}\n"
+                . "Sisa Unit Tersedia: {$remaining}";
+
+            $notifier->send($message);
             return;
         }
 

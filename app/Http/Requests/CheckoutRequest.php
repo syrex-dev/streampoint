@@ -19,7 +19,11 @@ class CheckoutRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'variant_id' => ['required', 'integer', 'exists:product_variants,id'],
+            'variant_id' => [
+                'required',
+                'integer',
+                \Illuminate\Validation\Rule::exists('product_variants', 'id')->where('is_active', true),
+            ],
             'customer_phone' => [
                 'required',
                 'string',

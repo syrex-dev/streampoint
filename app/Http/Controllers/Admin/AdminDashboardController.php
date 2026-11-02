@@ -29,8 +29,7 @@ class AdminDashboardController extends Controller
         // 2. Rental quota slots
         $quota = $quotaService->snapshot();
 
-        // 3. Active VERIFYING orders prioritized (newest first)
-        $verifyingOrders = Order::with(['product:id,name,icon_url', 'variant:id,name,duration_hours,type'])
+        $verifyingOrders = Order::with(['product:id,name,thumbnail_path', 'variant:id,name,duration_hours,type'])
             ->where('status', OrderStatus::VERIFYING)
             ->orderByDesc('created_at')
             ->get()

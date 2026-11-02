@@ -84,6 +84,23 @@ class CreateOrder
                 'order_id' => $order->id,
             ]);
 
+            // If remaining AVAILABLE stock for this product + kind <= 2, notify admin (deduped per 6 hours)
+            $remainingStock = ProductAccount::where('product_id', $variant->product_id)
+                ->where('kind', $variant->type)
+                ->where('status', AccountStatus::AVAILABLE)
+                ->count();
+
+            if ($remainingStock <= 2) {
+                $cacheKey = "stock_low_notified_{$variant->product_id}_{$variant->type->value}";
+                if (\Illuminate\Support\Facades\Cache::add($cacheKey, true, now()->addHours(6))) {
+                    SendAdminNotification::dispatch('stock.low', [
+                        'product_id' => $variant->product_id,
+                        'kind' => $variant->type->value,
+                        'remaining' => $remainingStock,
+                    ])->afterCommit();
+                }
+            }
+
             $order->events()->create([
                 'from_status' => null,
                 'to_status' => OrderStatus::PENDING,

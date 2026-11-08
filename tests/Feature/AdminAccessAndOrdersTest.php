@@ -520,4 +520,27 @@ class AdminAccessAndOrdersTest extends TestCase
         // Total count sent to Telegram must remain exactly 1!
         Http::assertSentCount(1);
     }
+
+    public function test_verifying_count_shared_prop_is_only_accessible_to_authenticated_admins(): void
+    {
+        $this->createOrder(OrderStatus::VERIFYING);
+        $this->createOrder(OrderStatus::VERIFYING);
+
+        // 1. Guest request to home page
+        $guestResponse = $this->get('/');
+        $guestResponse->assertOk();
+        $this->assertFalse(array_key_exists('verifyingCount', $guestResponse->original->getData()['page']['props']));
+
+        // 2. Regular non-admin user request
+        $nonAdminUser = User::factory()->create(['is_admin' => false]);
+        $userResponse = $this->actingAs($nonAdminUser)->get('/');
+        $userResponse->assertOk();
+        $this->assertFalse(array_key_exists('verifyingCount', $userResponse->original->getData()['page']['props']));
+
+        // 3. Authenticated admin request
+        $adminResponse = $this->actingAs($this->adminUser)->get('/admin');
+        $adminResponse->assertOk();
+        $this->assertTrue(array_key_exists('verifyingCount', $adminResponse->original->getData()['page']['props']));
+        $this->assertEquals(2, $adminResponse->original->getData()['page']['props']['verifyingCount']);
+    }
 }

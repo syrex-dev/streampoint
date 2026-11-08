@@ -26,7 +26,9 @@ class ProductStoreRequest extends FormRequest
             'is_active' => ['required', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'brand_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'thumbnail' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'has_warranty' => ['nullable', 'boolean'],
+            'thumbnail' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:1024'],
+            'cover' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }
 

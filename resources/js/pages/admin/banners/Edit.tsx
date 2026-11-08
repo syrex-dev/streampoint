@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { AdminLayout } from '@/layouts/AdminLayout';
+import { PageHeader } from '@/components/admin/PageHeader';
+import { FormSection } from '@/components/admin/FormSection';
+import { Switch } from '@/components/ui/switch';
 import { 
     Image as ImageIcon, 
     ArrowLeft, 
@@ -96,25 +99,18 @@ export default function BannerEdit({ banner }: EditProps) {
             <Head title={`Edit Banner: ${banner.title} - Admin`} />
 
             <div className="max-w-3xl mx-auto space-y-6">
-                {/* Header */}
-                <div className="flex items-center gap-3 pb-4 border-b border-border">
+                <PageHeader
+                    title={`Edit Banner: ${banner.title}`}
+                    description="Perbarui judul, tautan, jadwal, atau gambar banner."
+                >
                     <Link
                         href="/admin/banners"
-                        className="p-1.5 rounded-md bg-surface border border-border hover:bg-surface-hover text-text-2 hover:text-text transition-colors"
-                        title="Kembali"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-2 hover:bg-surface-hover text-text text-xs font-medium rounded-md border border-border transition-colors"
                     >
-                        <ArrowLeft className="w-4 h-4" />
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        <span>Kembali</span>
                     </Link>
-                    <div>
-                        <h1 className="text-lg font-bold tracking-tight text-text flex items-center gap-2">
-                            <ImageIcon className="w-5 h-5 text-accent-text" />
-                            <span>Edit Banner Toko</span>
-                        </h1>
-                        <p className="text-xs text-text-2">
-                            Perbarui judul, tautan, jadwal, atau gambar banner.
-                        </p>
-                    </div>
-                </div>
+                </PageHeader>
 
                 {/* Content Disclaimer Warning */}
                 <div className="p-3.5 bg-warning/10 border border-warning/30 rounded-lg flex items-start gap-3 text-xs text-warning">
@@ -362,15 +358,10 @@ export default function BannerEdit({ banner }: EditProps) {
                                 Aktifkan banner agar muncul di storefront (maksimal 5 banner aktif).
                             </span>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={data.is_active}
-                                onChange={(e) => setData('is_active', e.target.checked)}
-                                className="sr-only peer"
-                            />
-                            <div className="w-9 h-5 bg-surface-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-text-2 peer-checked:after:bg-on-accent after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent border border-border"></div>
-                        </label>
+                        <Switch
+                            checked={data.is_active}
+                            onCheckedChange={(checked) => setData('is_active', checked)}
+                        />
                     </div>
 
                     {/* Actions */}

@@ -184,7 +184,8 @@ class CheckoutAndInvoiceTest extends TestCase
             'hp_website' => '',
         ]);
 
-        // Second checkout attempts rent while quota full
+        // Second checkout attempts rent from a different buyer while quota full
+        $this->flushSession();
         $res = $this->from("/p/{$this->product->slug}")->post('/checkout', [
             'variant_id' => $this->rentVariant->id,
             'customer_phone' => '081298765432',

@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import { AdminLayout } from '@/layouts/AdminLayout';
+import { PageHeader } from '@/components/admin/PageHeader';
+import { FormSection } from '@/components/admin/FormSection';
+import { Switch } from '@/components/ui/switch';
 import { 
     Package, 
     ArrowLeft, 
@@ -35,6 +38,8 @@ interface ProductDetail {
     slug: string;
     category: string;
     thumbnail_path: string | null;
+    cover_path?: string | null;
+    has_warranty?: boolean;
     brand_color?: string | null;
     description?: string | null;
     rules?: string | null;
@@ -60,7 +65,9 @@ export default function ProductEdit({ product, variants }: EditProps) {
         is_active: boolean;
         sort_order: number;
         brand_color: string;
+        has_warranty: boolean;
         thumbnail: File | null;
+        cover: File | null;
     }>({
         _method: 'put',
         name: product.name,
@@ -71,10 +78,21 @@ export default function ProductEdit({ product, variants }: EditProps) {
         is_active: product.is_active,
         sort_order: product.sort_order,
         brand_color: product.brand_color || '',
+        has_warranty: Boolean(product.has_warranty),
         thumbnail: null,
+        cover: null,
     });
 
     const [previewUrl, setPreviewUrl] = useState<string | null>(product.thumbnail_path);
+    const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(product.cover_path || null);
+
+    const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setData('cover', file);
+            setCoverPreviewUrl(URL.createObjectURL(file));
+        }
+    };
 
     // Variant modal states
     const [isVariantModalOpen, setIsVariantModalOpen] = useState(false);
@@ -251,37 +269,29 @@ export default function ProductEdit({ product, variants }: EditProps) {
             <Head title={`Edit Produk ${product.name} - Admin`} />
 
             <div className="space-y-8">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
-                    <div className="flex items-center gap-3">
+                <PageHeader
+                    title={`Edit: ${product.name}`}
+                    description={`/${product.slug} • Kategori: ${product.category}`}
+                >
+                    <div className="flex items-center gap-2">
+                        <Link
+                            href={`/p/${product.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-2 hover:bg-surface-hover text-text text-xs font-medium rounded-md border border-border transition-colors"
+                        >
+                            <ExternalLink className="w-3.5 h-3.5 text-text-2" />
+                            <span>Lihat di Toko</span>
+                        </Link>
                         <Link
                             href="/admin/products"
-                            className="p-1.5 rounded-md bg-surface border border-border hover:bg-surface-hover text-text-2 hover:text-text transition-colors"
-                            title="Kembali ke daftar produk"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-2 hover:bg-surface-hover text-text text-xs font-medium rounded-md border border-border transition-colors"
                         >
-                            <ArrowLeft className="w-4 h-4" />
+                            <ArrowLeft className="w-3.5 h-3.5" />
+                            <span>Kembali</span>
                         </Link>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h1 className="text-xl font-bold tracking-tight text-text">
-                                    {product.name}
-                                </h1>
-                                <Link
-                                    href={`/p/${product.slug}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-text-3 hover:text-accent-text"
-                                    title="Lihat di storefront"
-                                >
-                                    <ExternalLink className="w-4 h-4" />
-                                </Link>
-                            </div>
-                            <p className="text-xs text-text-2 font-mono">
-                                /{product.slug} &bull; {product.category}
-                            </p>
-                        </div>
                     </div>
-                </div>
+                </PageHeader>
 
                 {/* Banner if Product Has Orders */}
                 {product.has_orders && (
@@ -296,227 +306,396 @@ export default function ProductEdit({ product, variants }: EditProps) {
                     </div>
                 )}
 
-                {/* Product Detail Form Card */}
-                <div className="bg-surface border border-border rounded-lg p-5 space-y-5">
-                    <h2 className="text-sm font-bold text-text flex items-center gap-2 pb-2 border-b border-border">
-                        <Package className="w-4 h-4 text-accent-text" />
-                        <span>Informasi Utama Produk</span>
-                    </h2>
+                {/* Product Detail Form & Live Preview Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Form Card (2 cols) */}
+                    <div className="lg:col-span-2 bg-surface border border-border rounded-lg p-5 space-y-5 h-fit">
+                        <h2 className="text-sm font-bold text-text flex items-center gap-2 pb-2 border-b border-border">
+                            <Package className="w-4 h-4 text-accent-text" />
+                            <span>Informasi Utama Produk</span>
+                        </h2>
 
-                    <form onSubmit={handleProductSubmit} className="space-y-4">
-                        {/* Name & Slug */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-text block">
-                                    Nama Produk <span className="text-danger">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={data.name}
-                                    onChange={(e) => setData('name', e.target.value)}
-                                    required
-                                    className="w-full h-9 px-3 text-xs bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
-                                />
-                                {errors.name && <p className="text-[11px] text-danger">{errors.name}</p>}
+                        <form onSubmit={handleProductSubmit} className="space-y-4">
+                            {/* Name & Slug */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-text block">
+                                        Nama Produk <span className="text-danger">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={data.name}
+                                        onChange={(e) => setData('name', e.target.value)}
+                                        required
+                                        className="w-full h-9 px-3 text-xs bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
+                                    />
+                                    {errors.name && <p className="text-[11px] text-danger">{errors.name}</p>}
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-text block">
+                                        Slug URL <span className="text-danger">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={data.slug}
+                                        onChange={(e) => setData('slug', e.target.value)}
+                                        required
+                                        className="w-full h-9 px-3 text-xs font-mono bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
+                                    />
+                                    {errors.slug && <p className="text-[11px] text-danger">{errors.slug}</p>}
+                                </div>
                             </div>
 
+                            {/* Category & Sort Order */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-text block">
+                                        Kategori <span className="text-danger">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={data.category}
+                                        onChange={(e) => setData('category', e.target.value)}
+                                        required
+                                        className="w-full h-9 px-3 text-xs bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
+                                    />
+                                    {errors.category && <p className="text-[11px] text-danger">{errors.category}</p>}
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-text block">
+                                        Urutan Tampilan
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        value={data.sort_order}
+                                        onChange={(e) => setData('sort_order', Number(e.target.value))}
+                                        className="w-full h-9 px-3 text-xs font-mono bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
+                                    />
+                                    {errors.sort_order && <p className="text-[11px] text-danger">{errors.sort_order}</p>}
+                                </div>
+                            </div>
+
+                            {/* Thumbnail / Logo */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-semibold text-text block">
-                                    Slug URL <span className="text-danger">*</span>
+                                    Logo / Ikon Produk (Maks 2MB)
                                 </label>
-                                <input
-                                    type="text"
-                                    value={data.slug}
-                                    onChange={(e) => setData('slug', e.target.value)}
-                                    required
-                                    className="w-full h-9 px-3 text-xs font-mono bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
-                                />
-                                {errors.slug && <p className="text-[11px] text-danger">{errors.slug}</p>}
-                            </div>
-                        </div>
-
-                        {/* Category & Sort Order */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-text block">
-                                    Kategori <span className="text-danger">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={data.category}
-                                    onChange={(e) => setData('category', e.target.value)}
-                                    required
-                                    className="w-full h-9 px-3 text-xs bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
-                                />
-                                {errors.category && <p className="text-[11px] text-danger">{errors.category}</p>}
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-text block">
-                                    Urutan Tampilan
-                                </label>
-                                <input
-                                    type="number"
-                                    min={0}
-                                    value={data.sort_order}
-                                    onChange={(e) => setData('sort_order', Number(e.target.value))}
-                                    className="w-full h-9 px-3 text-xs font-mono bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
-                                />
-                                {errors.sort_order && <p className="text-[11px] text-danger">{errors.sort_order}</p>}
-                            </div>
-                        </div>
-
-                        {/* Thumbnail */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-text block">
-                                Thumbnail / Logo Produk (Maks 2MB)
-                            </label>
-                            <div className="flex items-center gap-4">
-                                <div
-                                    className="w-14 h-14 rounded-lg flex items-center justify-center shrink-0 overflow-hidden font-mono text-xs"
-                                    style={
-                                        /^#[0-9A-Fa-f]{6}$/.test(data.brand_color)
-                                            ? {
-                                                  backgroundColor: `color-mix(in srgb, ${data.brand_color} 14%, var(--surface))`,
-                                                  borderColor: `color-mix(in srgb, ${data.brand_color} 30%, var(--border))`,
-                                                  borderWidth: '1px',
-                                                  borderStyle: 'solid',
-                                              }
-                                            : {
-                                                  backgroundColor: 'var(--surface-2)',
-                                                  borderColor: 'var(--border)',
-                                                  borderWidth: '1px',
-                                                  borderStyle: 'solid',
-                                              }
-                                    }
-                                >
-                                    {previewUrl ? (
-                                        <img src={previewUrl} alt="Thumbnail" className="w-full h-full object-contain p-2" />
-                                    ) : (
-                                        <span className="font-semibold text-base text-text-2">
-                                            {data.name.trim() ? data.name.trim().slice(0, 2).toUpperCase() : <Upload className="w-5 h-5 text-text-3" />}
+                                <div className="flex items-center gap-4">
+                                    <div
+                                        className="w-14 h-14 rounded-lg flex items-center justify-center shrink-0 overflow-hidden font-mono text-xs"
+                                        style={
+                                            /^#[0-9A-Fa-f]{6}$/.test(data.brand_color)
+                                                ? {
+                                                      backgroundColor: `color-mix(in srgb, ${data.brand_color} 14%, var(--surface))`,
+                                                      borderColor: `color-mix(in srgb, ${data.brand_color} 30%, var(--border))`,
+                                                      borderWidth: '1px',
+                                                      borderStyle: 'solid',
+                                                  }
+                                                : {
+                                                      backgroundColor: 'var(--surface-2)',
+                                                      borderColor: 'var(--border)',
+                                                      borderWidth: '1px',
+                                                      borderStyle: 'solid',
+                                                  }
+                                        }
+                                    >
+                                        {previewUrl ? (
+                                            <img src={previewUrl} alt="Thumbnail" className="w-full h-full object-contain p-2" />
+                                        ) : (
+                                            <span className="font-semibold text-base text-text-2">
+                                                {data.name.trim() ? data.name.trim().slice(0, 2).toUpperCase() : <Upload className="w-5 h-5 text-text-3" />}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <input
+                                            type="file"
+                                            accept="image/png,image/jpeg,image/webp"
+                                            onChange={handleThumbnailChange}
+                                            className="block w-full text-xs text-text-2 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-border file:text-xs file:font-semibold file:bg-surface-2 file:text-text hover:file:bg-surface-hover cursor-pointer"
+                                        />
+                                        <span className="text-[11px] text-text-3 block mt-1">
+                                            Dikonversi ke WebP otomatis (maks 256px).
                                         </span>
+                                    </div>
+                                </div>
+                                {errors.thumbnail && <p className="text-[11px] text-danger">{errors.thumbnail}</p>}
+                            </div>
+
+                            {/* Sampul Layanan (Cover Image) */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-text block">
+                                    Gambar Sampul Layanan (Rasio 16:10, Maks 2MB - Opsional)
+                                </label>
+                                <div className="flex items-start gap-4">
+                                    <div className="w-24 aspect-[16/10] rounded border border-border overflow-hidden bg-surface-2 shrink-0 flex items-center justify-center">
+                                        {coverPreviewUrl ? (
+                                            <img src={coverPreviewUrl} alt="Cover Preview" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <span className="text-[10px] text-text-3 font-mono">16:10</span>
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <input
+                                            type="file"
+                                            accept="image/png,image/jpeg,image/webp"
+                                            onChange={handleCoverChange}
+                                            className="block w-full text-xs text-text-2 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-border file:text-xs file:font-semibold file:bg-surface-2 file:text-text hover:file:bg-surface-hover cursor-pointer"
+                                        />
+                                        <span className="text-[11px] text-text-3 block mt-1">
+                                            Bila kosong, kartu etalase otomatis menampilkan latar tint warna merek + logo produk.
+                                        </span>
+                                    </div>
+                                </div>
+                                {errors.cover && <p className="text-[11px] text-danger">{errors.cover}</p>}
+                            </div>
+
+                            {/* Brand Color (Warna Merek Layanan) */}
+                            <div className="space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs font-semibold text-text block">
+                                        Warna Merek Layanan (Hex #RRGGBB - Opsional)
+                                    </label>
+                                    {data.brand_color && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setData('brand_color', '')}
+                                            className="text-[11px] text-danger hover:underline"
+                                        >
+                                            Kosongkan
+                                        </button>
                                     )}
                                 </div>
-                                <div className="flex-1">
+                                <div className="flex items-center gap-3">
+                                    <div className="relative w-9 h-9 rounded border border-border overflow-hidden shrink-0">
+                                        <input
+                                            type="color"
+                                            value={/^#[0-9A-Fa-f]{6}$/.test(data.brand_color) ? data.brand_color : '#10B981'}
+                                            onChange={(e) => setData('brand_color', e.target.value.toUpperCase())}
+                                            className="absolute -inset-2 w-14 h-14 cursor-pointer"
+                                            title="Pilih warna merek"
+                                        />
+                                    </div>
                                     <input
-                                        type="file"
-                                        accept="image/png,image/jpeg,image/webp"
-                                        onChange={handleThumbnailChange}
-                                        className="block w-full text-xs text-text-2 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-border file:text-xs file:font-semibold file:bg-surface-2 file:text-text hover:file:bg-surface-hover cursor-pointer"
+                                        type="text"
+                                        placeholder="#E50914"
+                                        maxLength={7}
+                                        value={data.brand_color}
+                                        onChange={(e) => {
+                                            let val = e.target.value;
+                                            if (val && !val.startsWith('#')) val = '#' + val;
+                                            setData('brand_color', val.toUpperCase());
+                                        }}
+                                        className="w-32 h-9 px-3 text-xs font-mono bg-surface-2 border border-border rounded text-text uppercase focus:outline-none focus:border-accent"
                                     />
-                                    <span className="text-[11px] text-text-3 block mt-1">
-                                        Pilih gambar baru untuk mengganti thumbnail saat ini (bukan SVG).
+                                    <span className="text-[11px] text-text-2">
+                                        Digunakan sebagai tint kartu bila sampul tidak diunggah.
+                                    </span>
+                                </div>
+                                {errors.brand_color && <p className="text-[11px] text-danger">{errors.brand_color}</p>}
+                            </div>
+
+                            {/* Garansi Layanan (has_warranty toggle) */}
+                            <div className="pt-2 border-t border-border flex items-center justify-between">
+                                <div>
+                                    <span className="text-xs font-semibold text-text block">Garansi Layanan Aktif</span>
+                                    <span className="text-[11px] text-text-3">
+                                        Menampilkan chip dan badge Garansi pada kartu etalase serta detail produk.
+                                    </span>
+                                </div>
+                                <Switch
+                                    checked={data.has_warranty}
+                                    onCheckedChange={(checked) => setData('has_warranty', checked)}
+                                />
+                            </div>
+
+                            {/* Description */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-text block">
+                                    Deskripsi Produk
+                                </label>
+                                <textarea
+                                    value={data.description}
+                                    onChange={(e) => setData('description', e.target.value)}
+                                    rows={3}
+                                    className="w-full p-2.5 text-xs bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent resize-none"
+                                />
+                                {errors.description && <p className="text-[11px] text-danger">{errors.description}</p>}
+                            </div>
+
+                            {/* Rules */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-text block">
+                                    Aturan Layanan & Garansi
+                                </label>
+                                <textarea
+                                    value={data.rules}
+                                    onChange={(e) => setData('rules', e.target.value)}
+                                    rows={4}
+                                    className="w-full p-2.5 text-xs bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
+                                />
+                                {errors.rules && <p className="text-[11px] text-danger">{errors.rules}</p>}
+                            </div>
+
+                            {/* Status Aktif */}
+                            <div className="pt-2 border-t border-border flex items-center justify-between">
+                                <div>
+                                    <span className="text-xs font-semibold text-text block">Status Publikasi</span>
+                                    <span className="text-[11px] text-text-3">
+                                        Jika nonaktif, produk tidak akan tampil pada etalase toko.
+                                    </span>
+                                </div>
+                                <Switch
+                                    checked={data.is_active}
+                                    onCheckedChange={(checked) => setData('is_active', checked)}
+                                />
+                            </div>
+
+                            {/* Submit Button */}
+                            <div className="flex items-center justify-end pt-3 border-t border-border">
+                                <button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="px-4 py-2 bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold rounded flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
+                                >
+                                    <Check className="w-4 h-4" />
+                                    <span>{processing ? 'Menyimpan...' : 'Perbarui Informasi Produk'}</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    {/* Live Card Preview (1 col) */}
+                    <div className="space-y-3">
+                        <div className="text-xs font-bold text-text-2 uppercase tracking-wider flex items-center justify-between">
+                            <span>Pratinjau Kartu Etalase</span>
+                            <span className="text-[10px] text-accent-text font-semibold">Live v3</span>
+                        </div>
+
+                        <div className="bg-surface border border-border rounded-lg overflow-hidden shadow-sm">
+                            {/* 1. Sampul 16:10 */}
+                            <div className="aspect-[16/10] relative w-full overflow-hidden bg-surface-2 shrink-0">
+                                {coverPreviewUrl ? (
+                                    <img
+                                        src={coverPreviewUrl}
+                                        alt="Sampul"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div
+                                        className="w-full h-full flex items-center justify-center brand-logo-box"
+                                        style={
+                                            /^#[0-9A-Fa-f]{6}$/.test(data.brand_color)
+                                                ? ({ ['--brand' as any]: data.brand_color, backgroundColor: `color-mix(in srgb, ${data.brand_color} 14%, var(--surface))` } as React.CSSProperties)
+                                                : { backgroundColor: 'var(--surface-2)' }
+                                        }
+                                    >
+                                        {previewUrl ? (
+                                            <img
+                                                src={previewUrl}
+                                                alt="Logo"
+                                                className="w-12 h-12 rounded-md object-contain p-1"
+                                            />
+                                        ) : (
+                                            <span className="font-mono text-lg font-semibold text-text tracking-wider">
+                                                {data.name.trim() ? data.name.trim().slice(0, 2).toUpperCase() : 'SP'}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Badges di atas sampul */}
+                                <div className="absolute top-2 left-2 flex items-center gap-1 z-10">
+                                    <span className="px-1.5 py-0.5 text-[11px] font-medium rounded border border-border bg-surface text-text shadow-sm">
+                                        Baru
+                                    </span>
+                                </div>
+
+                                <div className="absolute top-2 right-2 z-10">
+                                    <span className="px-1.5 py-0.5 text-[11px] font-medium rounded border bg-surface text-accent-text border-accent/50 shadow-sm">
+                                        Tersedia
                                     </span>
                                 </div>
                             </div>
-                            {errors.thumbnail && <p className="text-[11px] text-danger">{errors.thumbnail}</p>}
-                        </div>
 
-                        {/* Brand Color (Warna Merek Layanan) */}
-                        <div className="space-y-1.5">
-                            <div className="flex items-center justify-between">
-                                <label className="text-xs font-semibold text-text block">
-                                    Warna Merek Layanan (Hex #RRGGBB - Opsional)
-                                </label>
-                                {data.brand_color && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setData('brand_color', '')}
-                                        className="text-[11px] text-danger hover:underline"
-                                    >
-                                        Kosongkan
-                                    </button>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="relative w-9 h-9 rounded border border-border overflow-hidden shrink-0">
-                                    <input
-                                        type="color"
-                                        value={/^#[0-9A-Fa-f]{6}$/.test(data.brand_color) ? data.brand_color : '#10B981'}
-                                        onChange={(e) => setData('brand_color', e.target.value.toUpperCase())}
-                                        className="absolute -inset-2 w-14 h-14 cursor-pointer"
-                                        title="Pilih warna merek"
-                                    />
+                            {/* 2. Badan kartu */}
+                            <div className="p-3 space-y-2.5">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <div
+                                            className="w-6 h-6 rounded border flex items-center justify-center shrink-0 overflow-hidden"
+                                            style={
+                                                /^#[0-9A-Fa-f]{6}$/.test(data.brand_color)
+                                                    ? { backgroundColor: `color-mix(in srgb, ${data.brand_color} 14%, var(--surface))`, borderColor: `color-mix(in srgb, ${data.brand_color} 30%, var(--border))` }
+                                                    : { backgroundColor: 'var(--surface-2)', borderColor: 'var(--border)' }
+                                            }
+                                        >
+                                            {previewUrl ? (
+                                                <img src={previewUrl} alt="" className="w-full h-full object-contain p-0.5" />
+                                            ) : (
+                                                <span className="font-mono text-[10px] font-semibold text-text">
+                                                    {data.name.trim() ? data.name.trim().slice(0, 1).toUpperCase() : 'S'}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span className="text-xs text-text-2 truncate">{data.category || 'Kategori'}</span>
+                                    </div>
+
+                                    <h3 className="text-sm font-semibold text-text line-clamp-2 leading-snug mt-1">
+                                        {data.name || 'Nama Layanan Produk'}
+                                    </h3>
+
+                                    <div className="flex items-baseline gap-1 mt-1">
+                                        <span className="text-xs text-text-2">mulai</span>
+                                        <span className="font-mono text-sm font-semibold tabular-nums text-text">
+                                            {variants.length > 0 ? formatRupiah(Math.min(...variants.map(v => v.price))) : 'Rp 15.000'}
+                                        </span>
+                                    </div>
                                 </div>
-                                <input
-                                    type="text"
-                                    placeholder="#E50914"
-                                    maxLength={7}
-                                    value={data.brand_color}
-                                    onChange={(e) => {
-                                        let val = e.target.value;
-                                        if (val && !val.startsWith('#')) val = '#' + val;
-                                        setData('brand_color', val.toUpperCase());
-                                    }}
-                                    className="w-32 h-9 px-3 text-xs font-mono bg-surface-2 border border-border rounded text-text uppercase focus:outline-none focus:border-accent"
-                                />
-                                <span className="text-[11px] text-text-2">
-                                    Digunakan sebagai tint lembut kotak logo (14% terang / 18% gelap).
-                                </span>
+
+                                {/* Chips */}
+                                <div className="pt-2 border-t border-border flex items-center justify-between gap-1 text-[11px]">
+                                    <div className="flex items-center gap-1 flex-wrap">
+                                        {variants.some(v => v.type === 'RENT') && (
+                                            <span className="px-1.5 py-0.5 font-medium rounded border border-border bg-surface-2 text-text-2">
+                                                Sewa
+                                            </span>
+                                        )}
+                                        {variants.some(v => v.type === 'BUY') && (
+                                            <span className="px-1.5 py-0.5 font-medium rounded border border-border bg-surface-2 text-text-2">
+                                                Beli
+                                            </span>
+                                        )}
+                                        {variants.length === 0 && (
+                                            <>
+                                                <span className="px-1.5 py-0.5 font-medium rounded border border-border bg-surface-2 text-text-2">
+                                                    Sewa
+                                                </span>
+                                                <span className="px-1.5 py-0.5 font-medium rounded border border-border bg-surface-2 text-text-2">
+                                                    Beli
+                                                </span>
+                                            </>
+                                        )}
+                                        {data.has_warranty && (
+                                            <span className="px-1.5 py-0.5 font-medium rounded border border-accent/40 bg-accent/5 text-accent-text">
+                                                Garansi
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span className="text-xs text-text-2 font-mono whitespace-nowrap">
+                                        5 terjual
+                                    </span>
+                                </div>
                             </div>
-                            {errors.brand_color && <p className="text-[11px] text-danger">{errors.brand_color}</p>}
                         </div>
 
-                        {/* Description */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-text block">
-                                Deskripsi Produk
-                            </label>
-                            <textarea
-                                value={data.description}
-                                onChange={(e) => setData('description', e.target.value)}
-                                rows={3}
-                                className="w-full p-2.5 text-xs bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent resize-none"
-                            />
-                            {errors.description && <p className="text-[11px] text-danger">{errors.description}</p>}
-                        </div>
-
-                        {/* Rules */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-text block">
-                                Aturan Layanan & Garansi
-                            </label>
-                            <textarea
-                                value={data.rules}
-                                onChange={(e) => setData('rules', e.target.value)}
-                                rows={4}
-                                className="w-full p-2.5 text-xs bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
-                            />
-                            {errors.rules && <p className="text-[11px] text-danger">{errors.rules}</p>}
-                        </div>
-
-                        {/* Status Aktif */}
-                        <div className="pt-2 border-t border-border flex items-center justify-between">
-                            <div>
-                                <span className="text-xs font-semibold text-text block">Status Publikasi</span>
-                                <span className="text-[11px] text-text-3">
-                                    Jika nonaktif, produk tidak akan tampil pada etalase toko.
-                                </span>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={data.is_active}
-                                    onChange={(e) => setData('is_active', e.target.checked)}
-                                    className="sr-only peer"
-                                />
-                                <div className="w-10 h-5 bg-surface-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-success border border-border"></div>
-                            </label>
-                        </div>
-
-                        {/* Submit Button */}
-                        <div className="flex items-center justify-end pt-3 border-t border-border">
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                className="px-4 py-2 bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold rounded flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
-                            >
-                                <Check className="w-4 h-4" />
-                                <span>{processing ? 'Menyimpan...' : 'Perbarui Informasi Produk'}</span>
-                            </button>
-                        </div>
-                    </form>
+                        <p className="text-[11px] text-text-3 leading-relaxed">
+                            Pratinjau otomatis memperbarui tampilan kartu saat Anda mengganti sampul, logo, warna merek, atau garansi.
+                        </p>
+                    </div>
                 </div>
 
                 {/* Variants Manager Section */}
@@ -605,11 +784,11 @@ export default function ProductEdit({ product, variants }: EditProps) {
                                             </td>
                                             <td className="px-3 py-2.5 text-center">
                                                 {v.is_active ? (
-                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success border border-success/30">
+                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent/10 text-accent-text border border-accent/30">
                                                         Aktif
                                                     </span>
                                                 ) : (
-                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-surface-2 text-text-3 border border-border">
+                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-surface-2 text-text-muted border border-border">
                                                         Nonaktif
                                                     </span>
                                                 )}
@@ -824,15 +1003,10 @@ export default function ProductEdit({ product, variants }: EditProps) {
                             {/* Is Active */}
                             <div className="pt-2 border-t border-border flex items-center justify-between">
                                 <span className="font-semibold text-text">Status Aktif Varian</span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={variantForm.is_active}
-                                        onChange={(e) => setVariantForm({ ...variantForm, is_active: e.target.checked })}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-9 h-5 bg-surface-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-success border border-border"></div>
-                                </label>
+                                <Switch
+                                    checked={variantForm.is_active}
+                                    onCheckedChange={(checked) => setVariantForm({ ...variantForm, is_active: checked })}
+                                />
                             </div>
 
                             {/* Submit */}
@@ -890,7 +1064,7 @@ export default function ProductEdit({ product, variants }: EditProps) {
                                 type="button"
                                 onClick={handleDeleteVariant}
                                 disabled={isDeletingVariant}
-                                className="px-4 py-1.5 bg-danger text-white text-xs font-semibold rounded hover:bg-danger/90 transition-colors cursor-pointer"
+                                className="px-4 py-1.5 bg-danger-solid text-on-danger text-xs font-semibold rounded hover:bg-danger-solid-hover transition-colors cursor-pointer"
                             >
                                 {isDeletingVariant ? 'Menghapus...' : 'Ya, Hapus'}
                             </button>

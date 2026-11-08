@@ -27,6 +27,7 @@ class PaymentMethodStoreRequest extends FormRequest
             'is_active' => ['required', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'qris_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'logo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:512'],
         ];
     }
 

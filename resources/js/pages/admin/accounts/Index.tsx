@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { AdminLayout } from '@/layouts/AdminLayout';
+import { PageHeader } from '@/components/admin/PageHeader';
 import { 
     KeyRound, 
     Plus, 
@@ -170,26 +171,26 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
         switch (status) {
             case 'AVAILABLE':
                 return (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-success/15 text-success border border-success/30">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-accent/10 text-accent-text border border-accent/30">
                         {label}
                     </span>
                 );
             case 'RESERVED':
                 return (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-warning/15 text-warning border border-warning/30">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-warning/10 text-warning border border-warning/30">
                         {label}
                     </span>
                 );
             case 'SOLD':
             case 'RENTED':
                 return (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-info/15 text-info border border-info/30">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-info/10 text-info border border-info/30">
                         {label}
                     </span>
                 );
             case 'DISABLED':
                 return (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-surface-2 text-text-3 border border-border">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-surface-2 text-text-muted border border-border">
                         {label}
                     </span>
                 );
@@ -203,23 +204,15 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
             <Head title="Stok Akun - Admin" />
 
             <div className="space-y-6">
-                {/* Header & Quick Actions */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
-                    <div>
-                        <h1 className="text-xl font-bold tracking-tight text-text flex items-center gap-2">
-                            <KeyRound className="w-5 h-5 text-accent-text" />
-                            <span>Stok Unit Akun</span>
-                        </h1>
-                        <p className="text-xs text-text-2 mt-0.5">
-                            Manajemen inventaris kredensial akun streaming (Sewa & Beli).
-                        </p>
-                    </div>
-
+                <PageHeader
+                    title="Stok Unit Akun"
+                    description="Manajemen inventaris kredensial akun streaming (Sewa & Beli)."
+                >
                     <div className="flex items-center gap-2">
                         <button
                             type="button"
                             onClick={() => setIsSingleModalOpen(true)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-2 hover:bg-surface-hover text-text border border-border text-xs font-semibold rounded transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-2 hover:bg-surface-hover text-text border border-border text-xs font-semibold rounded-md transition-colors cursor-pointer"
                         >
                             <Plus className="w-4 h-4 text-accent-text" />
                             <span>Tambah Satuan</span>
@@ -227,13 +220,13 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                         <button
                             type="button"
                             onClick={() => setIsBulkModalOpen(true)}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold rounded transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold rounded-md transition-colors cursor-pointer"
                         >
                             <Upload className="w-4 h-4" />
                             <span>Impor Massal</span>
                         </button>
                     </div>
-                </div>
+                </PageHeader>
 
                 {/* Stock Summary per Product */}
                 <div className="space-y-2">
@@ -407,7 +400,7 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                                                                     className="p-1 rounded text-text-2 hover:text-text hover:bg-surface-2 cursor-pointer shrink-0"
                                                                     title="Salin Kredensial"
                                                                 >
-                                                                    {copiedId === acc.id ? <CheckCheck className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5" />}
+                                                                    {copiedId === acc.id ? <CheckCheck className="w-3.5 h-3.5 text-accent-text" /> : <Copy className="w-3.5 h-3.5" />}
                                                                 </button>
                                                             )}
                                                         </div>
@@ -439,7 +432,7 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                                                                     className={`px-2 py-1 rounded text-[11px] font-semibold border flex items-center gap-1 cursor-pointer transition-colors ${
                                                                         acc.status === 'AVAILABLE'
                                                                             ? 'bg-surface-2 hover:bg-danger/10 text-text-2 hover:text-danger border-border'
-                                                                            : 'bg-success/15 text-success border-success/30 hover:bg-success/25'
+                                                                            : 'bg-accent/15 text-accent-text border-accent/30 hover:bg-accent/25'
                                                                     }`}
                                                                     title={acc.status === 'AVAILABLE' ? 'Nonaktifkan unit' : 'Aktifkan kembali unit'}
                                                                 >
@@ -537,7 +530,7 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                                                                 onClick={() => copyToClipboard(acc.id, acc.credential)}
                                                                 className="p-1 rounded text-text-2 hover:text-text shrink-0"
                                                             >
-                                                                {copiedId === acc.id ? <CheckCheck className="w-3 h-3 text-success" /> : <Copy className="w-3 h-3" />}
+                                                                {copiedId === acc.id ? <CheckCheck className="w-3 h-3 text-accent-text" /> : <Copy className="w-3 h-3" />}
                                                             </button>
                                                         </div>
                                                     ) : (
@@ -602,27 +595,79 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                                     </span>
                                     <div className="flex items-center gap-1">
                                         {accounts.links.map((link, idx) => {
-                                            if (!link.url) {
-                                                return (
+                                            const isPrev = idx === 0 || link.label.toLowerCase().includes('prev') || link.label.includes('&laquo;') || link.label.includes('pagination.previous');
+                                            const isNext = idx === accounts.links.length - 1 || link.label.toLowerCase().includes('next') || link.label.includes('&raquo;') || link.label.includes('pagination.next');
+
+                                            if (isPrev) {
+                                                return link.url ? (
+                                                    <Link
+                                                        key={idx}
+                                                        href={link.url}
+                                                        preserveScroll
+                                                        className="p-1.5 px-2 rounded bg-surface border border-border text-text hover:bg-surface-hover inline-flex items-center gap-1 text-xs font-medium transition-colors"
+                                                        title="Halaman Sebelumnya"
+                                                        aria-label="Sebelumnya"
+                                                    >
+                                                        <ChevronLeft className="w-3.5 h-3.5" />
+                                                        <span className="hidden sm:inline">Prev</span>
+                                                    </Link>
+                                                ) : (
                                                     <span
                                                         key={idx}
-                                                        className="px-2 py-1 rounded text-text-3 opacity-40 select-none"
-                                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                                    />
+                                                        className="p-1.5 px-2 rounded bg-surface-2 border border-border text-text-3 opacity-40 select-none inline-flex items-center gap-1 text-xs cursor-not-allowed"
+                                                        aria-disabled="true"
+                                                    >
+                                                        <ChevronLeft className="w-3.5 h-3.5" />
+                                                        <span className="hidden sm:inline">Prev</span>
+                                                    </span>
                                                 );
                                             }
-                                            return (
+
+                                            if (isNext) {
+                                                return link.url ? (
+                                                    <Link
+                                                        key={idx}
+                                                        href={link.url}
+                                                        preserveScroll
+                                                        className="p-1.5 px-2 rounded bg-surface border border-border text-text hover:bg-surface-hover inline-flex items-center gap-1 text-xs font-medium transition-colors"
+                                                        title="Halaman Selanjutnya"
+                                                        aria-label="Selanjutnya"
+                                                    >
+                                                        <span className="hidden sm:inline">Next</span>
+                                                        <ChevronRight className="w-3.5 h-3.5" />
+                                                    </Link>
+                                                ) : (
+                                                    <span
+                                                        key={idx}
+                                                        className="p-1.5 px-2 rounded bg-surface-2 border border-border text-text-3 opacity-40 select-none inline-flex items-center gap-1 text-xs cursor-not-allowed"
+                                                        aria-disabled="true"
+                                                    >
+                                                        <span className="hidden sm:inline">Next</span>
+                                                        <ChevronRight className="w-3.5 h-3.5" />
+                                                    </span>
+                                                );
+                                            }
+
+                                            return link.url ? (
                                                 <Link
                                                     key={idx}
                                                     href={link.url}
                                                     preserveScroll
-                                                    className={`px-2.5 py-1 rounded font-medium transition-colors ${
+                                                    className={`min-w-7 h-7 px-2 flex items-center justify-center rounded text-xs transition-colors font-medium ${
                                                         link.active
                                                             ? 'bg-accent text-on-accent font-semibold'
-                                                            : 'bg-surface-2 text-text-2 hover:bg-surface-hover'
+                                                            : 'bg-surface border border-border text-text hover:bg-surface-hover'
                                                     }`}
-                                                    dangerouslySetInnerHTML={{ __html: link.label }}
-                                                />
+                                                >
+                                                    {link.label}
+                                                </Link>
+                                            ) : (
+                                                <span
+                                                    key={idx}
+                                                    className="min-w-7 h-7 px-1 flex items-center justify-center rounded text-xs text-text-3 opacity-50 select-none"
+                                                >
+                                                    {link.label}
+                                                </span>
                                             );
                                         })}
                                     </div>
@@ -905,7 +950,7 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                                 type="button"
                                 onClick={handleDeleteAccount}
                                 disabled={isDeleting}
-                                className="px-4 py-1.5 bg-danger text-white text-xs font-semibold rounded hover:bg-danger/90 transition-colors cursor-pointer"
+                                className="px-4 py-1.5 bg-danger-solid text-on-danger text-xs font-semibold rounded hover:bg-danger-solid-hover transition-colors cursor-pointer"
                             >
                                 {isDeleting ? 'Menghapus...' : 'Ya, Hapus'}
                             </button>

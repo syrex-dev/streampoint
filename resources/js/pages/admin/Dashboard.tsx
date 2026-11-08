@@ -1,14 +1,13 @@
 import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { AdminLayout } from '@/layouts/AdminLayout';
+import { PageHeader } from '@/components/admin/PageHeader';
+import { StatCard } from '@/components/admin/StatCard';
 import { 
     Clock, 
     CheckCircle2, 
-    AlertCircle, 
-    XCircle, 
     Hourglass, 
     ArrowRight, 
-    ExternalLink,
     FileText,
     Image as ImageIcon
 } from 'lucide-react';
@@ -54,135 +53,112 @@ export default function Dashboard({ todayCounts, quota, verifyingOrders }: Dashb
         }).format(val);
     };
 
+    const isWaitingLong = (createdAtStr: string) => {
+        const diffMs = Date.now() - new Date(createdAtStr).getTime();
+        return diffMs >= 30 * 60 * 1000;
+    };
+
     return (
         <AdminLayout>
-            <Head title="Admin Dashboard" />
+            <Head title="Dashboard - Admin" />
 
             <div className="space-y-6">
-                {/* Page Title */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-border">
-                    <div>
-                        <h1 className="text-lg font-bold tracking-tight text-text">Dashboard Penjualan</h1>
-                        <p className="text-xs text-text-2">Ringkasan transaksi hari ini dan kuota sewa aktif.</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Link
-                            href="/admin/orders"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-2 hover:bg-surface-hover text-text text-xs font-medium rounded border border-border transition-colors"
-                        >
-                            <FileText className="w-3.5 h-3.5 text-text-2" />
-                            <span>Semua Order</span>
-                        </Link>
-                    </div>
-                </div>
+                <PageHeader
+                    title="Dashboard"
+                    description="Ringkasan operasional toko, kuota sewa harian, dan antrean verifikasi."
+                >
+                    <Link
+                        href="/admin/orders"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-2 hover:bg-surface-hover text-text text-xs font-medium rounded-md border border-border transition-colors cursor-pointer"
+                    >
+                        <FileText className="w-3.5 h-3.5 text-text-2" />
+                        <span>Semua Pesanan</span>
+                    </Link>
+                </PageHeader>
 
-                {/* Quota & Today Summary Cards */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    {/* Rental Quota Card */}
-                    <div className="col-span-2 sm:col-span-1 p-3.5 bg-surface border border-border rounded-md flex flex-col justify-between">
-                        <div className="flex items-center justify-between text-xs text-text-2 mb-2">
-                            <span className="font-medium">Slot Sewa Hari Ini</span>
+                {/* Quota & Today Summary Cards (4 Kolom Desktop, 2 Kolom Mobile) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {/* Kartu Kuota Sewa */}
+                    <StatCard
+                        label="Slot Sewa Hari Ini"
+                        badge={
                             <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
                                 quota.is_full ? 'bg-danger/10 text-danger border border-danger/30' : 'bg-surface-2 text-text-2'
                             }`}>
                                 {quota.is_full ? 'Penuh' : `${quota.remaining} Tersisa`}
                             </span>
+                        }
+                    >
+                        <div>
+                            <div className="text-xl sm:text-2xl font-bold font-sans tracking-tight tabular-nums text-text leading-tight">
+                                Terpakai {quota.used} dari {quota.limit}
+                            </div>
+                            <div className="w-full bg-surface-2 h-1.5 rounded-full overflow-hidden border border-border mt-2.5">
+                                <div 
+                                    className={`h-full transition-all ${quota.is_full ? 'bg-danger' : 'bg-accent'}`}
+                                    style={{ width: `${Math.min(100, (quota.used / Math.max(1, quota.limit)) * 100)}%` }}
+                                />
+                            </div>
+                            <div className="text-xs text-text-2 mt-2">
+                                Reset otomatis pukul 00:00 WIB
+                            </div>
                         </div>
-                        <div className="flex items-baseline gap-2 mb-2">
-                            <span className="text-2xl font-bold font-mono tracking-tight text-text">
-                                {quota.used}
-                            </span>
-                            <span className="text-xs text-text-2 font-mono">/ {quota.limit} slot</span>
-                        </div>
-                        {/* Progress Bar */}
-                        <div className="w-full bg-surface-2 h-1.5 rounded-full overflow-hidden border border-border">
-                            <div 
-                                className={`h-full transition-all ${quota.is_full ? 'bg-danger' : 'bg-accent'}`}
-                                style={{ width: `${Math.min(100, (quota.used / Math.max(1, quota.limit)) * 100)}%` }}
-                            />
-                        </div>
-                        <div className="mt-2 text-[10px] text-text-2">
-                            Reset pukul 00:00 WIB
-                        </div>
-                    </div>
+                    </StatCard>
 
-                    {/* Verifying Card */}
-                    <div className={`p-3.5 bg-surface rounded-md border flex flex-col justify-between ${
-                        todayCounts.verifying > 0 ? 'border-info/50 bg-info/5' : 'border-border'
-                    }`}>
-                        <div className="flex items-center justify-between text-xs text-text-2 mb-1">
-                            <span className="font-medium">Perlu Verifikasi</span>
-                            <Hourglass className="w-3.5 h-3.5 text-info" />
-                        </div>
-                        <div className="text-2xl font-bold font-mono text-text">
-                            {todayCounts.verifying}
-                        </div>
-                        <div className="text-[11px] text-text-2">
-                            {todayCounts.verifying > 0 ? 'Segera periksa bukti transfer' : 'Tidak ada antrean'}
-                        </div>
-                    </div>
+                    {/* Kartu Menunggu Bayar */}
+                    <StatCard
+                        label="Menunggu Bayar"
+                        value={todayCounts.pending}
+                        description="Belum dibayar, kedaluwarsa dalam 15 menit"
+                        icon={Clock}
+                    />
 
-                    {/* Paid Card */}
-                    <div className="p-3.5 bg-surface border border-border rounded-md flex flex-col justify-between">
-                        <div className="flex items-center justify-between text-xs text-text-2 mb-1">
-                            <span className="font-medium">Lunas Hari Ini</span>
-                            <CheckCircle2 className="w-3.5 h-3.5 text-success" />
-                        </div>
-                        <div className="text-2xl font-bold font-mono text-text">
-                            {todayCounts.paid}
-                        </div>
-                        <div className="text-[11px] text-text-2">
-                            Pesanan berhasil dikirim
-                        </div>
-                    </div>
+                    {/* Kartu Perlu Verifikasi */}
+                    <StatCard
+                        label="Perlu Verifikasi"
+                        value={todayCounts.verifying}
+                        description={todayCounts.verifying > 0 ? "Segera periksa mutasi rekening" : "Tidak ada antrean saat ini"}
+                        icon={Hourglass}
+                        isInfo={todayCounts.verifying > 0}
+                    />
 
-                    {/* Pending & Total Card */}
-                    <div className="p-3.5 bg-surface border border-border rounded-md flex flex-col justify-between">
-                        <div className="flex items-center justify-between text-xs text-text-2 mb-1">
-                            <span className="font-medium">Menunggu Bayar</span>
-                            <Clock className="w-3.5 h-3.5 text-warning" />
-                        </div>
-                        <div className="text-2xl font-bold font-mono text-text">
-                            {todayCounts.pending}
-                        </div>
-                        <div className="text-[11px] text-text-2">
-                            Total {todayCounts.total} pesanan hari ini
-                        </div>
-                    </div>
+                    {/* Kartu Selesai / Lunas */}
+                    <StatCard
+                        label="Lunas Hari Ini"
+                        value={todayCounts.paid}
+                        description="Pesanan terverifikasi dan aktif"
+                        icon={CheckCircle2}
+                    />
                 </div>
 
-                {/* Additional status breakdown pill strip */}
-                <div className="flex flex-wrap items-center gap-2 p-2.5 bg-surface border border-border rounded-md text-xs">
-                    <span className="text-text-2 font-medium">Status hari ini:</span>
-                    <span className="px-2 py-0.5 rounded bg-surface-2 text-text font-mono">
-                        Menunggu: {todayCounts.pending}
+                {/* Status Sekunder (Hanya memuat status yang tidak ada di kartu) */}
+                <div className="flex flex-wrap items-center gap-4 px-4 py-2.5 bg-surface border border-border rounded-lg text-xs text-text-2">
+                    <span className="font-medium text-text-2">Status lainnya hari ini:</span>
+                    <span className="flex items-center gap-1.5">
+                        <span>Kedaluwarsa:</span>
+                        <strong className="font-sans font-semibold tabular-nums text-text">{todayCounts.expired}</strong>
                     </span>
-                    <span className="px-2 py-0.5 rounded bg-info/10 text-info font-mono font-medium">
-                        Verifikasi: {todayCounts.verifying}
-                    </span>
-                    <span className="px-2 py-0.5 rounded bg-success/10 text-success font-mono font-medium">
-                        Lunas: {todayCounts.paid}
-                    </span>
-                    <span className="px-2 py-0.5 rounded bg-surface-2 text-text-2 font-mono">
-                        Kedaluwarsa: {todayCounts.expired}
-                    </span>
-                    <span className="px-2 py-0.5 rounded bg-danger/10 text-danger font-mono">
-                        Dibatalkan: {todayCounts.cancelled}
+                    <span className="text-border">•</span>
+                    <span className="flex items-center gap-1.5">
+                        <span>Dibatalkan:</span>
+                        <strong className="font-sans font-semibold tabular-nums text-text">{todayCounts.cancelled}</strong>
                     </span>
                 </div>
 
-                {/* Section: Orders Waiting for Verification (Prioritized) */}
-                <div className="bg-surface border border-border rounded-md overflow-hidden">
+                {/* Seksi: Pesanan Menunggu Verifikasi (Prioritas) */}
+                <div className="bg-surface border border-border rounded-lg overflow-hidden">
                     <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-surface-2/30">
-                        <div className="flex items-center gap-2">
-                            <h2 className="text-xs font-bold uppercase tracking-wider text-text">
+                        <div className="flex items-center gap-2.5">
+                            <h2 className="text-xs font-semibold uppercase tracking-wider text-text">
                                 Pesanan Menunggu Verifikasi
                             </h2>
-                            <span className="px-1.5 py-0.2 bg-info/20 text-info border border-info/30 rounded text-[11px] font-mono font-bold">
-                                {verifyingOrders.length}
-                            </span>
+                            {verifyingOrders.length > 0 && (
+                                <span className="px-1.5 py-0.5 bg-info/15 text-info border border-info/30 rounded-full text-[11px] font-mono font-bold">
+                                    {verifyingOrders.length}
+                                </span>
+                            )}
                         </div>
-                        <span className="text-[11px] text-text-2">Prioritas Utama</span>
+                        <span className="text-xs text-text-2 font-medium">Prioritas Tindakan</span>
                     </div>
 
                     {verifyingOrders.length === 0 ? (
@@ -191,133 +167,130 @@ export default function Dashboard({ todayCounts, quota, verifyingOrders }: Dashb
                         </div>
                     ) : (
                         <div>
-                            {/* Desktop View Table */}
+                            {/* Desktop Table View */}
                             <div className="hidden md:block overflow-x-auto">
                                 <table className="w-full text-left text-xs">
                                     <thead>
-                                        <tr className="border-b border-border bg-surface-2/50 text-text-2 uppercase text-[10px] tracking-wider">
+                                        <tr className="border-b border-border bg-surface-2/50 text-text-2 uppercase text-[10px] tracking-wider font-semibold">
                                             <th className="py-2.5 px-4">Invoice</th>
                                             <th className="py-2.5 px-4">Layanan / Paket</th>
                                             <th className="py-2.5 px-4">WhatsApp</th>
                                             <th className="py-2.5 px-4">Total</th>
                                             <th className="py-2.5 px-4">Bukti</th>
-                                            <th className="py-2.5 px-4">Waktu</th>
+                                            <th className="py-2.5 px-4">Waktu Tunggu</th>
                                             <th className="py-2.5 px-4 text-right">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border">
-                                        {verifyingOrders.map((order) => (
-                                            <tr 
-                                                key={order.id} 
-                                                className="hover:bg-surface-hover border-l-2 border-l-info transition-colors"
-                                            >
-                                                <td className="py-3 px-4 font-mono font-semibold text-text">
-                                                    <Link 
-                                                        href={`/admin/orders/${order.id}`}
-                                                        className="hover:text-accent-text"
-                                                    >
+                                        {verifyingOrders.map((order) => {
+                                            const waitingLong = isWaitingLong(order.created_at);
+                                            return (
+                                                <tr 
+                                                    key={order.id} 
+                                                    onClick={() => router.visit(`/admin/orders/${order.id}`)}
+                                                    className="hover:bg-surface-hover border-l-2 border-l-info transition-colors cursor-pointer group"
+                                                >
+                                                    <td className="py-3 px-4 font-mono font-semibold text-text group-hover:text-accent-text">
                                                         {order.invoice_code}
-                                                    </Link>
-                                                </td>
-                                                <td className="py-3 px-4">
-                                                    <div className="font-medium text-text">{order.product_name}</div>
-                                                    <div className="text-[11px] text-text-2">{order.variant_name} ({order.order_type})</div>
-                                                </td>
-                                                <td className="py-3 px-4 font-mono text-text-2">
-                                                    {order.customer_phone}
-                                                </td>
-                                                <td className="py-3 px-4 font-mono font-semibold text-text">
-                                                    {formatRupiah(order.total_amount)}
-                                                </td>
-                                                <td className="py-3 px-4">
-                                                    {order.has_proof ? (
-                                                        <a
-                                                            href={`/admin/orders/${order.id}/proof`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="inline-flex items-center gap-1 text-[11px] text-accent-text hover:underline"
+                                                    </td>
+                                                    <td className="py-3 px-4">
+                                                        <div className="font-medium text-text">{order.product_name}</div>
+                                                        <div className="text-[11px] text-text-2">{order.variant_name} ({order.order_type})</div>
+                                                    </td>
+                                                    <td className="py-3 px-4 font-mono text-text-2">
+                                                        {order.customer_phone}
+                                                    </td>
+                                                    <td className="py-3 px-4 font-mono font-semibold text-text">
+                                                        {formatRupiah(order.total_amount)}
+                                                    </td>
+                                                    <td className="py-3 px-4">
+                                                        {order.has_proof ? (
+                                                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-accent-text">
+                                                                <ImageIcon className="w-3.5 h-3.5" />
+                                                                <span>Ada bukti</span>
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-[11px] text-text-2">Tanpa bukti</span>
+                                                        )}
+                                                    </td>
+                                                    <td className={`py-3 px-4 text-[11px] ${waitingLong ? 'text-warning font-semibold' : 'text-text-2'}`}>
+                                                        {order.created_at_human}
+                                                        {waitingLong && (
+                                                            <span className="ml-1.5 px-1.5 py-0.2 rounded text-[10px] bg-warning/15 text-warning border border-warning/30 font-medium">
+                                                                ≥ 30 mnt
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                                        <Link
+                                                            href={`/admin/orders/${order.id}`}
+                                                            className="inline-flex items-center gap-1 px-3 py-1 bg-accent text-on-accent text-xs font-semibold rounded hover:bg-accent-hover transition-colors"
                                                         >
-                                                            <ImageIcon className="w-3 h-3" />
-                                                            <span>Lihat Bukti</span>
-                                                        </a>
-                                                    ) : (
-                                                        <span className="text-[11px] text-text-2">Tanpa Bukti</span>
-                                                    )}
-                                                </td>
-                                                <td className="py-3 px-4 text-text-2 text-[11px]">
-                                                    {order.created_at_human}
-                                                </td>
-                                                <td className="py-3 px-4 text-right">
-                                                    <Link
-                                                        href={`/admin/orders/${order.id}`}
-                                                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-accent text-on-accent hover:bg-accent-hover text-xs font-semibold rounded transition-colors"
-                                                    >
-                                                        <span>Proses</span>
-                                                        <ArrowRight className="w-3 h-3" />
-                                                    </Link>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                                            <span>Periksa</span>
+                                                            <ArrowRight className="w-3 h-3" />
+                                                        </Link>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
 
-                            {/* Mobile View Cards */}
+                            {/* Mobile Card List (< 768px) */}
                             <div className="md:hidden divide-y divide-border">
-                                {verifyingOrders.map((order) => (
-                                    <div 
-                                        key={order.id} 
-                                        className="p-3.5 space-y-2 border-l-2 border-l-info bg-surface hover:bg-surface-hover"
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <span className="font-mono font-bold text-xs text-text">
-                                                {order.invoice_code}
-                                            </span>
-                                            <span className="text-[10px] text-text-2 font-mono">
-                                                {order.created_at_human}
-                                            </span>
-                                        </div>
-
-                                        <div className="text-xs">
-                                            <div className="font-medium text-text">{order.product_name}</div>
-                                            <div className="text-text-2 text-[11px]">{order.variant_name} ({order.order_type})</div>
-                                        </div>
-
-                                        <div className="flex items-center justify-between pt-1 text-xs">
-                                            <div className="font-mono font-bold text-text">
-                                                {formatRupiah(order.total_amount)}
+                                {verifyingOrders.map((order) => {
+                                    const waitingLong = isWaitingLong(order.created_at);
+                                    return (
+                                        <div
+                                            key={order.id}
+                                            onClick={() => router.visit(`/admin/orders/${order.id}`)}
+                                            className="p-3.5 space-y-2 bg-surface hover:bg-surface-hover border-l-2 border-l-info transition-colors cursor-pointer"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <span className="font-mono font-bold text-xs text-text">
+                                                    {order.invoice_code}
+                                                </span>
+                                                <span className="font-mono font-bold text-xs text-text">
+                                                    {formatRupiah(order.total_amount)}
+                                                </span>
                                             </div>
-                                            <div className="font-mono text-text-2 text-[11px]">
-                                                {order.customer_phone}
-                                            </div>
-                                        </div>
 
-                                        <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                                            <div>
+                                            <div className="text-xs">
+                                                <div className="font-medium text-text">{order.product_name}</div>
+                                                <div className="text-[11px] text-text-2">{order.variant_name} ({order.order_type})</div>
+                                            </div>
+
+                                            <div className="flex items-center justify-between text-xs pt-1 border-t border-border/50">
+                                                <span className="font-mono text-text-2 text-[11px]">
+                                                    {order.customer_phone}
+                                                </span>
                                                 {order.has_proof ? (
-                                                    <a
-                                                        href={`/admin/orders/${order.id}/proof`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="inline-flex items-center gap-1 text-[11px] text-accent-text hover:underline"
-                                                    >
+                                                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-accent-text">
                                                         <ImageIcon className="w-3 h-3" />
-                                                        <span>Bukti Bayar</span>
-                                                    </a>
+                                                        <span>Ada bukti</span>
+                                                    </span>
                                                 ) : (
-                                                    <span className="text-[11px] text-text-2">Tanpa Bukti</span>
+                                                    <span className="text-[11px] text-text-2">Tanpa bukti</span>
                                                 )}
                                             </div>
-                                            <Link
-                                                href={`/admin/orders/${order.id}`}
-                                                className="inline-flex items-center gap-1 px-3 py-1 bg-accent text-on-accent text-xs font-semibold rounded hover:bg-accent-hover transition-colors"
-                                            >
-                                                <span>Buka Detail</span>
-                                                <ArrowRight className="w-3 h-3" />
-                                            </Link>
+
+                                            <div className="flex items-center justify-between pt-1 text-xs">
+                                                <span className={`text-[11px] ${waitingLong ? 'text-warning font-semibold' : 'text-text-2'}`}>
+                                                    {order.created_at_human} {waitingLong && '(≥ 30 mnt)'}
+                                                </span>
+                                                <Link
+                                                    href={`/admin/orders/${order.id}`}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="inline-flex items-center gap-1 px-3 py-1 bg-accent text-on-accent text-xs font-semibold rounded hover:bg-accent-hover transition-colors"
+                                                >
+                                                    <span>Periksa</span>
+                                                    <ArrowRight className="w-3 h-3" />
+                                                </Link>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     )}

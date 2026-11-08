@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ProductStoreRequest;
 use App\Http\Requests\Admin\ProductUpdateRequest;
 use App\Models\Product;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -47,7 +48,7 @@ class AdminProductController extends Controller
         return Inertia::render('admin/products/Create');
     }
 
-    public function store(ProductStoreRequest $request): RedirectResponse
+    public function store(ProductStoreRequest $request, ImageOptimizer $optimizer): RedirectResponse
     {
         $slug = $request->validated('slug');
         if (empty($slug)) {
@@ -62,8 +63,14 @@ class AdminProductController extends Controller
 
         $thumbnailPath = null;
         if ($request->hasFile('thumbnail')) {
-            $path = $request->file('thumbnail')->store('products', 'public');
+            $path = $optimizer->optimizeLogo($request->file('thumbnail'), 'thumbnail');
             $thumbnailPath = '/storage/' . $path;
+        }
+
+        $coverPath = null;
+        if ($request->hasFile('cover')) {
+            $path = $optimizer->optimizeCover($request->file('cover'), 'cover');
+            $coverPath = '/storage/' . $path;
         }
 
         $product = Product::create([
@@ -75,7 +82,9 @@ class AdminProductController extends Controller
             'is_active' => (bool) $request->validated('is_active'),
             'sort_order' => (int) ($request->validated('sort_order') ?? 0),
             'brand_color' => $request->validated('brand_color'),
+            'has_warranty' => (bool) $request->validated('has_warranty'),
             'thumbnail_path' => $thumbnailPath,
+            'cover_path' => $coverPath,
         ]);
 
         return redirect()->route('admin.products.edit', $product)->with('success', "Produk '{$product->name}' berhasil ditambahkan.");
@@ -110,7 +119,9 @@ class AdminProductController extends Controller
                 'slug' => $product->slug,
                 'category' => $product->category,
                 'thumbnail_path' => $product->thumbnail_path,
+                'cover_path' => $product->cover_path,
                 'brand_color' => $product->brand_color,
+                'has_warranty' => (bool) $product->has_warranty,
                 'description' => $product->description,
                 'rules' => $product->rules,
                 'is_active' => (bool) $product->is_active,
@@ -121,7 +132,7 @@ class AdminProductController extends Controller
         ]);
     }
 
-    public function update(ProductUpdateRequest $request, Product $product): RedirectResponse
+    public function update(ProductUpdateRequest $request, Product $product, ImageOptimizer $optimizer): RedirectResponse
     {
         $data = [
             'name' => $request->validated('name'),
@@ -132,6 +143,7 @@ class AdminProductController extends Controller
             'is_active' => (bool) $request->validated('is_active'),
             'sort_order' => (int) ($request->validated('sort_order') ?? 0),
             'brand_color' => $request->validated('brand_color'),
+            'has_warranty' => (bool) $request->validated('has_warranty'),
         ];
 
         if ($request->hasFile('thumbnail')) {
@@ -140,8 +152,18 @@ class AdminProductController extends Controller
                 $oldPath = Str::after($product->thumbnail_path, '/storage/');
                 Storage::disk('public')->delete($oldPath);
             }
-            $path = $request->file('thumbnail')->store('products', 'public');
+            $path = $optimizer->optimizeLogo($request->file('thumbnail'), 'thumbnail');
             $data['thumbnail_path'] = '/storage/' . $path;
+        }
+
+        if ($request->hasFile('cover')) {
+            // Delete old file if present in public disk
+            if ($product->cover_path && Str::startsWith($product->cover_path, '/storage/')) {
+                $oldPath = Str::after($product->cover_path, '/storage/');
+                Storage::disk('public')->delete($oldPath);
+            }
+            $path = $optimizer->optimizeCover($request->file('cover'), 'cover');
+            $data['cover_path'] = '/storage/' . $path;
         }
 
         $product->update($data);
@@ -157,6 +179,11 @@ class AdminProductController extends Controller
 
         if ($product->thumbnail_path && Str::startsWith($product->thumbnail_path, '/storage/')) {
             $oldPath = Str::after($product->thumbnail_path, '/storage/');
+            Storage::disk('public')->delete($oldPath);
+        }
+
+        if ($product->cover_path && Str::startsWith($product->cover_path, '/storage/')) {
+            $oldPath = Str::after($product->cover_path, '/storage/');
             Storage::disk('public')->delete($oldPath);
         }
 

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PaymentMethodStoreRequest;
 use App\Http\Requests\Admin\PaymentMethodUpdateRequest;
 use App\Models\PaymentMethod;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -31,6 +32,7 @@ class AdminPaymentMethodController extends Controller
                 'account_holder' => $pm->account_holder,
                 'instructions' => $pm->instructions,
                 'qris_image_path' => $pm->qris_image_path,
+                'logo_path' => $pm->logo_path,
                 'is_active' => (bool) $pm->is_active,
                 'sort_order' => (int) $pm->sort_order,
                 'orders_count' => (int) $pm->orders_count,
@@ -46,12 +48,18 @@ class AdminPaymentMethodController extends Controller
         ]);
     }
 
-    public function store(PaymentMethodStoreRequest $request): RedirectResponse
+    public function store(PaymentMethodStoreRequest $request, ImageOptimizer $optimizer): RedirectResponse
     {
         $qrisImagePath = null;
         if ($request->hasFile('qris_image')) {
             $path = $request->file('qris_image')->store('qris', 'public');
             $qrisImagePath = '/storage/' . $path;
+        }
+
+        $logoPath = null;
+        if ($request->hasFile('logo')) {
+            $path = $optimizer->optimizePaymentLogo($request->file('logo'), 'logo');
+            $logoPath = '/storage/' . $path;
         }
 
         $paymentMethod = PaymentMethod::create([
@@ -63,12 +71,13 @@ class AdminPaymentMethodController extends Controller
             'is_active' => (bool) $request->validated('is_active'),
             'sort_order' => (int) ($request->validated('sort_order') ?? 0),
             'qris_image_path' => $qrisImagePath,
+            'logo_path' => $logoPath,
         ]);
 
         return back()->with('success', "Metode pembayaran '{$paymentMethod->label}' berhasil ditambahkan.");
     }
 
-    public function update(PaymentMethodUpdateRequest $request, PaymentMethod $paymentMethod): RedirectResponse
+    public function update(PaymentMethodUpdateRequest $request, PaymentMethod $paymentMethod, ImageOptimizer $optimizer): RedirectResponse
     {
         $data = [
             'type' => PaymentMethodType::from($request->validated('type')),
@@ -89,6 +98,15 @@ class AdminPaymentMethodController extends Controller
             $data['qris_image_path'] = '/storage/' . $path;
         }
 
+        if ($request->hasFile('logo')) {
+            if ($paymentMethod->logo_path && Str::startsWith($paymentMethod->logo_path, '/storage/')) {
+                $oldPath = Str::after($paymentMethod->logo_path, '/storage/');
+                Storage::disk('public')->delete($oldPath);
+            }
+            $path = $optimizer->optimizePaymentLogo($request->file('logo'), 'logo');
+            $data['logo_path'] = '/storage/' . $path;
+        }
+
         $paymentMethod->update($data);
 
         return back()->with('success', "Metode pembayaran '{$paymentMethod->label}' berhasil diperbarui.");
@@ -104,6 +122,11 @@ class AdminPaymentMethodController extends Controller
 
         if ($paymentMethod->qris_image_path && Str::startsWith($paymentMethod->qris_image_path, '/storage/')) {
             $oldPath = Str::after($paymentMethod->qris_image_path, '/storage/');
+            Storage::disk('public')->delete($oldPath);
+        }
+
+        if ($paymentMethod->logo_path && Str::startsWith($paymentMethod->logo_path, '/storage/')) {
+            $oldPath = Str::after($paymentMethod->logo_path, '/storage/');
             Storage::disk('public')->delete($oldPath);
         }
 

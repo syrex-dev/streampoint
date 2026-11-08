@@ -20,12 +20,17 @@ class QuotaService
             ?? Setting::current()->max_daily_rent_quota;
     }
 
-    public function used(string $date): int
+    public function used(string $date, bool $lock = false): int
     {
-        return Order::where('quota_date', $date)
+        $query = Order::where('quota_date', $date)
             ->where('order_type', OrderType::RENT)
-            ->countsTowardQuota()
-            ->count();
+            ->countsTowardQuota();
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        return $query->count();
     }
 
     /**

@@ -48,9 +48,12 @@ class InvoiceController extends Controller
         }
 
         $paymentMethod = $order->paymentMethod;
+        $setting = \App\Models\Setting::current();
 
         return Inertia::render('invoice/Show', [
-            'storeName' => config('app.name', 'NamaToko'),
+            'storeName' => $setting->store_name ?: config('app.name', 'StreamPoint'),
+            'adminWhatsapp' => $setting->admin_whatsapp,
+            'admin_whatsapp' => $setting->admin_whatsapp,
             'isAuthorized' => $isAuthorized,
             'serverNow' => now()->toIso8601String(),
             'order' => [
@@ -163,5 +166,27 @@ class InvoiceController extends Controller
         }
 
         return back();
+    }
+
+    /**
+     * Buyer cancels their own PENDING order.
+     * Throttle: 5/minute per IP.
+     */
+    public function cancel(string $invoiceCode, Request $request, \App\Actions\Order\CancelOrderByBuyer $cancelOrder): RedirectResponse
+    {
+        $order = Order::where('invoice_code', $invoiceCode)->firstOrFail();
+
+        $owned = $request->session()->get('owned_invoices', []);
+        if (! in_array($order->invoice_code, $owned, true)) {
+            abort(403, 'Kamu tidak memiliki izin untuk membatalkan pesanan ini.');
+        }
+
+        try {
+            $cancelOrder->handle($order);
+        } catch (\Throwable $e) {
+            return back()->withErrors(['cancel' => $e->getMessage()]);
+        }
+
+        return back()->with('success', 'Pesanan berhasil dibatalkan.');
     }
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { AdminLayout } from '@/layouts/AdminLayout';
+import { PageHeader } from '@/components/admin/PageHeader';
 import { 
     Image as ImageIcon, 
     Plus, 
@@ -78,32 +79,24 @@ export default function BannerIndex({ banners, activeCount, maxActive }: IndexPr
             <Head title="Manajemen Banner - Admin" />
 
             <div className="space-y-6">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border">
-                    <div>
-                        <h1 className="text-lg font-bold tracking-tight text-text flex items-center gap-2">
-                            <ImageIcon className="w-5 h-5 text-accent-text" />
-                            <span>Banner Slider Toko</span>
-                        </h1>
-                        <p className="text-xs text-text-2 mt-0.5">
-                            Kelola pengumuman & promo di atas bar kuota beranda. Maksimal {maxActive} banner aktif.
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <span className="text-xs text-text-2 px-2.5 py-1 rounded bg-surface border border-border">
+                <PageHeader
+                    title="Banner Slider Toko"
+                    description={`Kelola pengumuman & promo di atas bar kuota beranda. Maksimal ${maxActive} banner aktif.`}
+                >
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs text-text-2 px-2.5 py-1.5 rounded-md bg-surface border border-border">
                             Aktif: <strong className="text-text font-mono">{activeCount}</strong> / {maxActive}
                         </span>
 
                         <Link
                             href="/admin/banners/create"
-                            className="inline-flex items-center gap-1.5 h-8 px-3 rounded text-xs font-semibold bg-accent text-on-accent hover:bg-accent-hover transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-accent text-on-accent hover:bg-accent-hover transition-colors"
                         >
                             <Plus className="w-4 h-4" />
                             <span>Tambah Banner</span>
                         </Link>
                     </div>
-                </div>
+                </PageHeader>
 
                 {/* Table or Empty State */}
                 {banners.length === 0 ? (
@@ -123,7 +116,8 @@ export default function BannerIndex({ banners, activeCount, maxActive }: IndexPr
                     </div>
                 ) : (
                     <div className="bg-surface border border-border rounded-lg overflow-hidden">
-                        <div className="overflow-x-auto">
+                        {/* Table for Desktop */}
+                        <div className="hidden md:block overflow-x-auto">
                             <table className="w-full text-left text-xs">
                                 <thead>
                                     <tr className="border-b border-border bg-surface-2 text-text-2 font-semibold">
@@ -211,7 +205,7 @@ export default function BannerIndex({ banners, activeCount, maxActive }: IndexPr
                                                     <button
                                                         type="button"
                                                         onClick={() => setDeleteModalBanner(b)}
-                                                        className="p-1.5 rounded bg-surface border border-border hover:bg-danger/10 hover:border-danger/30 text-text-2 hover:text-danger transition-colors"
+                                                        className="p-1.5 rounded bg-surface border border-border hover:bg-danger/10 hover:border-danger/30 text-text-2 hover:text-danger transition-colors cursor-pointer"
                                                         title="Hapus Banner"
                                                     >
                                                         <Trash2 className="w-3.5 h-3.5" />
@@ -222,6 +216,75 @@ export default function BannerIndex({ banners, activeCount, maxActive }: IndexPr
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+
+                        {/* Cards for Mobile (< 768px) */}
+                        <div className="md:hidden divide-y divide-border">
+                            {banners.map((b) => (
+                                <div key={b.id} className="p-3.5 space-y-2.5">
+                                    <div className="flex items-start gap-3">
+                                        {b.image_path ? (
+                                            <img
+                                                src={b.image_path}
+                                                alt={b.title}
+                                                className="w-16 h-10 rounded border border-border object-cover shrink-0"
+                                            />
+                                        ) : (
+                                            <div className="w-16 h-10 rounded border border-border bg-surface-2 flex items-center justify-center shrink-0 text-text-3 font-mono text-[10px]">
+                                                Teks
+                                            </div>
+                                        )}
+                                        <div className="space-y-1 min-w-0 flex-1">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <h3 className="font-semibold text-xs text-text truncate">{b.title}</h3>
+                                                <span className="font-mono text-text-3 text-[10px]">#{b.sort_order}</span>
+                                            </div>
+                                            {b.subtitle && (
+                                                <p className="text-[11px] text-text-2 line-clamp-1">{b.subtitle}</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between text-xs pt-1 border-t border-border/50">
+                                        <div>{getToneBadge(b.tone)}</div>
+                                        <div>
+                                            {b.is_currently_running ? (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-accent-text">
+                                                    <CheckCircle2 className="w-3 h-3" />
+                                                    <span>Tayang</span>
+                                                </span>
+                                            ) : b.is_active ? (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-warning">
+                                                    <Clock className="w-3 h-3" />
+                                                    <span>Luar Jadwal</span>
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 text-[10px] text-text-3">
+                                                    <XCircle className="w-3 h-3" />
+                                                    <span>Nonaktif</span>
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <Link
+                                                href={`/admin/banners/${b.id}/edit`}
+                                                className="p-1 rounded bg-surface-2 border border-border text-text-2 hover:text-text"
+                                                title="Edit Banner"
+                                            >
+                                                <Edit2 className="w-3.5 h-3.5" />
+                                            </Link>
+                                            <button
+                                                type="button"
+                                                onClick={() => setDeleteModalBanner(b)}
+                                                className="p-1 rounded bg-surface-2 border border-border text-danger hover:bg-danger/10 cursor-pointer"
+                                                title="Hapus Banner"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 )}
@@ -256,7 +319,7 @@ export default function BannerIndex({ banners, activeCount, maxActive }: IndexPr
                                 type="button"
                                 disabled={isDeleting}
                                 onClick={handleDelete}
-                                className="h-8 px-3 rounded text-xs font-semibold bg-danger text-white hover:bg-danger/90 transition-colors"
+                                className="h-8 px-3 rounded text-xs font-semibold bg-danger-solid text-on-danger hover:bg-danger-solid-hover transition-colors"
                             >
                                 {isDeleting ? 'Menghapus...' : 'Ya, Hapus'}
                             </button>

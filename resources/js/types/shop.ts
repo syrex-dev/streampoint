@@ -14,6 +14,8 @@ export interface ProductCatalogItem {
     name: string;
     category: string;
     thumbnail_path: string | null;
+    logo_url?: string | null;
+    cover_url?: string | null;
     brand_color?: string | null;
     description: string | null;
     min_price: number;
@@ -23,6 +25,10 @@ export interface ProductCatalogItem {
     available_buy_stock: number;
     has_rent?: boolean;
     has_buy?: boolean;
+    has_warranty?: boolean;
+    is_new?: boolean;
+    is_bestseller?: boolean;
+    sold_count?: number | null;
 }
 
 export interface SharedSettings {
@@ -30,7 +36,17 @@ export interface SharedSettings {
     business_hours: string | null;
     store_name?: string | null;
     store_logo_path?: string | null;
+    store_tagline?: string | null;
+    delivery_eta?: string | null;
     accent_preset?: 'emerald' | 'teal' | 'blue' | 'mono';
+    announcement?: { text: string; url?: string | null } | null;
+    social_links?: {
+        telegram?: string | null;
+        instagram?: string | null;
+        threads?: string | null;
+        tiktok?: string | null;
+    } | null;
+    custom_request_enabled?: boolean;
 }
 
 export interface SharedPendingOrder {
@@ -67,7 +83,9 @@ export interface ProductDetail {
     name: string;
     category: string;
     thumbnail_path: string | null;
+    cover_path?: string | null;
     brand_color?: string | null;
+    has_warranty?: boolean;
     description: string | null;
     rules: string | null;
     available_rent_stock: number;
@@ -78,6 +96,7 @@ export interface PaymentMethodItem {
     id: number;
     type: 'QRIS' | 'BANK' | 'EWALLET';
     label: string;
+    logo_url?: string | null;
     account_number: string | null;
     account_holder: string | null;
     qris_image_path: string | null;

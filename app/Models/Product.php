@@ -15,17 +15,20 @@ class Product extends Model
         'name',
         'category',
         'thumbnail_path',
+        'cover_path',
         'description',
         'rules',
         'is_active',
         'sort_order',
         'brand_color',
+        'has_warranty',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'has_warranty' => 'boolean',
             'sort_order' => 'integer',
         ];
     }

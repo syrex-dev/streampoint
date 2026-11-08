@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
 import { AdminLayout } from '@/layouts/AdminLayout';
+import { PageHeader } from '@/components/admin/PageHeader';
+import { Switch } from '@/components/ui/switch';
 import { 
     CreditCard, 
     Plus, 
@@ -24,6 +26,7 @@ interface PaymentMethodItem {
     account_holder?: string | null;
     instructions?: string | null;
     qris_image_path?: string | null;
+    logo_path?: string | null;
     is_active: boolean;
     sort_order: number;
     orders_count: number;
@@ -42,6 +45,7 @@ export default function PaymentMethodsIndex({ paymentMethods, types }: IndexProp
     const [isDeleting, setIsDeleting] = useState(false);
 
     const [previewQrUrl, setPreviewQrUrl] = useState<string | null>(null);
+    const [previewLogoUrl, setPreviewLogoUrl] = useState<string | null>(null);
 
     const form = useForm<{
         _method?: string;
@@ -53,6 +57,7 @@ export default function PaymentMethodsIndex({ paymentMethods, types }: IndexProp
         is_active: boolean;
         sort_order: number;
         qris_image: File | null;
+        logo: File | null;
     }>({
         type: 'QRIS',
         label: '',
@@ -62,6 +67,7 @@ export default function PaymentMethodsIndex({ paymentMethods, types }: IndexProp
         is_active: true,
         sort_order: 0,
         qris_image: null,
+        logo: null,
     });
 
     const openCreateModal = () => {
@@ -76,8 +82,10 @@ export default function PaymentMethodsIndex({ paymentMethods, types }: IndexProp
             is_active: true,
             sort_order: paymentMethods.length,
             qris_image: null,
+            logo: null,
         });
         setPreviewQrUrl(null);
+        setPreviewLogoUrl(null);
         setIsModalOpen(true);
     };
 
@@ -93,8 +101,10 @@ export default function PaymentMethodsIndex({ paymentMethods, types }: IndexProp
             is_active: pm.is_active,
             sort_order: pm.sort_order,
             qris_image: null,
+            logo: null,
         });
         setPreviewQrUrl(pm.qris_image_path || null);
+        setPreviewLogoUrl(pm.logo_path || null);
         setIsModalOpen(true);
     };
 
@@ -103,6 +113,14 @@ export default function PaymentMethodsIndex({ paymentMethods, types }: IndexProp
         if (file) {
             form.setData('qris_image', file);
             setPreviewQrUrl(URL.createObjectURL(file));
+        }
+    };
+
+    const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            form.setData('logo', file);
+            setPreviewLogoUrl(URL.createObjectURL(file));
         }
     };
 
@@ -142,27 +160,19 @@ export default function PaymentMethodsIndex({ paymentMethods, types }: IndexProp
             <Head title="Metode Pembayaran - Admin" />
 
             <div className="space-y-6">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
-                    <div>
-                        <h1 className="text-xl font-bold tracking-tight text-text flex items-center gap-2">
-                            <CreditCard className="w-5 h-5 text-accent-text" />
-                            <span>Metode Pembayaran</span>
-                        </h1>
-                        <p className="text-xs text-text-2 mt-0.5">
-                            Kelola channel pembayaran manual (QRIS statis, Bank Transfer, E-Wallet).
-                        </p>
-                    </div>
-
+                <PageHeader
+                    title="Metode Pembayaran"
+                    description="Kelola channel pembayaran manual (QRIS statis, Bank Transfer, E-Wallet)."
+                >
                     <button
                         type="button"
                         onClick={openCreateModal}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold rounded transition-colors self-start sm:self-auto cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold rounded-md transition-colors cursor-pointer"
                     >
                         <Plus className="w-4 h-4" />
                         <span>Tambah Metode Pembayaran</span>
                     </button>
-                </div>
+                </PageHeader>
 
                 {/* List */}
                 <div className="bg-surface border border-border rounded-lg overflow-hidden">
@@ -202,12 +212,21 @@ export default function PaymentMethodsIndex({ paymentMethods, types }: IndexProp
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    <div className="font-semibold text-text">{pm.label}</div>
-                                                    {pm.account_number && (
-                                                        <div className="text-[11px] text-text-2 font-mono">
-                                                            {pm.account_number} {pm.account_holder ? `(${pm.account_holder})` : ''}
+                                                    <div className="flex items-center gap-2.5">
+                                                        {pm.logo_path && (
+                                                            <div className="logo-plate h-6 px-1.5 shrink-0">
+                                                                <img src={pm.logo_path} alt="" className="h-4 max-w-[48px] object-contain" />
+                                                            </div>
+                                                        )}
+                                                        <div>
+                                                            <div className="font-semibold text-text">{pm.label}</div>
+                                                            {pm.account_number && (
+                                                                <div className="text-[11px] text-text-2 font-mono">
+                                                                    {pm.account_number} {pm.account_holder ? `(${pm.account_holder})` : ''}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
                                                     {pm.qris_image_path ? (
@@ -236,11 +255,11 @@ export default function PaymentMethodsIndex({ paymentMethods, types }: IndexProp
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
                                                     {pm.is_active ? (
-                                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success border border-success/30">
+                                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent/10 text-accent-text border border-accent/30">
                                                             Aktif
                                                         </span>
                                                     ) : (
-                                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-surface-2 text-text-3 border border-border">
+                                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-surface-2 text-text-muted border border-border">
                                                             Nonaktif
                                                         </span>
                                                     )}
@@ -299,6 +318,11 @@ export default function PaymentMethodsIndex({ paymentMethods, types }: IndexProp
                                                     }`}>
                                                         {pm.type}
                                                     </span>
+                                                    {pm.logo_path && (
+                                                        <div className="logo-plate h-5 px-1 shrink-0">
+                                                            <img src={pm.logo_path} alt="" className="h-3.5 max-w-[36px] object-contain" />
+                                                        </div>
+                                                    )}
                                                     <h3 className="font-semibold text-xs text-text">{pm.label}</h3>
                                                 </div>
                                                 {pm.account_number && (
@@ -309,11 +333,11 @@ export default function PaymentMethodsIndex({ paymentMethods, types }: IndexProp
                                             </div>
 
                                             {pm.is_active ? (
-                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success border border-success/30">
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent/10 text-accent-text border border-accent/30">
                                                     Aktif
                                                 </span>
                                             ) : (
-                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-surface-2 text-text-3 border border-border">
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-surface-2 text-text-muted border border-border">
                                                     Nonaktif
                                                 </span>
                                             )}
@@ -484,6 +508,33 @@ export default function PaymentMethodsIndex({ paymentMethods, types }: IndexProp
                                 </div>
                             )}
 
+                            {/* Logo Upload (Optional for all types) */}
+                            <div className="space-y-1.5">
+                                <label className="font-semibold text-text block">
+                                    Logo Metode Pembayaran <span className="text-text-3 font-normal">(opsional, maks 1MB, JPG/PNG/WEBP)</span>
+                                </label>
+                                <div className="flex items-center gap-3">
+                                    <div className="logo-plate h-9 px-2 shrink-0 min-w-[56px] overflow-hidden">
+                                        {previewLogoUrl ? (
+                                            <img src={previewLogoUrl} alt="Logo Preview" className="h-6 max-w-[64px] object-contain" />
+                                        ) : (
+                                            <span className="text-[10px] text-text-muted font-mono font-medium">No Logo</span>
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <input
+                                            type="file"
+                                            accept="image/png,image/jpeg,image/webp"
+                                            onChange={handleLogoFileChange}
+                                            className="block w-full text-xs text-text-2 file:mr-2.5 file:py-1 file:px-2.5 file:rounded file:border file:border-border file:text-xs file:font-semibold file:bg-surface-2 file:text-text hover:file:bg-surface-hover cursor-pointer"
+                                        />
+                                        <span className="text-[10px] text-text-3 block mt-0.5">
+                                            Dikonversi ke WebP dan ditampilkan dengan latar putih di footer serta detail invoice.
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Instructions */}
                             <div className="space-y-1">
                                 <label className="font-semibold text-text block">Instruksi Pembayaran <span className="text-text-3 font-normal">(opsional)</span></label>
@@ -511,15 +562,10 @@ export default function PaymentMethodsIndex({ paymentMethods, types }: IndexProp
                             {/* Status Aktif */}
                             <div className="pt-2 border-t border-border flex items-center justify-between">
                                 <span className="font-semibold text-text">Status Aktif</span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={form.data.is_active}
-                                        onChange={(e) => form.setData('is_active', e.target.checked)}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-9 h-5 bg-surface-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-success border border-border"></div>
-                                </label>
+                                <Switch
+                                    checked={form.data.is_active}
+                                    onCheckedChange={(checked) => form.setData('is_active', checked)}
+                                />
                             </div>
 
                             {/* Submit */}
@@ -576,7 +622,7 @@ export default function PaymentMethodsIndex({ paymentMethods, types }: IndexProp
                                 type="button"
                                 onClick={handleDelete}
                                 disabled={isDeleting}
-                                className="px-4 py-1.5 bg-danger text-white text-xs font-semibold rounded hover:bg-danger/90 transition-colors cursor-pointer"
+                                className="px-4 py-1.5 bg-danger-solid text-on-danger text-xs font-semibold rounded hover:bg-danger-solid-hover transition-colors cursor-pointer"
                             >
                                 {isDeleting ? 'Menghapus...' : 'Ya, Hapus'}
                             </button>

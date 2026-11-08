@@ -16,15 +16,25 @@
     --border-strong: #D4D4D8;
     --text: #09090B;
     --text-2: #52525B;
-    --text-muted: #71717A;
+    --text-muted: #666670;
     --accent: #10B981;
     --accent-hover: #059669;
     --accent-text: #047857;
     --on-accent: #09090B;
+    --success: #047857;
     --warning: #B45309;
-    --danger: #DC2626;
+    --on-warning: #FFFFFF;
+    --danger: #B91C1C;
+    --danger-solid: #DC2626;
+    --danger-solid-hover: #B91C1C;
+    --on-danger: #FFFFFF;
     --info: #0369A1;
+    --on-info: #FFFFFF;
     --overlay: rgba(0, 0, 0, 0.4);
+
+    /* Motion Tokens (DESIGN_SYSTEM 6.39) */
+    --dur-fast: 120ms;
+    --dur: 180ms;
 
     /* Semantic / Framework mappings */
     --background: var(--bg);
@@ -39,9 +49,8 @@
     --secondary-foreground: var(--text);
     --muted: var(--surface-2);
     --muted-foreground: var(--text-muted);
-    --accent-subtle: rgba(16, 185, 129, 0.12);
-    --destructive: var(--danger);
-    --destructive-foreground: #FFFFFF;
+    --destructive: var(--danger-solid);
+    --destructive-foreground: var(--on-danger);
     --input: var(--border);
     --ring: var(--accent);
     --radius: 6px;
@@ -57,14 +66,20 @@
     --border-strong: #3F3F46;
     --text: #FAFAFA;
     --text-2: #A1A1AA;
-    --text-muted: #71717A;
+    --text-muted: #8E8E93;
     --accent: #10B981;
     --accent-hover: #34D399;
     --accent-text: #10B981;
     --on-accent: #09090B;
+    --success: #10B981;
     --warning: #F59E0B;
+    --on-warning: #09090B;
     --danger: #EF4444;
+    --danger-solid: #DC2626;
+    --danger-solid-hover: #B91C1C;
+    --on-danger: #FFFFFF;
     --info: #38BDF8;
+    --on-info: #09090B;
     --overlay: rgba(0, 0, 0, 0.6);
 
     /* Semantic / Framework mappings */
@@ -80,9 +95,8 @@
     --secondary-foreground: var(--text);
     --muted: var(--surface-2);
     --muted-foreground: var(--text-muted);
-    --accent-subtle: rgba(16, 185, 129, 0.12);
-    --destructive: var(--danger);
-    --destructive-foreground: var(--text);
+    --destructive: var(--danger-solid);
+    --destructive-foreground: var(--on-danger);
     --input: var(--border);
     --ring: var(--accent);
     --radius: 6px;
@@ -180,14 +194,21 @@ html.dark .brand-logo-box.has-brand-tint {
     --color-border-strong: var(--border-strong);
     --color-text: var(--text);
     --color-text-2: var(--text-2);
+    --color-text-3: var(--text-muted);
     --color-text-muted: var(--text-muted);
     --color-accent: var(--accent);
     --color-accent-hover: var(--accent-hover);
     --color-accent-text: var(--accent-text);
     --color-on-accent: var(--on-accent);
+    --color-success: var(--success);
     --color-warning: var(--warning);
+    --color-on-warning: var(--on-warning);
     --color-danger: var(--danger);
+    --color-danger-solid: var(--danger-solid);
+    --color-danger-solid-hover: var(--danger-solid-hover);
+    --color-on-danger: var(--on-danger);
     --color-info: var(--info);
+    --color-on-info: var(--on-info);
     --color-overlay: var(--overlay);
 
     --color-background: var(--bg);
@@ -202,8 +223,42 @@ html.dark .brand-logo-box.has-brand-tint {
     --color-secondary-foreground: var(--text);
     --color-muted: var(--surface-2);
     --color-muted-foreground: var(--text-muted);
-    --color-destructive: var(--danger);
-    --color-destructive-foreground: var(--text);
+    --color-destructive: var(--danger-solid);
+    --color-destructive-foreground: var(--on-danger);
+    --color-accent-foreground: var(--on-accent);
+    --color-input: var(--border);
+    --color-ring: var(--accent);
+
+    --color-sidebar: var(--surface-2);
+    --color-sidebar-foreground: var(--text);
+    --color-sidebar-primary: var(--accent);
+    --color-sidebar-primary-foreground: var(--on-accent);
+    --color-sidebar-accent: var(--surface-hover);
+    --color-sidebar-accent-foreground: var(--text);
+    --color-sidebar-border: var(--border);
+    --color-sidebar-ring: var(--accent);
+}
+
+@layer utilities {
+    /* QRIS Image Container Exception (DESIGN_SYSTEM 2.4, 6.21)
+       Kotak QRIS dan QR 2FA selalu berlatar putih di kedua mode agar dapat
+       dipindai kamera scanner dengan kontras optik maksimal. */
+    .qris-box {
+        background-color: #FFFFFF;
+    }
+
+    /* Logo Plate Exception (DESIGN_SYSTEM 2.1, 6.8, 6.10)
+       Plat logo pihak ketiga (metode pembayaran, logo bank/e-wallet/layanan)
+       berlatar putih di kedua mode agar logo berwarna gelap tetap terbaca jelas di mode gelap. */
+    .logo-plate {
+        background-color: #FFFFFF;
+        padding: 4px 8px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
 }
 
 @layer base {
@@ -228,6 +283,38 @@ html.dark .brand-logo-box.has-brand-tint {
     }
 }
 
+/* Inertia Progress Bar 2px (DESIGN_SYSTEM 6.39) */
+#nprogress .bar {
+    background: var(--accent) !important;
+    height: 2px !important;
+    position: fixed;
+    z-index: 99999;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+#nprogress .peg {
+    box-shadow: 0 0 10px var(--accent), 0 0 5px var(--accent) !important;
+}
+#nprogress .spinner {
+    display: none !important;
+}
+
+/* Skeleton Loading (DESIGN_SYSTEM 6.39) */
+@keyframes skeleton-pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.4;
+    }
+}
+
+.skeleton {
+    background-color: var(--surface-2);
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     ::before,
@@ -236,5 +323,9 @@ html.dark .brand-logo-box.has-brand-tint {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
+    }
+    .skeleton {
+        animation: none !important;
+        opacity: 0.8 !important;
     }
 }

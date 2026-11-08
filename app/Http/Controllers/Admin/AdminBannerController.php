@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\BannerStoreRequest;
 use App\Http\Requests\Admin\BannerUpdateRequest;
 use App\Models\Banner;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -50,11 +51,11 @@ class AdminBannerController extends Controller
         return Inertia::render('admin/banners/Create');
     }
 
-    public function store(BannerStoreRequest $request): RedirectResponse
+    public function store(BannerStoreRequest $request, ImageOptimizer $optimizer): RedirectResponse
     {
         $imagePath = null;
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('banners', 'public');
+            $path = $optimizer->optimizeBanner($request->file('image'), 'image');
             $imagePath = '/storage/' . $path;
         }
 
@@ -93,7 +94,7 @@ class AdminBannerController extends Controller
         ]);
     }
 
-    public function update(BannerUpdateRequest $request, Banner $banner): RedirectResponse
+    public function update(BannerUpdateRequest $request, Banner $banner, ImageOptimizer $optimizer): RedirectResponse
     {
         $data = [
             'title' => $request->validated('title'),
@@ -112,7 +113,7 @@ class AdminBannerController extends Controller
                 $oldPath = Str::after($banner->image_path, '/storage/');
                 Storage::disk('public')->delete($oldPath);
             }
-            $path = $request->file('image')->store('banners', 'public');
+            $path = $optimizer->optimizeBanner($request->file('image'), 'image');
             $data['image_path'] = '/storage/' . $path;
         }
 

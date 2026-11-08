@@ -45,8 +45,7 @@ class HandleInertiaRequests extends Middleware
         $ownedInvoices = $request->session()->get('owned_invoices', []);
         if (! empty($ownedInvoices) && is_array($ownedInvoices)) {
             $activeOrder = Order::whereIn('invoice_code', $ownedInvoices)
-                ->whereIn('status', [OrderStatus::PENDING, OrderStatus::VERIFYING])
-                ->where('payment_expires_at', '>', now())
+                ->countsAsActiveForBuyer()
                 ->orderByDesc('id')
                 ->first(['invoice_code', 'status']);
 
@@ -61,7 +60,7 @@ class HandleInertiaRequests extends Middleware
 
         $storeName = $setting->store_name ?: config('app.name', 'StreamPoint');
 
-        return [
+        $shared = [
             ...parent::share($request),
             'name' => $storeName,
             'auth' => [
@@ -74,8 +73,22 @@ class HandleInertiaRequests extends Middleware
                 'store_logo_path' => $setting->store_logo_path,
                 'accent_preset' => $setting->accent_preset ?? 'emerald',
             ],
+            'announcement' => ($setting->announcement_active && ! empty($setting->announcement_text)) ? [
+                'text' => $setting->announcement_text,
+                'url' => $setting->announcement_url,
+            ] : null,
+            'storeTagline' => $setting->store_tagline,
+            'deliveryEta' => $setting->delivery_eta,
+            'socialLinks' => $setting->social_links,
+            'customRequestEnabled' => (bool) $setting->custom_request_enabled,
             'pendingOrder' => $pendingOrder,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+
+        if ($request->user()?->is_admin) {
+            $shared['verifyingCount'] = fn () => Order::where('status', OrderStatus::VERIFYING)->count();
+        }
+
+        return $shared;
     }
 }

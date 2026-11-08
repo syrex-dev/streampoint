@@ -67,6 +67,7 @@ class DemoSeeder extends Seeder
                     'name' => $svc['name'],
                     'category' => $svc['category'],
                     'brand_color' => $svc['brand_color'],
+                    'has_warranty' => true,
                     'description' => $svc['description'],
                     'rules' => $svc['rules'],
                     'is_active' => true,
@@ -201,5 +202,22 @@ class DemoSeeder extends Seeder
                 'ends_at' => null,
             ]
         );
+
+        // Pengaturan demo: sampel pengumuman nonaktif, tagline, estimasi pengiriman, pesanan custom
+        \App\Models\Setting::current()->update([
+            'announcement_text' => 'Info: Layanan aktif normal setiap hari. Hubungi WhatsApp admin bila butuh bantuan cepat.',
+            'announcement_url' => '/#katalog',
+            'announcement_active' => false,
+            'store_tagline' => 'Sewa & Beli Akun Streaming',
+            'delivery_eta' => 'setelah verifikasi admin',
+            'min_sold_display' => 5,
+            'custom_request_enabled' => true,
+            'social_links' => [
+                'telegram' => 'https://t.me/streampoint',
+                'instagram' => 'https://instagram.com/streampoint',
+                'threads' => null,
+                'tiktok' => null,
+            ],
+        ]);
     }
 }

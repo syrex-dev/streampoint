@@ -9,10 +9,10 @@ use RuntimeException;
 class UniqueAmountGenerator
 {
     /**
-     * Generate unique random code between 1-999 such that basePrice + code
+     * Generate unique random code between 100-999 such that basePrice + code
      * is unique among active orders (PENDING not expired, or VERIFYING).
      */
-    public function generate(int $basePrice, ?int $ignoreOrderId = null): int
+    public function generate(int $basePrice, ?int $ignoreOrderId = null, bool $lock = false): int
     {
         $query = Order::where(function ($q) {
             $q->where('status', OrderStatus::VERIFYING)
@@ -22,6 +22,10 @@ class UniqueAmountGenerator
 
         if ($ignoreOrderId) {
             $query->where('id', '!=', $ignoreOrderId);
+        }
+
+        if ($lock) {
+            $query->lockForUpdate();
         }
 
         $activeAmounts = $query->pluck('total_amount')->all();

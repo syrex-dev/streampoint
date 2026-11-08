@@ -80,6 +80,30 @@ php artisan test --filter=CoreOrderLogicTest
 php artisan test --filter=AdminAccessAndOrdersTest
 ```
 
+### 3.1 Audit Token & Rasio Kontras Desain Sistem (`npm run check:*`)
+
+Untuk menjamin konsistensi visual dan kepatuhan penuh terhadap standar aksesibilitas WCAG 2.1 (DESIGN_SYSTEM Bagian 2 & 11), disediakan dua skrip audit frontend otomatis:
+
+```bash
+# 1. Audit Kepatuhan Token Warna (mendeteksi kelas palet langsung / token tak terdaftar)
+npm run check:tokens
+
+# 2. Audit Rasio Kontras Aksesibilitas WCAG 2.1 (semua mode & 4 preset tema)
+npm run check:contrast
+```
+
+**Karakteristik & Mekanisme Pemeriksaan:**
+- **`npm run check:tokens` (`scripts/check-tokens.mjs`):**
+  - Memindai seluruh berkas di `resources/js` dan `resources/css`.
+  - Memvalidasi bahwa tidak ada kelas palet warna langsung Tailwind (`bg-red-500`, `text-white`, `border-zinc-200`, dsb.) maupun arbitrary color `[#...]` di luar pengecualian resmi yang diizinkan (`.qris-box` dan `--overlay`).
+  - Memverifikasi secara dinamis terhadap `@theme` pada `app.css` bahwa setiap kelas utilitas warna (`bg-*`, `text-*`, `border-*`, `ring-*`, dsb.) terdaftar sebagai token desain resmi.
+  - Keluar dengan kode error (`exit 1`) jika ditemukan pelanggaran.
+- **`npm run check:contrast` (`scripts/check-contrast.mjs`):**
+  - Mengurai variabel CSS pada `app.css` untuk mode Terang (`:root`), Gelap (`.dark`), dan 4 preset tema (`emerald`, `teal`, `blue`, `mono`).
+  - Menghitung rasio kontras luminansi relatif WCAG 2.1 untuk 28 pasangan warna teks dan elemen UI (termasuk `text-muted` pada ketiga level surface, `on-warning` pada warning, `on-danger` pada danger-solid, `success` pada surface, dan batas switch nonaktif).
+  - Memverifikasi ambang batas: minimal **4.5:1** untuk teks normal (WCAG AA) dan minimal **3.0:1** untuk batas komponen UI interaktif.
+  - Menampilkan tabel hasil audit komprehensif dan gagal (`exit 1`) jika ada rasio di bawah ambang.
+
 ---
 
 ## 4. Struktur Folder Penting

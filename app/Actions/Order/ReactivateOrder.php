@@ -39,6 +39,16 @@ class ReactivateOrder
                 throw new InvalidStatusTransitionException($order->status->value, $targetStatus->value);
             }
 
+            // Reject if buyer already has another active order (PRD 4.4b, TECH_SPEC 12 #18)
+            $hasActive = Order::where('customer_phone', $order->customer_phone)
+                ->where('id', '!=', $order->id)
+                ->countsAsActiveForBuyer()
+                ->exists();
+
+            if ($hasActive) {
+                throw new \DomainException('Nomor WhatsApp pembeli ini masih memiliki pesanan aktif lain yang belum selesai.');
+            }
+
             // 1. Quota check for RENT
             if ($order->order_type === OrderType::RENT) {
                 $quotaDate = $order->quota_date ? $order->quota_date->toDateString() : now()->toDateString();

@@ -21,7 +21,10 @@ export const CopyButton: React.FC<CopyButtonProps> = ({
         try {
             await navigator.clipboard.writeText(String(copyTarget));
             setCopied(true);
-            setTimeout(() => setCopied(false), 1500);
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('copy-success'));
+            }
+            setTimeout(() => setCopied(false), 2000);
         } catch (err) {
             console.error('Failed to copy to clipboard', err);
         }

@@ -17,6 +17,7 @@ class PaymentMethod extends Model
         'account_number',
         'account_holder',
         'qris_image_path',
+        'logo_path',
         'instructions',
         'is_active',
         'sort_order',

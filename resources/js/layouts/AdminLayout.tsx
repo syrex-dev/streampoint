@@ -1,4 +1,4 @@
-import React, { ReactNode, useState, useEffect } from 'react';
+import React, { ReactNode, useState, useEffect, useRef } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import { 
     LayoutDashboard, 
@@ -12,37 +12,43 @@ import {
     Menu, 
     X, 
     ExternalLink,
-    CheckCircle2,
-    AlertCircle
+    User
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/shop/ThemeToggle';
+import { BrandMark } from '@/components/shop/BrandMark';
+import { FlashBanner } from '@/components/admin/FlashBanner';
 
 interface AdminLayoutProps {
     title?: string;
     children: ReactNode;
 }
 
-export function AdminLayout({ title, children }: AdminLayoutProps) {
+export function AdminLayout({ children }: AdminLayoutProps) {
     const { url } = usePage();
-    const { auth, flash, errors } = usePage<{
+    const { auth, flash, errors, verifyingCount } = usePage<{
         auth: { user: { name: string; email: string } | null };
-        flash?: { success?: string; error?: string };
+        flash?: { success?: string; error?: string; status?: string };
         errors: Record<string, string>;
+        verifyingCount?: number;
     }>().props;
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const drawerRef = useRef<HTMLDivElement>(null);
+    const menuButtonRef = useRef<HTMLButtonElement>(null);
 
-    // Close mobile menu on Escape
+    // Close mobile menu on Escape and manage focus
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape' && isMobileMenuOpen) {
                 setIsMobileMenuOpen(false);
+                menuButtonRef.current?.focus();
             }
         };
 
         if (isMobileMenuOpen) {
             document.addEventListener('keydown', handleKeyDown);
             document.body.style.overflow = 'hidden';
+            drawerRef.current?.focus();
         } else {
             document.body.style.overflow = '';
         }
@@ -53,14 +59,71 @@ export function AdminLayout({ title, children }: AdminLayoutProps) {
         };
     }, [isMobileMenuOpen]);
 
-    const navItems = [
-        { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, exact: true },
-        { label: 'Order', href: '/admin/orders', icon: ShoppingBag, exact: false },
-        { label: 'Produk', href: '/admin/products', icon: Package, exact: false },
-        { label: 'Stok Akun', href: '/admin/accounts', icon: KeyRound, exact: false },
-        { label: 'Metode Pembayaran', href: '/admin/payment-methods', icon: CreditCard, exact: false },
-        { label: 'Banner', href: '/admin/banners', icon: ImageIcon, exact: false },
-        { label: 'Pengaturan', href: '/admin/settings', icon: SettingsIcon, exact: false },
+    const navGroups = [
+        {
+            title: 'Operasional',
+            items: [
+                {
+                    label: 'Dashboard',
+                    href: '/admin',
+                    icon: LayoutDashboard,
+                    exact: true,
+                    badge: null,
+                },
+                {
+                    label: 'Order',
+                    href: '/admin/orders',
+                    icon: ShoppingBag,
+                    exact: false,
+                    badge: typeof verifyingCount === 'number' && verifyingCount > 0 ? verifyingCount : null,
+                },
+            ],
+        },
+        {
+            title: 'Katalog',
+            items: [
+                {
+                    label: 'Produk',
+                    href: '/admin/products',
+                    icon: Package,
+                    exact: false,
+                    badge: null,
+                },
+                {
+                    label: 'Stok Akun',
+                    href: '/admin/accounts',
+                    icon: KeyRound,
+                    exact: false,
+                    badge: null,
+                },
+                {
+                    label: 'Banner',
+                    href: '/admin/banners',
+                    icon: ImageIcon,
+                    exact: false,
+                    badge: null,
+                },
+            ],
+        },
+        {
+            title: 'Toko',
+            items: [
+                {
+                    label: 'Metode Pembayaran',
+                    href: '/admin/payment-methods',
+                    icon: CreditCard,
+                    exact: false,
+                    badge: null,
+                },
+                {
+                    label: 'Pengaturan',
+                    href: '/admin/settings',
+                    icon: SettingsIcon,
+                    exact: false,
+                    badge: null,
+                },
+            ],
+        },
     ];
 
     const isActive = (href: string, exact: boolean) => {
@@ -74,172 +137,248 @@ export function AdminLayout({ title, children }: AdminLayoutProps) {
         router.post('/logout');
     };
 
+    // Render Navigation Links
+    const renderNav = (closeOnClick = false) => (
+        <nav aria-label="Navigasi Admin" className="flex-1 space-y-5 px-3 py-4 overflow-y-auto">
+            {navGroups.map((group) => (
+                <div key={group.title} className="space-y-1">
+                    <div className="text-[11px] font-semibold tracking-wider text-text-2 uppercase px-3 py-1">
+                        {group.title}
+                    </div>
+                    <div className="space-y-0.5">
+                        {group.items.map((item) => {
+                            const active = isActive(item.href, item.exact);
+                            const Icon = item.icon;
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    aria-current={active ? 'page' : undefined}
+                                    onClick={() => {
+                                        if (closeOnClick) setIsMobileMenuOpen(false);
+                                    }}
+                                    className={`group flex items-center justify-between h-9 px-3 rounded-md text-sm font-medium transition-colors ${
+                                        active
+                                            ? 'bg-surface-2 text-text font-semibold border-l-2 border-accent shadow-xs'
+                                            : 'text-text-2 hover:text-text hover:bg-surface-hover'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                        <Icon className={`w-4 h-4 shrink-0 transition-colors ${
+                                            active ? 'text-accent-text' : 'text-text-2 group-hover:text-text'
+                                        }`} />
+                                        <span className="truncate">{item.label}</span>
+                                    </div>
+                                    {item.badge !== null && (
+                                        <span
+                                            className="px-1.5 py-0.5 text-[11px] font-mono font-semibold rounded-full bg-info/15 text-info border border-info/30"
+                                            title={`${item.badge} order menunggu verifikasi`}
+                                        >
+                                            {item.badge}
+                                        </span>
+                                    )}
+                                </Link>
+                            );
+                        })}
+                    </div>
+                </div>
+            ))}
+        </nav>
+    );
+
     return (
-        <div className="min-h-screen bg-bg text-text flex flex-col antialiased selection:bg-accent selection:text-on-accent transition-colors">
-            {/* Top Navigation Bar */}
-            <header className="sticky top-0 z-40 w-full h-12 bg-surface border-b border-border">
-                <div className="max-w-6xl mx-auto h-full px-4 flex items-center justify-between">
-                    {/* Left: Brand & Desktop Nav */}
-                    <div className="flex items-center gap-6">
-                        <Link 
-                            href="/admin" 
-                            className="flex items-center gap-2 font-bold tracking-tight text-text hover:text-accent-text text-sm transition-colors"
-                        >
-                            <span className="w-6 h-6 rounded bg-accent text-on-accent flex items-center justify-center text-xs font-mono font-bold">
-                                SP
-                            </span>
-                            <span>StreamPoint <span className="text-xs px-1.5 py-0.5 rounded bg-surface-2 text-text-2 border border-border font-normal">Admin</span></span>
-                        </Link>
+        <div className="min-h-screen bg-bg text-text flex flex-col lg:flex-row antialiased selection:bg-accent selection:text-on-accent transition-colors">
+            {/* Tautan Lompat ke Konten (Aksesibilitas) */}
+            <a
+                href="#admin-content"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-3 focus:py-1.5 focus:bg-surface focus:text-text focus:border focus:border-border focus:rounded-md focus:shadow-md text-xs font-semibold"
+            >
+                Lewati ke konten
+            </a>
 
-                        {/* Desktop Navigation */}
-                        <nav className="hidden md:flex items-center gap-1">
-                            {navItems.map((item) => {
-                                const active = isActive(item.href, item.exact);
-                                const Icon = item.icon;
-                                return (
-                                    <Link
-                                        key={item.href}
-                                        href={item.href}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                                            active
-                                                ? 'bg-surface-2 text-text font-semibold border border-border-strong'
-                                                : 'text-text-2 hover:text-text hover:bg-surface-hover'
-                                        }`}
-                                    >
-                                        <Icon className="w-3.5 h-3.5" />
-                                        <span>{item.label}</span>
-                                    </Link>
-                                );
-                            })}
-                        </nav>
-                    </div>
+            {/* Mobile Top Bar (56px) */}
+            <header className="lg:hidden sticky top-0 z-40 w-full h-14 bg-surface border-b border-border flex items-center justify-between px-4">
+                <div className="flex items-center gap-2.5 min-w-0">
+                    <button
+                        ref={menuButtonRef}
+                        type="button"
+                        onClick={() => setIsMobileMenuOpen(true)}
+                        className="p-1.5 text-text-2 hover:text-text hover:bg-surface-hover rounded-md transition-colors cursor-pointer"
+                        aria-label="Buka navigasi admin"
+                        aria-expanded={isMobileMenuOpen}
+                    >
+                        <Menu className="w-5 h-5" />
+                    </button>
+                    <Link href="/admin" className="flex items-center gap-2 min-w-0">
+                        <BrandMark
+                            variant="icon-text"
+                            showTagline={false}
+                            logoClassName="w-6 h-6 object-contain shrink-0"
+                            textClassName="text-sm font-bold text-text truncate tracking-tight"
+                        />
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-2 text-text-2 border border-border shrink-0">
+                            Admin
+                        </span>
+                    </Link>
+                </div>
 
-                    {/* Right: Actions */}
-                    <div className="flex items-center gap-2">
-                        <Link
-                            href="/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hidden sm:flex items-center gap-1 px-2.5 py-1 text-xs text-text-2 hover:text-text hover:bg-surface-hover rounded transition-colors"
-                            title="Buka Toko Publik"
-                        >
-                            <span>Toko</span>
-                            <ExternalLink className="w-3 h-3" />
-                        </Link>
-
-                        <ThemeToggle />
-
-                        <button
-                            type="button"
-                            onClick={handleLogout}
-                            className="hidden md:flex items-center gap-1 px-2.5 py-1.5 text-xs text-text-2 hover:text-danger hover:bg-surface-hover rounded transition-colors cursor-pointer"
-                            title="Keluar"
-                        >
-                            <LogOut className="w-3.5 h-3.5" />
-                            <span>Keluar</span>
-                        </button>
-
-                        {/* Mobile Menu Button */}
-                        <button
-                            type="button"
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            aria-label={isMobileMenuOpen ? 'Tutup menu' : 'Buka menu'}
-                            className="md:hidden p-1.5 rounded text-text-2 hover:text-text hover:bg-surface-hover cursor-pointer"
-                        >
-                            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                        </button>
-                    </div>
+                <div className="flex items-center gap-2 shrink-0">
+                    <ThemeToggle />
                 </div>
             </header>
 
-            {/* Mobile Drawer Navigation */}
+            {/* Mobile Drawer Navigation (<1024px) */}
             {isMobileMenuOpen && (
-                <div 
-                    className="fixed inset-0 z-50 md:hidden bg-overlay flex flex-col justify-start"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                >
-                    <div 
-                        className="bg-surface border-b border-border p-4 shadow-lg flex flex-col gap-3"
-                        onClick={(e) => e.stopPropagation()}
+                <div className="lg:hidden fixed inset-0 z-50 flex">
+                    {/* Backdrop */}
+                    <div
+                        className="fixed inset-0 bg-overlay backdrop-blur-xs transition-opacity"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        aria-hidden="true"
+                    />
+
+                    {/* Drawer Panel */}
+                    <div
+                        ref={drawerRef}
+                        tabIndex={-1}
+                        className="relative w-72 max-w-[85vw] bg-surface border-r border-border h-full flex flex-col z-50 shadow-2xl outline-none"
                     >
-                        <div className="flex items-center justify-between pb-2 border-b border-border">
-                            <div className="text-xs font-semibold text-text-2 uppercase">Menu Navigasi</div>
-                            <button
-                                type="button"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="p-1 rounded text-text-2 hover:text-text"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-
-                        <nav className="flex flex-col gap-1">
-                            {navItems.map((item) => {
-                                const active = isActive(item.href, item.exact);
-                                const Icon = item.icon;
-                                return (
-                                    <Link
-                                        key={item.href}
-                                        href={item.href}
-                                        onClick={() => setIsMobileMenuOpen(false)}
-                                        className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                                            active
-                                                ? 'bg-surface-2 text-text font-semibold border border-border-strong'
-                                                : 'text-text-2 hover:text-text hover:bg-surface-hover'
-                                        }`}
-                                    >
-                                        <Icon className="w-4 h-4" />
-                                        <span>{item.label}</span>
-                                    </Link>
-                                );
-                            })}
-
+                        {/* Drawer Header */}
+                        <div className="h-14 px-4 border-b border-border flex items-center justify-between shrink-0">
                             <Link
-                                href="/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-text-2 hover:text-text hover:bg-surface-hover"
+                                href="/admin"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="flex items-center gap-2 min-w-0"
                             >
-                                <ExternalLink className="w-4 h-4" />
-                                <span>Buka Toko Publik</span>
+                                <BrandMark
+                                    showTagline={false}
+                                    logoClassName="w-6 h-6 rounded-[6px] object-contain shrink-0"
+                                    textClassName="text-sm font-bold text-text truncate tracking-tight"
+                                />
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-2 text-text-2 border border-border shrink-0">
+                                    Admin
+                                </span>
                             </Link>
 
                             <button
                                 type="button"
-                                onClick={() => {
-                                    setIsMobileMenuOpen(false);
-                                    handleLogout();
-                                }}
-                                className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-danger hover:bg-surface-hover text-left cursor-pointer"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="p-1.5 text-text-2 hover:text-text hover:bg-surface-hover rounded-md transition-colors cursor-pointer"
+                                aria-label="Tutup navigasi"
                             >
-                                <LogOut className="w-4 h-4" />
-                                <span>Keluar</span>
+                                <X className="w-5 h-5" />
                             </button>
-                        </nav>
+                        </div>
+
+                        {/* Nav Items */}
+                        {renderNav(true)}
+
+                        {/* Drawer Footer */}
+                        <div className="p-3 border-t border-border bg-surface-2/40 space-y-1 shrink-0">
+                            <Link
+                                href="/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-between h-9 px-3 text-xs font-medium text-text-2 hover:text-text hover:bg-surface-hover rounded-md transition-colors"
+                            >
+                                <span>Lihat Toko</span>
+                                <ExternalLink className="w-3.5 h-3.5" />
+                            </Link>
+                            <Link
+                                href="/settings/profile"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="flex items-center gap-2 h-9 px-3 text-xs font-medium text-text-2 hover:text-text hover:bg-surface-hover rounded-md transition-colors"
+                            >
+                                <User className="w-4 h-4 text-text-2" />
+                                <span className="truncate">{auth?.user?.name || 'Akun Admin'}</span>
+                            </Link>
+                            <div className="pt-2 border-t border-border/50 flex items-center justify-between px-3">
+                                <ThemeToggle />
+                                <button
+                                    type="button"
+                                    onClick={handleLogout}
+                                    className="flex items-center gap-1.5 text-xs text-text-2 hover:text-danger p-1.5 rounded transition-colors cursor-pointer"
+                                    title="Keluar dari akun admin"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    <span>Keluar</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
 
+            {/* Desktop Fixed Sidebar (240px = w-60) */}
+            <aside className="hidden lg:flex flex-col w-60 h-screen sticky top-0 bg-surface border-r border-border shrink-0">
+                {/* Brand Header */}
+                <div className="h-14 px-4 border-b border-border flex items-center shrink-0">
+                    <Link href="/admin" className="flex items-center gap-2 min-w-0 w-full">
+                        <BrandMark
+                            variant="icon-text"
+                            showTagline={false}
+                            logoClassName="w-6 h-6 object-contain shrink-0"
+                            textClassName="text-sm font-bold text-text truncate tracking-tight"
+                        />
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-2 text-text-2 border border-border shrink-0">
+                            Admin
+                        </span>
+                    </Link>
+                </div>
+
+                {/* Nav Items */}
+                {renderNav(false)}
+
+                {/* Desktop Sidebar Footer */}
+                <div className="p-3 border-t border-border bg-surface-2/30 space-y-1 shrink-0">
+                    <Link
+                        href="/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between h-9 px-3 text-xs font-medium text-text-2 hover:text-text hover:bg-surface-hover rounded-md transition-colors"
+                        title="Buka etalase toko di tab baru"
+                    >
+                        <span>Lihat Toko</span>
+                        <ExternalLink className="w-3.5 h-3.5 text-text-2" />
+                    </Link>
+                    <Link
+                        href="/settings/profile"
+                        className={`flex items-center gap-2 h-9 px-3 text-xs font-medium rounded-md transition-colors ${
+                            url.startsWith('/settings')
+                                ? 'bg-surface-2 text-text font-semibold border border-border-strong'
+                                : 'text-text-2 hover:text-text hover:bg-surface-hover'
+                        }`}
+                        title="Pengaturan akun & keamanan"
+                    >
+                        <User className="w-4 h-4 text-text-2 shrink-0" />
+                        <span className="truncate">{auth?.user?.name || 'Akun Admin'}</span>
+                    </Link>
+                    <div className="pt-2 border-t border-border/50 flex items-center justify-between px-2">
+                        <ThemeToggle />
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="flex items-center gap-1.5 text-xs text-text-2 hover:text-danger p-1.5 rounded transition-colors cursor-pointer"
+                            title="Keluar dari sesi admin"
+                        >
+                            <LogOut className="w-4 h-4 shrink-0" />
+                            <span>Keluar</span>
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
             {/* Main Content Area */}
-            <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-5">
-                {/* Flash Messages */}
-                {flash?.success && (
-                    <div className="mb-4 p-3 bg-surface border border-success/40 text-text rounded-md flex items-center gap-2.5 text-xs">
-                        <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
-                        <span>{flash.success}</span>
-                    </div>
-                )}
-                {(flash?.error || errors?.action) && (
-                    <div className="mb-4 p-3 bg-surface border border-danger/40 text-text rounded-md flex items-center gap-2.5 text-xs">
-                        <AlertCircle className="w-4 h-4 text-danger shrink-0" />
-                        <span>{flash?.error || errors?.action}</span>
-                    </div>
-                )}
+            <main id="admin-content" className="flex-1 min-w-0 p-4 lg:p-6 max-w-6xl w-full mx-auto space-y-6">
+                {/* Flash Banner for feedback alerts */}
+                <FlashBanner
+                    success={flash?.success}
+                    error={flash?.error || (errors && Object.keys(errors).length > 0 ? Object.values(errors)[0] : null)}
+                    status={flash?.status}
+                />
 
                 {children}
             </main>
         </div>
     );
 }
-
-export default AdminLayout;

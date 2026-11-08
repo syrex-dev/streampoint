@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -449,5 +450,92 @@ class BannerAndStoreIdentityTest extends TestCase
         $responseTeal = $this->get('/');
         $responseTeal->assertOk();
         $this->assertStringContainsString('data-accent="teal"', $responseTeal->getContent());
+    }
+
+    public function test_admin_can_configure_telegram_settings_in_panel(): void
+    {
+        $response = $this->actingAs($this->adminUser)->post('/admin/settings', [
+            'store_name' => 'StreamPoint Store',
+            'accent_preset' => 'emerald',
+            'max_daily_rent_quota' => 10,
+            'admin_whatsapp' => '081234567890',
+            'business_hours' => '09:00 - 21:00',
+            'telegram_active' => 1,
+            'telegram_bot_token' => '123456:BOT_TOKEN_SECRET_ABC',
+            'telegram_chat_id' => "7423806051\n-100987654321",
+        ]);
+
+        $response->assertSessionHasNoErrors();
+
+        $setting = Setting::current();
+        $this->assertTrue($setting->telegram_active);
+        $this->assertEquals('123456:BOT_TOKEN_SECRET_ABC', $setting->telegram_bot_token);
+        $this->assertEquals("7423806051\n-100987654321", $setting->telegram_chat_id);
+
+        // Verify token is encrypted in raw database storage
+        $raw = \Illuminate\Support\Facades\DB::table('settings')->where('id', $setting->id)->value('telegram_bot_token');
+        $this->assertNotEquals('123456:BOT_TOKEN_SECRET_ABC', $raw);
+        $this->assertNotEmpty($raw);
+    }
+
+    public function test_admin_can_detect_telegram_chat_id(): void
+    {
+        Http::fake([
+            'https://api.telegram.org/bot*/getUpdates' => Http::response([
+                'ok' => true,
+                'result' => [
+                    [
+                        'update_id' => 1,
+                        'message' => [
+                            'message_id' => 10,
+                            'chat' => [
+                                'id' => 7423806051,
+                                'first_name' => 'Admin',
+                                'username' => 'admin_user',
+                                'type' => 'private',
+                            ],
+                            'text' => '/start',
+                        ],
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $response = $this->actingAs($this->adminUser)->postJson('/admin/settings/detect-telegram-chat-id', [
+            'bot_token' => '123456:TEST_TOKEN',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+            'chats' => [
+                [
+                    'id' => '7423806051',
+                    'name' => 'Admin',
+                    'username' => '@admin_user',
+                    'type' => 'private',
+                ],
+            ],
+        ]);
+    }
+
+    public function test_admin_can_send_test_telegram_message(): void
+    {
+        Http::fake([
+            'https://api.telegram.org/bot*/sendMessage' => Http::response([
+                'ok' => true,
+                'result' => ['message_id' => 99],
+            ], 200),
+        ]);
+
+        $response = $this->actingAs($this->adminUser)->postJson('/admin/settings/test-telegram', [
+            'bot_token' => '123456:TEST_TOKEN',
+            'chat_id' => '7423806051',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+        ]);
     }
 }

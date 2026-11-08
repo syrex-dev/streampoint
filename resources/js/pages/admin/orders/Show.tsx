@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { AdminLayout } from '@/layouts/AdminLayout';
+import { PageHeader } from '@/components/admin/PageHeader';
 import { 
     ArrowLeft, 
     Check, 
@@ -198,19 +199,19 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
         switch (status) {
             case 'PENDING':
                 return (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-surface-2 text-text border border-border">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-warning/10 text-warning border border-warning/30">
                         Menunggu Bayar
                     </span>
                 );
             case 'VERIFYING':
                 return (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-info/15 text-info border border-info/40">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-info/10 text-info border border-info/30">
                         Diverifikasi
                     </span>
                 );
             case 'PAID':
                 return (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-success/15 text-success border border-success/40">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-accent/10 text-accent-text border border-accent/35">
                         Lunas
                     </span>
                 );
@@ -222,7 +223,7 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
                 );
             case 'CANCELLED':
                 return (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-danger/15 text-danger border border-danger/40">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-danger/10 text-danger border border-danger/30">
                         Dibatalkan
                     </span>
                 );
@@ -719,7 +720,7 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
                                 type="button"
                                 onClick={handleReject}
                                 disabled={isSubmitting || rejectReason.trim().length < 3}
-                                className="px-4 py-1.5 bg-danger text-white text-xs font-semibold rounded hover:bg-danger/90 transition-colors disabled:opacity-50 cursor-pointer"
+                                className="px-4 py-1.5 bg-danger-solid text-on-danger text-xs font-semibold rounded hover:bg-danger-solid-hover transition-colors disabled:opacity-50 cursor-pointer"
                             >
                                 {isSubmitting ? 'Memproses...' : 'Tolak Pesanan'}
                             </button>
@@ -835,7 +836,7 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
                                 type="button"
                                 onClick={handleReplaceAccount}
                                 disabled={isSubmitting || replaceReason.trim().length < 3}
-                                className="px-4 py-1.5 bg-warning text-black text-xs font-semibold rounded hover:bg-warning/90 transition-colors disabled:opacity-50 cursor-pointer"
+                                className="px-4 py-1.5 bg-warning text-on-warning text-xs font-semibold rounded hover:bg-warning/90 transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
                             >
                                 {isSubmitting ? 'Memproses...' : 'Ganti Akun Sekarang'}
                             </button>

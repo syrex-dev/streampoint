@@ -21,6 +21,7 @@ class PaymentMethodFactory extends Factory
             'account_number' => null,
             'account_holder' => 'StreamPoint Store',
             'qris_image_path' => null,
+            'logo_path' => null,
             'instructions' => 'Scan QRIS untuk melakukan pembayaran.',
             'is_active' => true,
             'sort_order' => 0,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Order\CreateOrder;
 use App\Actions\Order\CreateOrderData;
+use App\Exceptions\ActiveOrderExistsException;
 use App\Exceptions\OutOfStockException;
 use App\Exceptions\QuotaFullException;
 use App\Http\Requests\CheckoutRequest;
@@ -39,7 +40,22 @@ class CheckoutController extends Controller
                 phone: (string) $request->validated('customer_phone'),
                 paymentMethodId: (int) $request->validated('payment_method_id'),
                 note: $request->validated('customer_note'),
+                ownedInvoices: $request->session()->get('owned_invoices', []),
             ));
+        } catch (ActiveOrderExistsException $e) {
+            if ($e->ownedBySession) {
+                $msg = $e->isVerifying
+                    ? "Pesanan {$e->invoiceCode} sedang diverifikasi admin. Kamu bisa memesan lagi setelah selesai."
+                    : "Kamu masih punya pesanan yang belum selesai ({$e->invoiceCode}). Selesaikan pembayaran atau batalkan dulu.";
+            } else {
+                $msg = $e->isVerifying
+                    ? 'Nomor ini masih punya pesanan yang sedang diverifikasi admin. Tunggu sampai selesai atau gunakan Cek Pesanan.'
+                    : 'Nomor ini masih punya pesanan yang belum selesai. Tunggu sampai selesai atau gunakan Cek Pesanan.';
+            }
+
+            throw ValidationException::withMessages([
+                'customer_phone' => $msg,
+            ]);
         } catch (QuotaFullException) {
             throw ValidationException::withMessages([
                 'variant_id' => 'Kuota sewa hari ini sudah penuh. Silakan coba lagi besok pukul 00:00 WIB.',

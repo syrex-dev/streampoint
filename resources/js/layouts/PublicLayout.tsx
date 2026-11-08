@@ -8,11 +8,18 @@ import { FloatingWhatsApp } from '@/components/shop/FloatingWhatsApp';
 import { SharedSettings, SharedPendingOrder } from '@/types/shop';
 
 import { BrandMark } from '@/components/shop/BrandMark';
+import { AnnouncementBar } from '@/components/shop/AnnouncementBar';
 
 interface PublicLayoutProps {
     storeName?: string;
     currentInvoiceCode?: string;
     isProductPage?: boolean;
+    paymentMethods?: Array<{
+        id: number;
+        type: string;
+        label: string;
+        logo_url?: string | null;
+    }>;
     children: ReactNode;
 }
 
@@ -20,11 +27,19 @@ export function PublicLayout({
     storeName,
     currentInvoiceCode,
     isProductPage = false,
+    paymentMethods = [],
     children,
 }: PublicLayoutProps) {
-    const { settings, pendingOrder } = usePage<{
+    const { settings, pendingOrder, announcement, socialLinks } = usePage<{
         settings?: SharedSettings;
         pendingOrder?: SharedPendingOrder;
+        announcement?: { text: string; url?: string | null } | null;
+        socialLinks?: {
+            telegram?: string | null;
+            instagram?: string | null;
+            threads?: string | null;
+            tiktok?: string | null;
+        } | null;
     }>().props;
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -67,6 +82,9 @@ export function PublicLayout({
                 Lewati ke konten
             </a>
 
+            {/* Announcement Bar (32px, above header, scrolls with page) */}
+            <AnnouncementBar announcement={announcement ?? settings?.announcement} />
+
             {/* Sticky Header 56px */}
             <header className="h-14 border-b border-border bg-bg/95 backdrop-blur-none shrink-0 z-30 sticky top-0 transition-colors">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between gap-4">
@@ -74,9 +92,9 @@ export function PublicLayout({
                     <div className="flex items-center gap-6">
                         <Link
                             href="/"
-                            className="rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                            className="rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-accent inline-flex items-center"
                         >
-                            <BrandMark />
+                            <BrandMark variant="full" />
                         </Link>
 
                         {/* Desktop Anchor Navigation */}
@@ -170,12 +188,12 @@ export function PublicLayout({
             <PendingOrderBanner order={pendingOrder} currentInvoiceCode={currentInvoiceCode} />
 
             {/* Main Content Area */}
-            <main id="main-content" className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+            <main id="main-content" className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-3.5 sm:py-4">
                 {children}
             </main>
 
             {/* Footer */}
-            <Footer storeName={storeName} settings={settings} />
+            <Footer storeName={storeName} settings={settings} socialLinks={socialLinks} paymentMethods={paymentMethods} />
 
             {/* Floating WhatsApp Help Button */}
             <FloatingWhatsApp phone={settings?.admin_whatsapp} isProductPage={isProductPage} />

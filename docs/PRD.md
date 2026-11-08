@@ -94,6 +94,19 @@ Setiap pesanan yang sukses harus mengirim kredensial nyata, sehingga sistem haru
 - **Pembayaran terlambat:** jika pembeli sudah transfer tetapi order telah `EXPIRED`, admin dapat melakukan **Aktifkan Kembali** selama kuota dan stok masih tersedia. Jika tidak tersedia, admin menangani refund secara manual di luar sistem.
 - Order `VERIFYING` **tidak** kedaluwarsa otomatis (pembeli sudah bayar). Admin diingatkan lewat notifikasi jika ada order `VERIFYING` lebih dari 30 menit.
 
+### 4.4b Satu Pesanan Aktif per Pembeli
+
+Selama pembeli masih punya pesanan yang **belum selesai dibayar**, ia **tidak boleh membuat pesanan baru**, baik untuk layanan yang sama maupun layanan lain. Tujuannya mencegah satu orang menahan kuota atau stok dengan banyak pesanan.
+
+- **Pesanan aktif (memblokir):** `PENDING` yang belum melewati `payment_expires_at`, dan `VERIFYING`.
+- **Tidak memblokir:** `PAID`, `EXPIRED` (termasuk `PENDING` yang waktunya sudah lewat walau scheduler belum berjalan), dan `CANCELLED`. Setelah pesanan lunas atau berakhir, pembeli bebas memesan lagi.
+- **Siapa yang dianggap "pembeli yang sama"** (tanpa login): (1) nomor WhatsApp yang sama setelah dinormalisasi (`0812…`, `+62812…`, `62812…` dianggap sama), atau (2) sesi browser yang sama yang masih memegang pesanan aktif walau nomornya diganti.
+- **Pembatalan oleh pembeli:** pembeli bisa menekan **Batalkan Pesanan** pada invoice yang masih `PENDING` (kuota dan unit akun langsung dilepas). Pesanan `VERIFYING` tidak bisa dibatalkan pembeli, harus diselesaikan atau ditolak admin.
+- **Pesan penolakan:** jika pesanan aktif milik sesi yang sama, tampilkan kode invoice dan tombol **Lanjutkan Pembayaran**. Jika hanya cocok lewat nomor WA (bukan sesi ini), tampilkan pesan umum **tanpa kode invoice** (mencegah orang lain membaca pesanan milik nomor tertentu).
+- **Tombol checkout** dinonaktifkan di antarmuka dengan alasan tertulis ("Selesaikan pesanan INV-… terlebih dahulu"). Server tetap menjadi penentu akhir.
+- **Admin:** "Aktifkan Kembali" pada order `EXPIRED` juga ditolak jika nomor yang sama masih punya pesanan aktif lain.
+- **Batasan jujur:** tanpa akun, aturan ini bisa dihindari dengan nomor lain dan browser lain. Karena itu aturan ini bukan satu-satunya pengaman: batas bayar 15 menit, rate limit checkout, dan kuota global tetap berlaku.
+
 ### 4.5 Siklus Status Order
 
 | Dari | Ke | Pemicu |
@@ -154,14 +167,20 @@ Teks berikut ditampilkan di kolom kiri halaman detail dan **dapat diedit admin p
 - **Navigasi cepat:** tautan **Cek Pesanan** di header.
 - **Filter katalog:** Tipe (Semua/Sewa/Beli) dan Kategori, dijalankan di sisi klien tanpa reload.
 - **Banner pesanan belum selesai:** jika sesi pengunjung punya order `PENDING`/`VERIFYING`, tampil tautan **Lanjutkan** ke invoice di semua halaman publik.
-- **Seksi tambahan di bawah katalog** (urutan): **Cara Pesan** (5 langkah), **Metode Pembayaran** (dari metode aktif), **FAQ** (akordeon), **Footer** (tautan, WhatsApp admin, jam operasional, disclaimer non-afiliasi), dan **tombol bantuan WhatsApp** mengambang.
+- **Seksi tambahan di bawah katalog** (urutan): **Cara Pesan** (5 langkah), **Strip Bantuan** yang membuka modal Tanya Jawab (isi FAQ di 5.6), **Footer** (juga memuat logo metode pembayaran aktif; pilihan lengkap metode tampil di Langkah 3 checkout dan di invoice) (tautan, WhatsApp admin, jam operasional, disclaimer non-afiliasi), dan **tombol bantuan WhatsApp** mengambang.
 - **Header:** tautan jangkar (Layanan, Cara Pesan, FAQ), Cek Pesanan, pengalih tema Terang/Gelap/Sistem. Menu hamburger di mobile.
 - **Pita intro** ringkas (judul + satu kalimat) boleh ada di atas bar kuota, tanpa hero besar. Bar kuota dan produk tetap harus cepat terlihat tanpa scroll (detail di `DESIGN_SYSTEM.md` Bagian 1).
 - Referensi susunan halaman: seakun.id (pola saja, bukan menyalin teks atau aset).
 - **Banner** yang dapat diedit admin (judul, subjudul, tombol, gambar opsional, jadwal) tampil di atas bar kuota. Tanpa banner aktif, tampil pita intro.
 - **Kartu produk** menampilkan logo layanan yang diunggah admin dengan tint warna merek.
 - **Seksi "Kenapa Beli di Sini"** setelah katalog (maks. 6 poin, hanya klaim yang benar sesuai kebijakan toko).
-- **Identitas toko** (nama, logo, preset warna aksen) diatur admin dan tampil di header, footer, dan judul halaman.
+- **Identitas toko** (nama, logo, tagline, preset warna aksen) diatur admin dan tampil di header, footer, dan judul halaman.
+- **Katalog bergaya marketplace** (referensi pola: orvaki.com): kartu layanan dengan gambar sampul, badge `Baru`/`Terlaris`, chip `Sewa`/`Beli`/`Garansi`, dan jumlah terjual hanya dari data nyata; pencarian, filter, dan pengurutan di sisi klien; layanan yang stoknya habis dipisah ke bagian "Sedang Kosong".
+- **Bar pengumuman** opsional di atas header, **ajakan pesanan custom** opsional sebelum footer, dan **footer** berisi tautan sosial, jam kerja, kontak, dan metode pembayaran.
+- Tidak ada rating, jumlah dilihat, atau angka penjualan yang dikarang. Rating dan testimoni baru hadir bersama fitur ulasan asli (Fase 7).
+- **Hero fungsional** (menggantikan pita intro saat tidak ada banner): judul, tombol Lihat Layanan dan Cek Pesanan, panel status nyata (slot sewa, layanan tersedia, estimasi verifikasi bila datanya ada), dan mosaik logo layanan.
+- **Statistik nyata** (opsional) di seksi keunggulan: jumlah pesanan selesai, layanan aktif, dan median waktu verifikasi. Hanya tampil bila memenuhi ambang yang diatur pemilik toko.
+- **Gerak halus fungsional:** bilah progres navigasi, skeleton saat memuat, dan toast salin. Tanpa animasi dekoratif.
 
 ### 5.2 Detail Layanan & Checkout 4 Langkah (`/p/{slug}`)
 
@@ -176,6 +195,8 @@ Desktop memakai 2 kolom (kiri: info layanan, syarat sewa/garansi; kanan: 4 langk
 
 Jika kuota habis tepat saat tombol ditekan, tampilkan pesan error inline dan kunci kembali paket sewa. Jangan pindah halaman.
 
+**Halaman layanan (versi 2):** header bersampul dengan logo, chip garansi dan ketersediaan, paket sewa menampilkan perkiraan harga per hari (dihitung dari harga dan durasi) dan penanda "Paling hemat per hari" bila ada ≥ 2 paket sewa, ringkasan pesanan menempel di desktop, dan penanda langkah 1 sampai 4 yang berubah centang saat terisi.
+
 ### 5.3 Invoice (`/invoice/{invoiceCode}`)
 
 Tampilan menyesuaikan status:
@@ -187,6 +208,8 @@ Tampilan menyesuaikan status:
 | `PAID` | Area pengiriman akun: Email/Username, Password, Profil, PIN (masing-masing dengan tombol Salin), `accessStartsAt`, `accessExpiresAt`, hitung mundur sisa masa sewa, aturan singkat. |
 | `EXPIRED` | Info waktu habis, tombol **Buat Pesanan Baru**, petunjuk jika sudah terlanjur transfer (hubungi admin dengan kode invoice). |
 | `CANCELLED` | Alasan pembatalan dari admin dan kontak admin. |
+
+**Penyempurnaan invoice (v2):** indikator langkah (Dibuat, Dibayar, Diverifikasi, Selesai) di semua status, progress bar waktu pembayaran, toast "Tersalin", tiga langkah singkat cara bayar, dan tautan Hubungi Admin via WhatsApp yang membawa kode invoice. Stepper yang sama dipakai pada hasil Cek Transaksi.
 
 ### 5.4 Cek Transaksi (`/cek-pesanan`)
 
@@ -200,6 +223,7 @@ Dua mode: **Kode Invoice + Nomor WA** (membuka invoice lengkap), atau **Nomor WA
 - **Produk & Varian:** CRUD layanan, varian, harga, aturan sewa/garansi.
 - **Stok Akun:** tambah satu per satu atau impor massal (satu baris per unit: `email|password|profil|pin`), lihat status tiap unit.
 - **Metode Pembayaran:** kelola rekening, e-wallet, dan gambar QRIS.
+- **Tampilan katalog:** per layanan: gambar sampul, logo, warna merek, dan penanda `Garansi`. Pengaturan: bar pengumuman, tagline, estimasi pengiriman (teks bebas, mis. "setelah verifikasi admin"), ambang tampil jumlah terjual, ajakan pesanan custom, dan tautan sosial (Telegram, Instagram, Threads, TikTok). Per metode pembayaran: logo opsional.
 - **Banner:** CRUD banner (judul, subjudul, label dan tautan tombol, gambar, nada warna, urutan, jadwal tayang, aktif/nonaktif). Maksimal 5 banner aktif.
 - **Pengaturan:** kuota default, override kuota per tanggal, identitas toko (nama, logo, preset warna aksen), tombol uji notifikasi Telegram.
 
@@ -245,6 +269,12 @@ Tulis ulang dengan kata-kata sendiri dan sesuaikan dengan kebijakan toko. Jangan
 | FR-13 | Bukti bayar privat | File bukti bayar hanya dapat dibuka admin. |
 | FR-14 | Override kuota | Admin dapat mengubah batas kuota untuk tanggal tertentu, dan bar kuota di storefront mencerminkannya. |
 | FR-15 | Audit | Setiap perubahan status tercatat (siapa, kapan, dari, ke, catatan). |
+| FR-16 | Satu pesanan aktif per pembeli | Dengan 1 order `PENDING` (belum expired) atau `VERIFYING` untuk sebuah nomor WA, pembuatan order baru dengan nomor itu (layanan sama atau berbeda) ditolak server. Setelah order tersebut `PAID`, `EXPIRED`, atau `CANCELLED`, pembuatan order baru berhasil. |
+| FR-17 | Pembeli memblokir lewat sesi | Sesi yang memegang order aktif tidak bisa membuat order baru walau memakai nomor WA lain. |
+| FR-18 | Privasi pesan penolakan | Kode invoice pada pesan penolakan hanya ditampilkan jika order itu milik sesi yang sama. |
+| FR-19 | Batalkan oleh pembeli | Pemilik invoice `PENDING` bisa membatalkan. Kuota dan unit akun dilepas, dan status `CANCELLED` tercatat dengan aktor `buyer`. Order `VERIFYING`/`PAID` tidak bisa dibatalkan pembeli. |
+| FR-20 | Konkurensi | Dua permintaan checkout bersamaan dengan nomor yang sama: tepat satu berhasil. |
+| FR-21 | Idempotensi tidak terblokir | Pengiriman ulang request yang sama (`idempotency_key` sama) mengembalikan invoice yang sama, bukan error pesanan aktif. |
 
 ## 7. Kasus Tepi (Edge Cases)
 
@@ -258,6 +288,10 @@ Tulis ulang dengan kata-kata sendiri dan sesuaikan dengan kebijakan toko. Jangan
 | Telegram API down | Job notifikasi diulang otomatis. Kegagalan dicatat di log, order tidak terpengaruh. |
 | Masa sewa berakhir | Invoice menampilkan "Masa sewa berakhir". Kredensial disembunyikan. Unit sewa kembali `AVAILABLE`. |
 | Nomor WA format tidak standar (`08..`, `+62..`, spasi) | Dinormalisasi otomatis ke `628..`. |
+| Pembeli mencoba memesan lagi saat pesanan sebelumnya belum dibayar | Ditolak dengan pesan jelas dan tautan **Lanjutkan Pembayaran** (jika sesi sama). Pembeli bisa membatalkan pesanan `PENDING` agar bisa memesan paket lain. |
+| Pembeli mengganti nomor WA untuk memesan lagi di browser yang sama | Tetap ditolak karena sesi masih memegang pesanan aktif. |
+| Pesanan `PENDING` sudah lewat 15 menit tetapi scheduler belum berjalan | Tidak memblokir. Status dihitung dari `payment_expires_at`, bukan menunggu cron. |
+| Admin mengaktifkan kembali order expired padahal nomor itu punya pesanan aktif lain | Ditolak dengan pesan jelas. |
 
 ## 8. Kebutuhan Non-Fungsional
 

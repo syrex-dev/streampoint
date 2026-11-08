@@ -58,15 +58,20 @@ class ProductController extends Controller
                 'instructions' => $pm->instructions,
             ]);
 
+        $setting = \App\Models\Setting::current();
+
         return Inertia::render('product/Show', [
-            'storeName' => \App\Models\Setting::current()->store_name ?: config('app.name', 'StreamPoint'),
+            'storeName' => $setting->store_name ?: config('app.name', 'StreamPoint'),
+            'deliveryEta' => $setting->delivery_eta,
             'product' => [
                 'id' => $product->id,
                 'slug' => $product->slug,
                 'name' => $product->name,
                 'category' => $product->category,
                 'thumbnail_path' => $product->thumbnail_path,
+                'cover_path' => $product->cover_path,
                 'brand_color' => $product->brand_color && preg_match('/^#[0-9A-Fa-f]{6}$/', $product->brand_color) ? $product->brand_color : null,
+                'has_warranty' => (bool) $product->has_warranty,
                 'description' => $product->description,
                 'rules' => $product->rules,
                 'available_rent_stock' => $rentStock,

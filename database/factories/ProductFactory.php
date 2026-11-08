@@ -26,6 +26,8 @@ class ProductFactory extends Factory
             'is_active' => true,
             'sort_order' => 0,
             'brand_color' => null,
+            'cover_path' => null,
+            'has_warranty' => false,
         ];
     }
 }

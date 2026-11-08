@@ -61,13 +61,19 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
     // Color logic: text (> 3 min), warning (<= 3 min), danger (<= 1 min)
     let colorClass = 'text-text';
     let borderClass = 'border-border';
+    let progressBg = 'bg-accent';
+
     if (secondsRemaining <= 60) {
         colorClass = 'text-danger';
         borderClass = 'border-danger/40';
+        progressBg = 'bg-danger';
     } else if (secondsRemaining <= 180) {
         colorClass = 'text-warning';
         borderClass = 'border-warning/40';
+        progressBg = 'bg-warning';
     }
+
+    const progressPercent = Math.min(100, Math.max(0, (secondsRemaining / 900) * 100));
 
     return (
         <div
@@ -83,6 +89,14 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
                 aria-label={`Sisa waktu pembayaran ${minutes} menit ${seconds} detik`}
             >
                 {formattedMinutes}:{formattedSeconds}
+            </div>
+
+            {/* 4px Progress Bar with threshold colors (DESIGN_SYSTEM 6.18 & 6.37) */}
+            <div className="w-full h-1 bg-surface-2 rounded-full overflow-hidden mt-3 max-w-xs mx-auto">
+                <div
+                    className={`h-full rounded-full transition-all duration-300 ${progressBg}`}
+                    style={{ width: `${progressPercent}%` }}
+                />
             </div>
 
             <p className="text-xs text-text-muted mt-2">

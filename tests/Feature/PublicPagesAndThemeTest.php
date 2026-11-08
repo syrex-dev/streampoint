@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AccountStatus;
 use App\Enums\OrderStatus;
 use App\Enums\OrderType;
 use App\Models\Order;
 use App\Models\PaymentMethod;
 use App\Models\Product;
+use App\Models\ProductAccount;
 use App\Models\ProductVariant;
 use App\Models\Setting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -207,6 +209,13 @@ class PublicPagesAndThemeTest extends TestCase
             'price' => 15000,
             'type' => OrderType::BUY->value,
             'is_active' => true,
+        ]);
+
+        ProductAccount::create([
+            'product_id' => $product->id,
+            'kind' => OrderType::BUY,
+            'status' => AccountStatus::AVAILABLE,
+            'credential' => 'test_user | test_pass',
         ]);
 
         $response = $this->get('/');

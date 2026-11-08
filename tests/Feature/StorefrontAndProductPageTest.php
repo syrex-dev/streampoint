@@ -186,7 +186,7 @@ class StorefrontAndProductPageTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('storefront/Index')
-            ->has('products.0', fn (Assert $item) => $item
+            ->has('outOfStockProducts.0', fn (Assert $item) => $item
                 ->where('status', 'out_of_stock')
                 ->where('status_label', 'Habis')
                 ->where('available_rent_stock', 0)

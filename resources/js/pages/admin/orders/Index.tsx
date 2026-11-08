@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { AdminLayout } from '@/layouts/AdminLayout';
+import { PageHeader } from '@/components/admin/PageHeader';
 import { 
     Search, 
     Filter, 
@@ -106,7 +107,7 @@ export default function OrdersIndex({ orders, filters, statuses }: OrdersIndexPr
         switch (status) {
             case 'PENDING':
                 return (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-surface-2 text-text border border-border">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-warning/10 text-warning border border-warning/30">
                         Menunggu Bayar
                     </span>
                 );
@@ -118,7 +119,7 @@ export default function OrdersIndex({ orders, filters, statuses }: OrdersIndexPr
                 );
             case 'PAID':
                 return (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-success/10 text-success border border-success/30">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-accent/10 text-accent-text border border-accent/35">
                         Lunas
                     </span>
                 );
@@ -144,15 +145,10 @@ export default function OrdersIndex({ orders, filters, statuses }: OrdersIndexPr
             <Head title="Kelola Order - Admin" />
 
             <div className="space-y-4">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-border">
-                    <div>
-                        <h1 className="text-lg font-bold tracking-tight text-text">Daftar Pesanan</h1>
-                        <p className="text-xs text-text-2">
-                            Total {orders.total} pesanan tercatat. Pesanan menunggu verifikasi diprioritaskan di atas.
-                        </p>
-                    </div>
-                </div>
+                <PageHeader
+                    title="Daftar Pesanan"
+                    description={`Total ${orders.total} pesanan tercatat. Pesanan menunggu verifikasi diprioritaskan di atas.`}
+                />
 
                 {/* Filters & Search */}
                 <div className="bg-surface border border-border rounded-md p-3 space-y-3">
@@ -400,42 +396,79 @@ export default function OrdersIndex({ orders, filters, statuses }: OrdersIndexPr
                                     </div>
                                     <div className="flex items-center gap-1">
                                         {orders.links.map((link, idx) => {
-                                            if (link.label.includes('Previous') || link.label.includes('&laquo;')) {
+                                            const isPrev = idx === 0 || link.label.toLowerCase().includes('prev') || link.label.includes('&laquo;') || link.label.includes('pagination.previous');
+                                            const isNext = idx === orders.links.length - 1 || link.label.toLowerCase().includes('next') || link.label.includes('&raquo;') || link.label.includes('pagination.next');
+
+                                            if (isPrev) {
                                                 return link.url ? (
                                                     <Link
                                                         key={idx}
                                                         href={link.url}
-                                                        className="p-1.5 rounded bg-surface border border-border text-text hover:bg-surface-hover"
-                                                        title="Sebelumnya"
+                                                        preserveScroll
+                                                        className="p-1.5 px-2 rounded bg-surface border border-border text-text hover:bg-surface-hover inline-flex items-center gap-1 text-xs font-medium transition-colors"
+                                                        title="Halaman Sebelumnya"
+                                                        aria-label="Sebelumnya"
                                                     >
                                                         <ChevronLeft className="w-3.5 h-3.5" />
+                                                        <span className="hidden sm:inline">Prev</span>
                                                     </Link>
-                                                ) : null;
+                                                ) : (
+                                                    <span
+                                                        key={idx}
+                                                        className="p-1.5 px-2 rounded bg-surface-2 border border-border text-text-3 opacity-40 select-none inline-flex items-center gap-1 text-xs cursor-not-allowed"
+                                                        aria-disabled="true"
+                                                    >
+                                                        <ChevronLeft className="w-3.5 h-3.5" />
+                                                        <span className="hidden sm:inline">Prev</span>
+                                                    </span>
+                                                );
                                             }
-                                            if (link.label.includes('Next') || link.label.includes('&raquo;')) {
+
+                                            if (isNext) {
                                                 return link.url ? (
                                                     <Link
                                                         key={idx}
                                                         href={link.url}
-                                                        className="p-1.5 rounded bg-surface border border-border text-text hover:bg-surface-hover"
-                                                        title="Selanjutnya"
+                                                        preserveScroll
+                                                        className="p-1.5 px-2 rounded bg-surface border border-border text-text hover:bg-surface-hover inline-flex items-center gap-1 text-xs font-medium transition-colors"
+                                                        title="Halaman Selanjutnya"
+                                                        aria-label="Selanjutnya"
                                                     >
+                                                        <span className="hidden sm:inline">Next</span>
                                                         <ChevronRight className="w-3.5 h-3.5" />
                                                     </Link>
-                                                ) : null;
+                                                ) : (
+                                                    <span
+                                                        key={idx}
+                                                        className="p-1.5 px-2 rounded bg-surface-2 border border-border text-text-3 opacity-40 select-none inline-flex items-center gap-1 text-xs cursor-not-allowed"
+                                                        aria-disabled="true"
+                                                    >
+                                                        <span className="hidden sm:inline">Next</span>
+                                                        <ChevronRight className="w-3.5 h-3.5" />
+                                                    </span>
+                                                );
                                             }
-                                            return (
+
+                                            return link.url ? (
                                                 <Link
                                                     key={idx}
-                                                    href={link.url || '#'}
-                                                    className={`px-2.5 py-1 rounded text-xs transition-colors ${
+                                                    href={link.url}
+                                                    preserveScroll
+                                                    className={`min-w-7 h-7 px-2 flex items-center justify-center rounded text-xs transition-colors font-medium ${
                                                         link.active
                                                             ? 'bg-accent text-on-accent font-semibold'
                                                             : 'bg-surface border border-border text-text hover:bg-surface-hover'
-                                                    } ${!link.url ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                                    }`}
                                                 >
                                                     {link.label}
                                                 </Link>
+                                            ) : (
+                                                <span
+                                                    key={idx}
+                                                    className="min-w-7 h-7 px-1 flex items-center justify-center rounded text-xs text-text-3 opacity-50 select-none"
+                                                >
+                                                    {link.label}
+                                                </span>
                                             );
                                         })}
                                     </div>

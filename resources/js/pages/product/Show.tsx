@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, ShieldCheck, QrCode, Building2, Wallet, AlertCircle } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { ArrowLeft, ShieldCheck, QrCode, Building2, Wallet, AlertCircle, Clock, Check } from 'lucide-react';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,10 +9,11 @@ import { PackageOption } from '@/components/shop/PackageOption';
 import { StickyBottomBar } from '@/components/shop/StickyBottomBar';
 import { formatRupiah } from '@/lib/format';
 import { validatePhone } from '@/lib/phone';
-import { PaymentMethodItem, ProductDetail, ProductVariantData, QuotaData } from '@/types/shop';
+import { PaymentMethodItem, ProductDetail, ProductVariantData, QuotaData, SharedPendingOrder } from '@/types/shop';
 
 interface ProductShowProps {
     storeName?: string;
+    deliveryEta?: string | null;
     product: ProductDetail;
     variants: ProductVariantData[];
     quota: QuotaData;
@@ -21,11 +22,15 @@ interface ProductShowProps {
 
 export default function ProductShow({
     storeName = 'NamaToko',
+    deliveryEta,
     product,
     variants = [],
     quota,
     paymentMethods = [],
 }: ProductShowProps) {
+    const { pendingOrder } = usePage<{ pendingOrder?: SharedPendingOrder }>().props;
+    const hasActiveOrder = Boolean(pendingOrder);
+
     // 1. Tab state: RENT or BUY
     const [selectedTab, setSelectedTab] = useState<'RENT' | 'BUY'>('RENT');
 
@@ -59,6 +64,35 @@ export default function ProductShow({
         return variants.filter((v) => v.type === selectedTab);
     }, [variants, selectedTab]);
 
+    // Active rent variants and lowest daily rate calculation (DESIGN_SYSTEM 6.36)
+    const rentVariants = useMemo(() => {
+        return variants.filter((v) => v.type === 'RENT');
+    }, [variants]);
+
+    const lowestDailyRate = useMemo(() => {
+        if (rentVariants.length < 2) return null;
+        let min = Infinity;
+        for (const v of rentVariants) {
+            if (v.duration_hours > 0) {
+                const rate = Math.round(v.price / (v.duration_hours / 24));
+                if (rate < min) min = rate;
+            }
+        }
+        return min === Infinity ? null : min;
+    }, [rentVariants]);
+
+    // Stock availability badge
+    const totalStock = product.available_rent_stock + product.available_buy_stock;
+    const availabilityBadge = useMemo(() => {
+        if (totalStock === 0) {
+            return { label: 'Habis', class: 'bg-danger/10 text-danger border-danger/30' };
+        }
+        if (totalStock <= 2) {
+            return { label: 'Stok Menipis', class: 'bg-warning/10 text-warning border-warning/30' };
+        }
+        return { label: 'Tersedia', class: 'bg-accent/10 text-accent-text border-accent/30' };
+    }, [totalStock]);
+
     // Validation
     const phoneValidation = useMemo(() => {
         return validatePhone(rawPhone);
@@ -71,6 +105,14 @@ export default function ProductShow({
             selectedPaymentMethodId !== null
         );
     }, [selectedVariant, phoneValidation.isValid, selectedPaymentMethodId]);
+
+    // 4-step progress indicators
+    const stepIndicators = [
+        { num: 1, label: 'Paket', done: selectedVariant !== null },
+        { num: 2, label: 'Penerima', done: phoneValidation.isValid },
+        { num: 3, label: 'Metode', done: selectedPaymentMethodId !== null },
+        { num: 4, label: 'Konfirmasi', done: isReadyToSubmit },
+    ];
 
     // Generate initials for fallback logo
     const initials = product.name
@@ -162,52 +204,97 @@ export default function ProductShow({
 
                 {/* 2 Columns on Desktop (38% left, 62% right) */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-start">
-                    {/* Left Column: Service Info & Rental Rules (38%) */}
+                    {/* Left Column: Service Header Band & Rental Rules (38%) */}
                     <div className="lg:col-span-5 space-y-4">
-                        {/* Service Card */}
-                        <div className="bg-surface border border-border rounded-lg p-4 sm:p-5">
-                            <div className="flex items-start gap-3.5">
-                                <div
-                                    className={`w-16 h-16 rounded-lg border flex items-center justify-center shrink-0 overflow-hidden brand-logo-box ${
-                                        product.brand_color && /^#[0-9A-Fa-f]{6}$/.test(product.brand_color)
-                                            ? 'has-brand-tint'
-                                            : ''
-                                    }`}
-                                    style={
-                                        product.brand_color && /^#[0-9A-Fa-f]{6}$/.test(product.brand_color)
-                                            ? ({ ['--brand' as any]: product.brand_color } as React.CSSProperties)
-                                            : undefined
-                                    }
-                                >
-                                    {product.thumbnail_path ? (
-                                        <img
-                                            src={product.thumbnail_path}
-                                            alt={product.name}
-                                            className="w-full h-full object-contain p-2"
-                                            width={64}
-                                            height={64}
-                                        />
-                                    ) : (
-                                        <span className="font-mono text-xl font-semibold text-text tracking-wider">
-                                            {initials}
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="min-w-0">
-                                    <h1 className="text-lg sm:text-xl font-bold text-text tracking-tight">
-                                        {product.name}
-                                    </h1>
-                                    <span className="inline-block text-xs text-text-2 mt-0.5">
-                                        {product.category}
-                                    </span>
-                                </div>
+                        {/* Service Card with Header Band (DESIGN_SYSTEM 6.36) */}
+                        <div className="bg-surface border border-border rounded-lg overflow-hidden shadow-2xs">
+                            {/* Cover Band: 160px desktop / 120px mobile */}
+                            <div className="w-full h-[120px] sm:h-[160px] bg-surface-2 relative overflow-hidden">
+                                {product.cover_path ? (
+                                    <img
+                                        src={product.cover_path}
+                                        alt={product.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div
+                                        className="w-full h-full flex items-center justify-center bg-surface-2"
+                                        style={{
+                                            backgroundColor: product.brand_color && /^#[0-9A-Fa-f]{6}$/.test(product.brand_color)
+                                                ? `${product.brand_color}18`
+                                                : undefined,
+                                        }}
+                                    />
+                                )}
                             </div>
 
-                            {product.description && (
-                                <p className="text-xs sm:text-sm text-text-2 leading-relaxed mt-4 pt-3.5 border-t border-border/50">
-                                    {product.description}
-                                </p>
-                            )}
+                            {/* Content Under Cover */}
+                            <div className="p-4 sm:p-5 pt-0">
+                                {/* Overlapping 64px Logo (bottom-left) */}
+                                <div className="flex items-end justify-between -mt-8 mb-3 relative z-10">
+                                    <div
+                                        className="w-16 h-16 rounded-xl border-2 border-surface bg-surface shadow-xs p-1 flex items-center justify-center overflow-hidden shrink-0"
+                                        style={{
+                                            borderColor: product.brand_color && /^#[0-9A-Fa-f]{6}$/.test(product.brand_color)
+                                                ? `${product.brand_color}40`
+                                                : undefined,
+                                        }}
+                                    >
+                                        {product.thumbnail_path ? (
+                                            <img
+                                                src={product.thumbnail_path}
+                                                alt={product.name}
+                                                className="w-full h-full object-contain"
+                                                width={64}
+                                                height={64}
+                                            />
+                                        ) : (
+                                            <span className="font-mono text-xl font-bold text-text">
+                                                {initials}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Title, Category & Status Chips */}
+                                <div className="space-y-2">
+                                    <div>
+                                        <h1 className="text-xl font-semibold text-text tracking-tight">
+                                            {product.name}
+                                        </h1>
+                                        <span className="text-xs text-text-2">
+                                            {product.category}
+                                        </span>
+                                    </div>
+
+                                    {/* Chips: Garansi, Ketersediaan, Estimasi Pengiriman */}
+                                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                                        {product.has_warranty && (
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-accent/10 text-accent-text border border-accent/30">
+                                                <ShieldCheck className="w-3.5 h-3.5" />
+                                                <span>Garansi</span>
+                                            </span>
+                                        )}
+
+                                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border ${availabilityBadge.class}`}>
+                                            <span>{availabilityBadge.label}</span>
+                                        </span>
+
+                                        {deliveryEta && (
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-surface-2 text-text-2 border border-border">
+                                                <Clock className="w-3.5 h-3.5" />
+                                                <span>{deliveryEta}</span>
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {product.description && (
+                                    <p className="text-xs sm:text-sm text-text-2 leading-relaxed mt-4 pt-3.5 border-t border-border/60">
+                                        {product.description}
+                                    </p>
+                                )}
+                            </div>
                         </div>
 
                         {/* Rules & Guarantee Card */}
@@ -235,6 +322,25 @@ export default function ProductShow({
 
                     {/* Right Column: 4-Step Checkout Form (62%) */}
                     <div className="lg:col-span-7 space-y-4">
+                        {/* 4-Step Progress Indicators (DESIGN_SYSTEM 6.36) */}
+                        <div className="flex items-center justify-between gap-1.5 sm:gap-2 p-3 bg-surface border border-border rounded-lg text-xs font-medium">
+                            {stepIndicators.map((s, idx) => (
+                                <div key={s.num} className="flex items-center gap-1.5 flex-1 min-w-0">
+                                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors ${
+                                        s.done
+                                            ? 'bg-accent text-on-accent'
+                                            : 'bg-surface-2 text-text-2 border border-border-strong'
+                                    }`}>
+                                        {s.done ? <Check className="w-3 h-3 stroke-[3]" /> : s.num}
+                                    </div>
+                                    <span className={`truncate text-xs ${s.done ? 'text-text font-semibold' : 'text-text-2'}`}>
+                                        {s.label}
+                                    </span>
+                                    {idx < 3 && <div className={`flex-1 h-0.5 mx-1 hidden sm:block ${s.done ? 'bg-accent/40' : 'bg-border'}`} />}
+                                </div>
+                            ))}
+                        </div>
+
                         {/* Step 1: Select Type & Package */}
                         <section
                             aria-labelledby="step-1-title"
@@ -258,15 +364,15 @@ export default function ProductShow({
                                 />
                             </div>
 
-                            {/* Package Options List */}
+                            {/* Package Options List: 2-Column Grid on Desktop (DESIGN_SYSTEM 6.36) */}
                             <div
                                 id={`tabpanel-${selectedTab}`}
                                 role="tabpanel"
                                 aria-labelledby={`tab-${selectedTab}`}
                             >
-                                <div className="space-y-2" role="radiogroup" aria-label="Pilihan Paket">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="radiogroup" aria-label="Pilihan Paket">
                                     {tabVariants.length === 0 ? (
-                                        <div className="p-4 rounded-md bg-surface-2 text-center text-xs text-text-2">
+                                        <div className="col-span-full p-4 rounded-md bg-surface-2 text-center text-xs text-text-2">
                                             Tidak ada paket yang tersedia untuk kategori ini.
                                         </div>
                                     ) : (
@@ -291,6 +397,10 @@ export default function ProductShow({
                                             }
 
                                             const isSelected = selectedVariant?.id === variant.id;
+                                            const dailyRate = isRent && variant.duration_hours > 0
+                                                ? Math.round(variant.price / (variant.duration_hours / 24))
+                                                : null;
+                                            const isLowest = isRent && lowestDailyRate !== null && dailyRate === lowestDailyRate;
 
                                             return (
                                                 <PackageOption
@@ -299,6 +409,8 @@ export default function ProductShow({
                                                     isSelected={isSelected}
                                                     isDisabled={isDisabled}
                                                     disabledReason={disabledReason}
+                                                    isLowestDailyRate={isLowest}
+                                                    showSavingsBadge={rentVariants.length >= 2}
                                                     onSelect={(v) => setSelectedVariant(v)}
                                                 />
                                             );
@@ -445,9 +557,15 @@ export default function ProductShow({
                                             }`}
                                         >
                                             <div className="flex items-center gap-2.5 min-w-0">
-                                                <div className="w-8 h-8 rounded-md bg-surface border border-border flex items-center justify-center shrink-0">
-                                                    {getPaymentIcon(pm.type)}
-                                                </div>
+                                                {pm.logo_url ? (
+                                                    <div className="logo-plate h-8 px-2 shrink-0">
+                                                        <img src={pm.logo_url} alt={pm.label} className="h-4 max-w-[48px] object-contain" />
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-8 h-8 rounded-md bg-surface border border-border flex items-center justify-center shrink-0">
+                                                        {getPaymentIcon(pm.type)}
+                                                    </div>
+                                                )}
                                                 <div className="min-w-0">
                                                     <div className="text-sm font-semibold text-text truncate">
                                                         {pm.label}
@@ -482,10 +600,10 @@ export default function ProductShow({
                             )}
                         </section>
 
-                        {/* Step 4: Summary & Confirmation (Desktop) */}
+                        {/* Step 4: Summary & Confirmation (Desktop Sticky) */}
                         <section
                             aria-labelledby="step-4-title"
-                            className="bg-surface border border-border rounded-lg p-4 sm:p-5"
+                            className="bg-surface border border-border rounded-lg p-4 sm:p-5 lg:sticky lg:top-[72px] lg:z-20 shadow-sm"
                         >
                             <div className="flex items-center gap-2.5 mb-4">
                                 <span className="w-5 h-5 rounded-full bg-surface-2 border border-border-strong text-text font-mono text-xs font-bold flex items-center justify-center shrink-0">
@@ -496,10 +614,48 @@ export default function ProductShow({
                                 </h2>
                             </div>
 
-                            {serverErrors.general && (
-                                <div className="mb-3.5 p-3 rounded-md bg-danger/10 border border-danger/30 text-xs text-danger flex items-center gap-2">
-                                    <AlertCircle className="w-4 h-4 shrink-0" />
-                                    <span>{serverErrors.general}</span>
+                            {/* Server Error inline (DESIGN_SYSTEM 6.3) */}
+                            {(serverErrors.general || serverErrors.customer_phone || serverErrors.variant_id) && (
+                                <div className="mb-3.5 p-3 rounded-md bg-danger/10 border border-danger/30 text-xs text-danger flex items-start gap-2">
+                                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                                    <div className="flex-1 space-y-1">
+                                        <p>{serverErrors.customer_phone || serverErrors.variant_id || serverErrors.general}</p>
+                                        {serverErrors.customer_phone && serverErrors.customer_phone.includes('INV-') && (
+                                            <div>
+                                                <Link
+                                                    href={`/invoice/${serverErrors.customer_phone.match(/INV-[A-Za-z0-9-]+/)?.[0] || ''}`}
+                                                    className="font-semibold text-accent-text hover:underline inline-flex items-center gap-1"
+                                                >
+                                                    Lanjutkan Pembayaran &rarr;
+                                                </Link>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Active Order Notice (DESIGN_SYSTEM 6.3) */}
+                            {hasActiveOrder && (
+                                <div className="mb-3.5 p-3 rounded-md bg-warning/10 border border-warning/30 text-xs text-text space-y-1">
+                                    <div className="flex items-center gap-1.5 text-warning font-semibold">
+                                        <Clock className="w-4 h-4 shrink-0" />
+                                        <span>Pesanan Belum Selesai</span>
+                                    </div>
+                                    <p className="text-text-2">
+                                        {pendingOrder?.status === 'VERIFYING' ? (
+                                            'Pembayaran sedang diverifikasi. Kamu bisa memesan lagi setelah selesai.'
+                                        ) : (
+                                            <>
+                                                Selesaikan pesanan <span className="font-mono font-semibold text-text">{pendingOrder?.invoice_code}</span> terlebih dahulu.{' '}
+                                                <Link
+                                                    href={`/invoice/${pendingOrder?.invoice_code}`}
+                                                    className="font-semibold text-accent-text hover:underline inline-flex items-center gap-0.5"
+                                                >
+                                                    Lanjutkan Pembayaran &rarr;
+                                                </Link>
+                                            </>
+                                        )}
+                                    </p>
                                 </div>
                             )}
 
@@ -550,7 +706,7 @@ export default function ProductShow({
                                 type="button"
                                 variant="primary"
                                 size="lg"
-                                disabled={!isReadyToSubmit || isSubmitting}
+                                disabled={!isReadyToSubmit || isSubmitting || hasActiveOrder}
                                 loading={isSubmitting}
                                 onClick={handleSubmit}
                                 className="w-full h-11 text-sm font-semibold"
@@ -567,6 +723,7 @@ export default function ProductShow({
                     isReadyToSubmit={isReadyToSubmit}
                     isSubmitting={isSubmitting}
                     buttonLabel={selectedTab === 'RENT' ? 'Sewa Sekarang' : 'Beli Sekarang'}
+                    pendingOrder={pendingOrder}
                     onSubmit={handleSubmit}
                 />
 

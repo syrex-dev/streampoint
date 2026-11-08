@@ -16,6 +16,9 @@ Route::post('/checkout', [CheckoutController::class, 'store'])
 
 Route::get('/invoice/{invoiceCode}', [InvoiceController::class, 'show'])->name('invoice.show');
 Route::post('/invoice/{invoiceCode}/confirm', [InvoiceController::class, 'confirm'])->name('invoice.confirm');
+Route::post('/invoice/{invoiceCode}/cancel', [InvoiceController::class, 'cancel'])
+    ->middleware('throttle:5,1')
+    ->name('invoice.cancel');
 Route::post('/invoice/{invoiceCode}/verify', [InvoiceController::class, 'verify'])
     ->middleware('throttle:5,1')
     ->name('invoice.verify');
@@ -75,6 +78,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/settings/overrides', [\App\Http\Controllers\Admin\AdminSettingController::class, 'storeOverride'])->name('settings.overrides.store');
     Route::delete('/settings/overrides/{override}', [\App\Http\Controllers\Admin\AdminSettingController::class, 'destroyOverride'])->name('settings.overrides.destroy');
     Route::post('/settings/test-telegram', [\App\Http\Controllers\Admin\AdminSettingController::class, 'testTelegram'])->name('settings.test-telegram');
+    Route::post('/settings/detect-telegram-chat-id', [\App\Http\Controllers\Admin\AdminSettingController::class, 'detectTelegramChatId'])->name('settings.detect-telegram-chat-id');
 });
 
 require __DIR__.'/settings.php';

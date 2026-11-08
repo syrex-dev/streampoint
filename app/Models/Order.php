@@ -62,6 +62,15 @@ class Order extends Model
         });
     }
 
+    public function scopeCountsAsActiveForBuyer(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q) {
+            $q->where('status', OrderStatus::VERIFYING)
+              ->orWhere(fn (Builder $sq) => $sq->where('status', OrderStatus::PENDING)
+                                              ->where('payment_expires_at', '>', now()));
+        });
+    }
+
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
@@ -84,6 +93,6 @@ class Order extends Model
 
     public function events(): HasMany
     {
-        return $this->hasMany(OrderEvent::class)->orderBy('created_at');
+        return $this->hasMany(OrderEvent::class);
     }
 }

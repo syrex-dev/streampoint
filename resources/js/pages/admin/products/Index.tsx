@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { AdminLayout } from '@/layouts/AdminLayout';
+import { PageHeader } from '@/components/admin/PageHeader';
 import { 
     Package, 
     Plus, 
@@ -51,26 +52,18 @@ export default function ProductsIndex({ products }: IndexProps) {
             <Head title="Kelola Produk - Admin" />
 
             <div className="space-y-6">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
-                    <div>
-                        <h1 className="text-xl font-bold tracking-tight text-text flex items-center gap-2">
-                            <Package className="w-5 h-5 text-accent-text" />
-                            <span>Kelola Produk & Layanan</span>
-                        </h1>
-                        <p className="text-xs text-text-2 mt-0.5">
-                            Daftar semua layanan langganan streaming, paket varian, dan aturan garansi.
-                        </p>
-                    </div>
-
+                <PageHeader
+                    title="Kelola Produk & Layanan"
+                    description="Daftar semua layanan langganan streaming, paket varian, dan aturan garansi."
+                >
                     <Link
                         href="/admin/products/create"
-                        className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold rounded transition-colors self-start sm:self-auto cursor-pointer"
+                        className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold rounded-md transition-colors cursor-pointer"
                     >
                         <Plus className="w-4 h-4" />
                         <span>Tambah Produk Baru</span>
                     </Link>
-                </div>
+                </PageHeader>
 
                 {/* Products List */}
                 {products.length === 0 ? (
@@ -168,11 +161,11 @@ export default function ProductsIndex({ products }: IndexProps) {
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                                 {p.is_active ? (
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-success/15 text-success border border-success/30">
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-accent/10 text-accent-text border border-accent/30">
                                                         Aktif
                                                     </span>
                                                 ) : (
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-surface-2 text-text-3 border border-border">
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-surface-2 text-text-muted border border-border">
                                                         Nonaktif
                                                     </span>
                                                 )}
@@ -250,11 +243,11 @@ export default function ProductsIndex({ products }: IndexProps) {
                                         </div>
 
                                         {p.is_active ? (
-                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success border border-success/30">
+                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent/10 text-accent-text border border-accent/30">
                                                 Aktif
                                             </span>
                                         ) : (
-                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-surface-2 text-text-3 border border-border">
+                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-surface-2 text-text-muted border border-border">
                                                 Nonaktif
                                             </span>
                                         )}
@@ -349,7 +342,7 @@ export default function ProductsIndex({ products }: IndexProps) {
                                 type="button"
                                 onClick={handleDelete}
                                 disabled={isDeleting}
-                                className="px-4 py-1.5 bg-danger text-white text-xs font-semibold rounded hover:bg-danger/90 transition-colors cursor-pointer"
+                                className="px-4 py-1.5 bg-danger-solid text-on-danger text-xs font-semibold rounded hover:bg-danger-solid-hover transition-colors cursor-pointer"
                             >
                                 {isDeleting ? 'Menghapus...' : 'Ya, Hapus'}
                             </button>

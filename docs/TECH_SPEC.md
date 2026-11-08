@@ -102,6 +102,7 @@ resources/js/
 | GET | `/invoice/{invoiceCode}` | `InvoiceController@show` | Kredensial hanya jika sesi memiliki invoice atau sudah terverifikasi (Bagian 9). |
 | POST | `/invoice/{invoiceCode}/confirm` | `InvoiceController@confirm` | "Saya Sudah Bayar" + upload bukti opsional. |
 | POST | `/invoice/{invoiceCode}/verify` | `InvoiceController@verify` | Verifikasi nomor WA untuk membuka kredensial. Throttle ketat. |
+| POST | `/invoice/{invoiceCode}/cancel` | `InvoiceController@cancel` | Pembeli membatalkan pesanan `PENDING` miliknya (sesi atau terverifikasi). Throttle 5/menit. |
 | GET/POST | `/cek-pesanan` | `TrackingController` | Throttle: 10/menit per IP. |
 
 ### Admin (middleware `auth` + `EnsureAdmin`, prefix `/admin`)
@@ -128,6 +129,8 @@ Gunakan migration Laravel. Semua uang dalam **integer Rupiah**. Kolom enum disim
 | is_active | boolean default true | |
 | sort_order | unsigned int default 0 | |
 | brand_color | string(7) nullable | Hex `#RRGGBB` untuk tint kotak logo. Divalidasi regex. |
+| cover_path | string nullable | Gambar sampul kartu (jpg/png/webp, bukan SVG), diperkecil ke ≤ 800px lebar dan disimpan WebP. |
+| has_warranty | boolean default false | Menampilkan chip `Garansi` di kartu. |
 | timestamps | | |
 
 ### `product_variants`
@@ -195,11 +198,17 @@ Index: `(quota_date, order_type, status)`, `(status, payment_expires_at)`, `cust
 
 ### `payment_methods`
 
-`id, type (QRIS|BANK|EWALLET), label` (mis. "BCA", "DANA", "QRIS"), `account_number nullable, account_holder nullable, qris_image_path nullable, instructions text nullable, is_active, sort_order`.
+`id, type (QRIS|BANK|EWALLET), label` (mis. "BCA", "DANA", "QRIS"), `account_number nullable, account_holder nullable, qris_image_path nullable, logo_path nullable (logo opsional, jpg/png/webp, bukan SVG, ≤ 256px), instructions text nullable, is_active, sort_order`.
 
 ### `settings` (satu baris)
 
 `id, max_daily_rent_quota unsigned tinyint default 3, admin_whatsapp string nullable` (nomor kontak yang ditampilkan di invoice, footer, dan tombol bantuan), `business_hours string nullable` (mis. "Setiap hari, 09.00-21.00 WIB", tampil di footer). Keduanya dibagikan ke semua halaman publik lewat shared props Inertia (`HandleInertiaRequests`). Tambahan identitas toko: `store_name string nullable` (default dari `APP_NAME`), `store_logo_path string nullable` (jpg/png/webp maks 1 MB, **bukan SVG**), `accent_preset string default 'emerald'` (daftar putih: `emerald`, `teal`, `blue`, `mono`). `accent_preset` diterapkan sebagai atribut `data-accent` pada `<html>` di `app.blade.php` (server-side, tanpa kedipan).
+
+Kolom tambahan `settings` untuk katalog: `announcement_text string(160) nullable, announcement_url string(255) nullable` (path internal `/…` atau `https://`), `announcement_active boolean default false, store_tagline string(60) nullable, delivery_eta string(60) nullable` (teks bebas, mis. "setelah verifikasi admin"; tampil di halaman layanan dan langkah 5 "Cara Pesan"), `min_sold_display unsigned smallint default 5` (ambang tampil `N terjual`), `custom_request_enabled boolean default false, social_links json nullable` dengan kunci `telegram`, `instagram`, `threads`, `tiktok`. Setiap URL sosial wajib `https://` dan host-nya masuk daftar putih per platform (`t.me`/`telegram.me`; `instagram.com`; `threads.net`/`threads.com`; `tiktok.com`), selain itu ditolak.
+
+**Data katalog publik (`StorefrontController`):** per layanan kirim `cover_url`, `logo_url`, `brand_color` (hanya jika lolos regex), `has_warranty`, `is_new` (dibuat ≤ 14 hari), `min_price`, status stok, dan `sold_count` yang dihitung dengan `withCount(['orders as sold_count' => fn ($q) => $q->where('status', OrderStatus::PAID)])` (tanpa N+1). `sold_count` **hanya dikirim jika ≥ `min_sold_display`**, selain itu `null`. Penanda `Terlaris` dihitung di server: tiga layanan teratas yang memenuhi ambang. Tidak ada kolom sensitif yang ikut terkirim.
+
+**Data hero dan statistik (Fase 7):** kolom `settings.stats_min_orders unsigned smallint default 20` (0 = sembunyikan statistik). `StorefrontController` mengirim: `available_services_count` (layanan yang punya paket bisa dipesan), `verification_median_minutes` (median selisih waktu event `VERIFYING` ke `PAID` dari `order_events` dalam 30 hari terakhir, **hanya jika ≥ 10 sampel**, dibulatkan ke atas ke kelipatan 5, selain itu `null`; di-cache 10 menit lewat `Cache::remember`), dan `stats` = `{ completed_orders, active_services }` di mana `completed_orders` dikirim hanya jika ≥ `stats_min_orders` dan `active_services` hanya jika ≥ 3, selain itu `null`. Semua angka dihitung dari data nyata (tanpa N+1, tanpa kolom sensitif). Harga per hari untuk paket sewa dihitung di server atau klien dari `price ÷ (duration_hours ÷ 24)` dan ditampilkan sebagai bilangan bulat rupiah; badge "Paling hemat per hari" ditentukan dari nilai terendah di antara paket sewa aktif (≥ 2 paket).
 
 > **Tema:** mode Terang/Gelap/Sistem diimplementasikan lewat CSS variables (`DESIGN_SYSTEM.md` Bagian 2) dengan class `dark` pada `<html>`. Skrip inline di `app.blade.php` menetapkan class sebelum render agar tidak berkedip.
 
@@ -338,6 +347,29 @@ Aturan:
 - Kuota dan stok **diperiksa ulang di server** walau UI sudah menonaktifkan tombol.
 - `QuotaFullException` dan `OutOfStockException` diterjemahkan ke error validasi yang ditampilkan inline oleh Inertia.
 - Order `BUY` melewati pengecekan kuota tetapi tetap melewati lock dan reservasi stok.
+- **Satu pesanan aktif per pembeli (PRD 4.4b).** Kunci baris `settings` berlaku untuk **semua** pembuatan order (RENT dan BUY), supaya pengecekan ini ikut berurutan. Di dalam transaksi, sebelum kuota dan stok diperiksa:
+
+  ```php
+  $phone = Phone::normalize($data->phone);
+
+  $active = Order::query()
+      ->where('customer_phone', $phone)
+      ->countsAsActiveForBuyer()   // PENDING (payment_expires_at > now()) atau VERIFYING
+      ->first();
+
+  $sessionActive = Order::whereIn('invoice_code', session('owned_invoices', []))
+      ->countsAsActiveForBuyer()
+      ->first();
+
+  if ($active || $sessionActive) {
+      throw new ActiveOrderExistsException(
+          invoiceCode: ($sessionActive ?? $active)->invoice_code,
+          ownedBySession: (bool) $sessionActive,   // kode invoice hanya ditampilkan jika true
+      );
+  }
+  ```
+
+  Scope `countsAsActiveForBuyer` memakai kondisi yang sama dengan `countsTowardQuota` (PENDING belum expired + VERIFYING) tetapi **tidak** dibatasi `order_type` atau `quota_date`. Pengecekan `idempotency_key` dilakukan **sebelum** ini agar pengiriman ulang request yang sama mengembalikan invoice yang sama. `ActiveOrderExistsException` diterjemahkan ke error validasi (HTTP 422) dengan pesan umum tanpa kode invoice bila `ownedBySession` false. Tambahkan index `customer_phone, status, payment_expires_at`.
 
 ### 5.4 Kode unik
 
@@ -364,6 +396,7 @@ Aturan:
 | `RejectOrder` | `VERIFYING/PENDING → CANCELLED`. Wajib `status_note`. Lepas unit (`AVAILABLE`, `order_id = null`). |
 | `ExpireOrders` | Semua `PENDING` dengan `payment_expires_at <= now()` → `EXPIRED`, lepas unit. Idempoten dan aman dijalankan berulang. |
 | `ReactivateOrder` | `EXPIRED → PENDING` (atau `VERIFYING` jika bukti sudah ada) hanya jika kuota (untuk `RENT`) dan unit masih tersedia. Reset `payment_expires_at`. |
+| `CancelOrderByBuyer` | `PENDING → CANCELLED` oleh pemilik invoice. Menolak status selain `PENDING` dan order yang sudah lewat waktu. Lepas kuota dan unit akun, tulis `order_events` dengan aktor `buyer`. Dibungkus transaksi + `lockForUpdate` pada order. |
 
 Semua transisi berjalan dalam `DB::transaction` dan menulis `order_events`.
 
@@ -516,6 +549,12 @@ Simpan konfigurasi notifikasi di `config/notify.php` yang membaca `env()`. Janga
 11. `total_amount` unik di antara order aktif.
 12. Kegagalan Telegram (di-fake `Http::fake` 500) tidak membatalkan checkout.
 13. Upload bukti bayar menolak file bukan gambar dan file > 3 MB. File tidak dapat diakses publik.
+14. Satu pesanan aktif per pembeli: order kedua dengan nomor sama ditolak saat order pertama `PENDING` (layanan sama maupun berbeda) dan saat `VERIFYING`. Berhasil setelah order pertama `PAID`, `EXPIRED`, atau `CANCELLED`, termasuk `PENDING` yang sudah lewat waktu tanpa scheduler.
+15. Nomor berformat berbeda (`0812…`, `+62812…`, `62812…`) dianggap sama. Sesi yang sama dengan nomor berbeda tetap ditolak. Sesi berbeda dengan nomor berbeda diizinkan (batasan terdokumentasi).
+16. Pesan penolakan memuat kode invoice hanya untuk pemilik sesi. Untuk selain itu pesan umum tanpa kode.
+17. `CancelOrderByBuyer`: hanya pemilik, hanya `PENDING`, melepas kuota dan unit, tercatat aktor `buyer`, terkena throttle. `VERIFYING` dan `PAID` tidak bisa dibatalkan pembeli.
+18. `ReactivateOrder` ditolak bila nomor yang sama punya pesanan aktif lain.
+19. Konkurensi: dua checkout serentak nomor sama (MySQL) menghasilkan tepat satu order. Idempotensi: request ulang dengan `idempotency_key` sama tidak kena penolakan pesanan aktif.
 
 ---
 
@@ -537,3 +576,18 @@ Simpan konfigurasi notifikasi di `config/notify.php` yang membaca `env()`. Janga
 ## 14. Definition of Done (MVP)
 
 Semua kriteria FR-01 sampai FR-15 di `PRD.md` terpenuhi, semua pengujian Bagian 12 lolos, tampilan mematuhi checklist akhir `DESIGN_SYSTEM.md`, dan checklist deploy Bagian 13 selesai.
+
+---
+
+## 15. Optimasi Gambar Unggahan
+
+Karena server bisa berupa perangkat rumahan dengan upload terbatas, semua gambar unggahan admin dioptimalkan **di server saat diunggah**, tanpa paket tambahan (cukup ekstensi PHP GD):
+
+| Jenis | Lebar maks | Format simpan | Batas unggah |
+| :-- | :-- | :-- | :-- |
+| Sampul layanan | 800px | WebP kualitas ~80 | 2 MB |
+| Gambar banner | 1200px | WebP kualitas ~80 | 2 MB |
+| Logo layanan, logo toko | 256px | WebP (PNG bila perlu transparansi) | 1 MB |
+| Logo metode pembayaran | 160px | WebP/PNG | 512 KB |
+
+Aturan: tolak SVG dan file yang bukan gambar (validasi `getimagesize`, bukan hanya ekstensi), buang metadata (EXIF), beri nama acak, jaga proporsi, jangan membesarkan gambar yang lebih kecil dari batas. Jika GD tidak tersedia, simpan file asli yang sudah lolos validasi dan catat peringatan di log. Sajikan lewat disk `public` dengan header cache panjang (nama file acak sehingga aman di-cache oleh Cloudflare).

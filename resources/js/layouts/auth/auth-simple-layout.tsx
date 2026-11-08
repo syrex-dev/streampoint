@@ -17,7 +17,7 @@ export default function AuthSimpleLayout({
                             href={home()}
                             className="flex items-center gap-2 font-medium"
                         >
-                            <BrandMark logoClassName="w-8 h-8 rounded-[6px] object-contain shrink-0" textClassName="text-base font-bold text-text tracking-tight" />
+                            <BrandMark variant="full" />
                         </Link>
 
                         <div className="space-y-2 text-center">

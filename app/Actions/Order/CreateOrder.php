@@ -5,6 +5,7 @@ namespace App\Actions\Order;
 use App\Enums\AccountStatus;
 use App\Enums\OrderStatus;
 use App\Enums\OrderType;
+use App\Exceptions\ActiveOrderExistsException;
 use App\Exceptions\OutOfStockException;
 use App\Exceptions\QuotaFullException;
 use App\Jobs\SendAdminNotification;
@@ -29,20 +30,44 @@ class CreateOrder
 
     public function handle(CreateOrderData $data): Order
     {
+        Setting::current(); // Ensure settings row exists before transaction begins
+
         return DB::transaction(function () use ($data) {
+            // Serialization: lock the settings row first so concurrent checkouts serialize cleanly
+            Setting::lockForUpdate()->firstOrFail();
+
+            // Active order check (PRD 4.4b, TECH_SPEC 5.3)
+            $phone = Phone::normalize($data->phone);
+
+            $active = Order::query()
+                ->where('customer_phone', $phone)
+                ->countsAsActiveForBuyer()
+                ->lockForUpdate()
+                ->first();
+
+            $sessionOwned = $data->ownedInvoices ?? (function_exists('session') ? session('owned_invoices', []) : []);
+            $sessionActive = ! empty($sessionOwned) && is_array($sessionOwned)
+                ? Order::whereIn('invoice_code', $sessionOwned)->countsAsActiveForBuyer()->lockForUpdate()->first()
+                : null;
+
+            if ($active || $sessionActive) {
+                $target = $sessionActive ?? $active;
+                throw new ActiveOrderExistsException(
+                    invoiceCode: $target->invoice_code,
+                    ownedBySession: (bool) $sessionActive,
+                    isVerifying: $target->status === OrderStatus::VERIFYING
+                );
+            }
+
             $variant = ProductVariant::with('product')->where('is_active', true)->findOrFail($data->variantId);
             abort_unless($variant->product && $variant->product->is_active, 404, 'Layanan tidak aktif.');
 
             $paymentMethod = PaymentMethod::where('is_active', true)->findOrFail($data->paymentMethodId);
 
-            // Serialization: lock the settings row so concurrent checkouts serialize cleanly
-            Setting::current(); // ensure row exists
-            Setting::lockForUpdate()->firstOrFail();
-
             $date = $this->quota->today();
 
             if ($variant->type === OrderType::RENT) {
-                if ($this->quota->used($date) >= $this->quota->limitFor($date)) {
+                if ($this->quota->used($date, lock: true) >= $this->quota->limitFor($date)) {
                     throw new QuotaFullException();
                 }
             }
@@ -58,7 +83,7 @@ class CreateOrder
                 throw new OutOfStockException();
             }
 
-            $unique = $this->uniqueAmount->generate($variant->price);
+            $unique = $this->uniqueAmount->generate($variant->price, lock: true);
             $ttlMinutes = (int) env('ORDER_PAYMENT_TTL_MINUTES', 15);
 
             $order = Order::create([

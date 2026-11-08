@@ -12,21 +12,32 @@ import {
     ArrowLeft,
     PhoneCall,
     ShieldAlert,
-    ExternalLink,
 } from 'lucide-react';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import {
+    Dialog,
+    DialogTrigger,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from '@/components/ui/dialog';
 import { CountdownTimer } from '@/components/shop/CountdownTimer';
 import { TotalHighlight } from '@/components/shop/TotalHighlight';
 import { CopyButton } from '@/components/shop/CopyButton';
 import { CredentialBox } from '@/components/shop/CredentialBox';
+import { OrderStepper } from '@/components/shop/OrderStepper';
 import { formatRupiah, formatDateTimeWIB } from '@/lib/format';
 import { OrderInvoiceData } from '@/types/shop';
 
 interface InvoiceShowProps {
     storeName?: string;
+    adminWhatsapp?: string | null;
+    admin_whatsapp?: string | null;
     isAuthorized: boolean;
     serverNow: string;
     order: OrderInvoiceData;
@@ -35,6 +46,8 @@ interface InvoiceShowProps {
 
 export default function InvoiceShow({
     storeName = 'NamaToko',
+    adminWhatsapp,
+    admin_whatsapp,
     isAuthorized,
     serverNow,
     order,
@@ -46,6 +59,55 @@ export default function InvoiceShow({
     const [proofPreview, setProofPreview] = useState<string | null>(null);
     const [isConfirming, setIsConfirming] = useState(false);
     const [confirmError, setConfirmError] = useState<string | null>(null);
+
+    // Cancel order state
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+    const [isCancelling, setIsCancelling] = useState(false);
+
+    // Floating copy toast state (DESIGN_SYSTEM 6.37 & 6.39: 2s duration, opacity transition only)
+    const [showCopyToast, setShowCopyToast] = useState(false);
+    const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        const handleCopy = () => {
+            setShowCopyToast(true);
+            if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+            toastTimerRef.current = setTimeout(() => {
+                setShowCopyToast(false);
+            }, 2000);
+        };
+
+        window.addEventListener('copy-success', handleCopy);
+        return () => {
+            window.removeEventListener('copy-success', handleCopy);
+            if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+        };
+    }, []);
+
+    // Clean admin WhatsApp phone number
+    const rawWhatsapp = adminWhatsapp || admin_whatsapp || '';
+    let cleanAdminPhone = rawWhatsapp.replace(/\D/g, '');
+    if (cleanAdminPhone.startsWith('0')) {
+        cleanAdminPhone = '62' + cleanAdminPhone.slice(1);
+    }
+
+    const handleCancelOrder = () => {
+        setIsCancelling(true);
+        setConfirmError(null);
+
+        router.post(`/invoice/${order.invoice_code}/cancel`, {}, {
+            preserveScroll: true,
+            onFinish: () => {
+                setIsCancelling(false);
+                setIsCancelModalOpen(false);
+            },
+            onError: (errs) => {
+                if (errs.cancel) {
+                    setConfirmError(errs.cancel);
+                }
+            },
+        });
+    };
 
     // Phone verification form state
     const [verifyPhone, setVerifyPhone] = useState('');
@@ -170,15 +232,24 @@ export default function InvoiceShow({
             <Head title={`Invoice #${order.invoice_code} - ${storeName}`} />
 
             <div className="w-full max-w-3xl mx-auto pb-20 pt-2 space-y-5">
-                {/* Back to Home Link */}
-                <div className="flex items-center justify-between">
-                    <Link
-                        href="/"
-                        className="inline-flex items-center gap-1.5 text-xs text-text-2 hover:text-text transition-colors"
-                    >
-                        <ArrowLeft className="w-3.5 h-3.5" />
-                        <span>Katalog Layanan</span>
-                    </Link>
+                {/* (1) Kode Invoice + Badge Status & Back Link */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface border border-border rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                        <Link
+                            href="/"
+                            className="inline-flex items-center gap-1.5 text-xs text-text-2 hover:text-text transition-colors"
+                        >
+                            <ArrowLeft className="w-3.5 h-3.5" />
+                            <span>Katalog</span>
+                        </Link>
+                        <span className="text-border">|</span>
+                        <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-sm font-bold text-text">
+                                #{order.invoice_code}
+                            </span>
+                            <CopyButton text={order.invoice_code} label="Salin Kode" />
+                        </div>
+                    </div>
 
                     <div className="flex items-center gap-2">
                         <span className="text-xs text-text-2">Status:</span>
@@ -188,7 +259,89 @@ export default function InvoiceShow({
                     </div>
                 </div>
 
-                {/* Status Banners */}
+                {/* (2) Stepper Status (DESIGN_SYSTEM 6.35) */}
+                <div className="bg-surface border border-border rounded-lg p-3 sm:p-4">
+                    <OrderStepper status={status} />
+                </div>
+
+                {/* (3) Credential Box for PAID status (moves to position 3 per 6.37) */}
+                {status === 'PAID' && (
+                    <div className="space-y-4">
+                        <div className="bg-accent/10 border border-accent/30 rounded-lg p-4 flex items-start gap-3 text-accent-text">
+                            <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+                            <div className="space-y-1">
+                                <h3 className="text-sm font-bold text-text">
+                                    Pembayaran Berhasil — Akun Aktif
+                                </h3>
+                                <p className="text-xs text-text-2 leading-relaxed">
+                                    Pesanan kamu telah lunas. Kredensial akun streaming dapat dilihat di bawah ini.
+                                </p>
+                            </div>
+                        </div>
+
+                        {isAuthorized ? (
+                            <CredentialBox
+                                credentials={order.credentials}
+                                orderType={order.order_type}
+                                accessStartsAt={order.access_starts_at}
+                                accessExpiresAt={order.access_expires_at}
+                            />
+                        ) : (
+                            /* Unauthorized Card */
+                            <div className="bg-surface border border-warning/40 rounded-lg p-5 space-y-4">
+                                <div className="flex items-center gap-2 text-warning">
+                                    <ShieldAlert className="w-5 h-5 shrink-0" />
+                                    <h3 className="text-sm font-bold text-text">
+                                        Kredensial Terlindungi
+                                    </h3>
+                                </div>
+                                <p className="text-xs text-text-2 leading-relaxed">
+                                    Kredensial akun disembunyikan untuk menjaga keamanan pembeli. Masukkan nomor WhatsApp yang kamu gunakan saat checkout untuk membuka akses akun.
+                                </p>
+
+                                {verifyError && (
+                                    <div className="p-3 rounded-md bg-danger/10 border border-danger/30 text-xs text-danger flex items-center gap-2">
+                                        <AlertCircle className="w-4 h-4 shrink-0" />
+                                        <span>{verifyError}</span>
+                                    </div>
+                                )}
+
+                                <form onSubmit={handleVerifyPhone} className="space-y-3">
+                                    <div>
+                                        <label
+                                            htmlFor="verify-phone"
+                                            className="block text-xs font-medium text-text-2 mb-1.5"
+                                        >
+                                            Nomor WhatsApp Terdaftar
+                                        </label>
+                                        <Input
+                                            id="verify-phone"
+                                            type="tel"
+                                            inputMode="tel"
+                                            value={verifyPhone}
+                                            onChange={(e) => setVerifyPhone(e.target.value)}
+                                            placeholder="Contoh: 081234567890"
+                                            hasError={!!verifyError}
+                                        />
+                                    </div>
+
+                                    <Button
+                                        type="submit"
+                                        variant="primary"
+                                        size="default"
+                                        loading={isVerifying}
+                                        disabled={isVerifying || !verifyPhone.trim()}
+                                        className="w-full"
+                                    >
+                                        Buka Kredensial Akun
+                                    </Button>
+                                </form>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* VERIFYING Banner */}
                 {status === 'VERIFYING' && (
                     <div className="bg-info/10 border border-info/30 rounded-lg p-4 flex items-start gap-3 text-info">
                         <Clock className="w-5 h-5 shrink-0 mt-0.5" />
@@ -203,20 +356,7 @@ export default function InvoiceShow({
                     </div>
                 )}
 
-                {status === 'PAID' && (
-                    <div className="bg-accent/10 border border-accent/30 rounded-lg p-4 flex items-start gap-3 text-accent-text">
-                        <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
-                        <div className="space-y-1">
-                            <h3 className="text-sm font-bold text-text">
-                                Pembayaran Berhasil — Akun Aktif
-                            </h3>
-                            <p className="text-xs text-text-2 leading-relaxed">
-                                Pesanan kamu telah lunas. Kredensial akun streaming dapat dilihat di bawah ini.
-                            </p>
-                        </div>
-                    </div>
-                )}
-
+                {/* EXPIRED Banner */}
                 {status === 'EXPIRED' && (
                     <div className="bg-danger/10 border border-danger/30 rounded-lg p-4 flex items-start gap-3 text-danger">
                         <XCircle className="w-5 h-5 shrink-0 mt-0.5" />
@@ -236,6 +376,7 @@ export default function InvoiceShow({
                     </div>
                 )}
 
+                {/* CANCELLED Banner */}
                 {status === 'CANCELLED' && (
                     <div className="bg-danger/10 border border-danger/30 rounded-lg p-4 flex items-start gap-3 text-danger">
                         <XCircle className="w-5 h-5 shrink-0 mt-0.5" />
@@ -255,45 +396,53 @@ export default function InvoiceShow({
                     </div>
                 )}
 
-                {/* PENDING State: Countdown + Payment Card */}
+                {/* PENDING State Elements: (3) Total Transfer, (4) Countdown, (5) Payment Card, (6) 3 Steps, (7) Action/Cancel, (8) WhatsApp */}
                 {status === 'PENDING' && (
                     <div className="space-y-5">
-                        {/* Countdown */}
+                        {/* (3) Kartu Total Transfer (Paling Menonjol) */}
+                        <TotalHighlight
+                            totalAmount={order.total_amount}
+                            uniqueCode={order.unique_code}
+                        />
+
+                        {/* (4) Countdown dengan progress bar waktu 4px */}
                         <CountdownTimer
                             expiresAt={order.payment_expires_at}
                             serverNow={serverNow}
                             onExpire={handleCountdownExpire}
                         />
 
-                        {/* Total Highlight with Accent Unique Code */}
-                        <TotalHighlight
-                            totalAmount={order.total_amount}
-                            uniqueCode={order.unique_code}
-                        />
-
-                        {/* Payment Method Details */}
+                        {/* (5) Instruksi Pembayaran: QRIS (kotak putih maks 280px) atau Rekening */}
                         <div className="bg-surface border border-border rounded-lg p-4 sm:p-5 space-y-4">
                             <div className="flex items-center gap-2 pb-3 border-b border-border">
-                                {order.payment_method.type === 'QRIS' && <QrCode className="w-4 h-4 text-accent-text" />}
-                                {order.payment_method.type === 'BANK' && <Building2 className="w-4 h-4 text-info" />}
-                                {order.payment_method.type === 'EWALLET' && <Wallet className="w-4 h-4 text-warning" />}
+                                {order.payment_method.logo_url ? (
+                                    <div className="logo-plate h-6 px-1.5 shrink-0">
+                                        <img src={order.payment_method.logo_url} alt="" className="h-4 max-w-[48px] object-contain" />
+                                    </div>
+                                ) : (
+                                    <>
+                                        {order.payment_method.type === 'QRIS' && <QrCode className="w-4 h-4 text-accent-text" />}
+                                        {order.payment_method.type === 'BANK' && <Building2 className="w-4 h-4 text-info" />}
+                                        {order.payment_method.type === 'EWALLET' && <Wallet className="w-4 h-4 text-warning" />}
+                                    </>
+                                )}
                                 <h3 className="text-sm font-bold text-text">
                                     Tujuan Pembayaran: {order.payment_method.label}
                                 </h3>
                             </div>
 
-                            {/* QRIS Image if available */}
+                            {/* QRIS Image if available: max 280px in white box */}
                             {order.payment_method.type === 'QRIS' && order.payment_method.qris_image_path && (
                                 <div className="flex flex-col items-center justify-center p-4 bg-surface-2 rounded-lg border border-border space-y-3">
-                                    <div className="p-3 bg-white rounded-lg border border-border max-w-[260px] mx-auto">
+                                    <div className="p-3 qris-box rounded-lg border border-border max-w-[280px] w-full mx-auto shadow-2xs">
                                         <img
                                             src={order.payment_method.qris_image_path}
                                             alt="QRIS Pembayaran"
-                                            className="w-full h-auto object-contain aspect-square"
+                                            className="w-full h-auto object-contain aspect-square mx-auto"
                                         />
                                     </div>
                                     <p className="text-xs text-text-2 text-center max-w-xs">
-                                        Pindai QRIS di atas memakai aplikasi BCA, Mandiri, GoPay, OVO, Dana, atau mobile banking kamu.
+                                        Pindai QRIS di atas memakai aplikasi BCA, Mandiri, GoPay, OVO, Dana, ShopeePay, atau mobile banking kamu.
                                     </p>
                                 </div>
                             )}
@@ -330,7 +479,40 @@ export default function InvoiceShow({
                             )}
                         </div>
 
-                        {/* Upload Proof & Confirm Form */}
+                        {/* (6) Tiga Langkah Singkat Berangka */}
+                        <div className="bg-surface border border-border rounded-lg p-4 sm:p-5 space-y-3">
+                            <h4 className="text-xs font-bold text-text tracking-wider uppercase">
+                                3 Langkah Pembayaran
+                            </h4>
+                            <ol className="space-y-2.5 text-xs text-text-2 list-none p-0 m-0">
+                                <li className="flex items-start gap-2.5">
+                                    <span className="w-5 h-5 rounded-full bg-surface-2 border border-border-strong text-text font-mono text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                                        1
+                                    </span>
+                                    <span className="leading-relaxed">
+                                        Transfer sesuai nominal tepat sampai 3 digit terakhir.
+                                    </span>
+                                </li>
+                                <li className="flex items-start gap-2.5">
+                                    <span className="w-5 h-5 rounded-full bg-surface-2 border border-border-strong text-text font-mono text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                                        2
+                                    </span>
+                                    <span className="leading-relaxed">
+                                        Unggah bukti transfer (opsional) di kolom bawah.
+                                    </span>
+                                </li>
+                                <li className="flex items-start gap-2.5">
+                                    <span className="w-5 h-5 rounded-full bg-surface-2 border border-border-strong text-text font-mono text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                                        3
+                                    </span>
+                                    <span className="leading-relaxed">
+                                        Tekan tombol <strong className="text-text font-semibold">Saya Sudah Bayar</strong>.
+                                    </span>
+                                </li>
+                            </ol>
+                        </div>
+
+                        {/* (7) Tombol Aksi + Batalkan Pesanan */}
                         <div className="bg-surface border border-border rounded-lg p-4 sm:p-5 space-y-4">
                             <div className="pb-3 border-b border-border">
                                 <h3 className="text-sm font-bold text-text">Konfirmasi Pembayaran</h3>
@@ -393,79 +575,61 @@ export default function InvoiceShow({
                                 type="button"
                                 variant="primary"
                                 size="lg"
-                                disabled={isConfirming}
+                                disabled={isConfirming || isCancelling}
                                 loading={isConfirming}
                                 onClick={handleConfirmPayment}
                                 className="w-full h-11 text-sm font-semibold"
                             >
                                 Saya Sudah Bayar
                             </Button>
-                        </div>
-                    </div>
-                )}
 
-                {/* PAID State: Credential Box or WhatsApp Verification Card */}
-                {status === 'PAID' && (
-                    <div className="space-y-4">
-                        {isAuthorized ? (
-                            <CredentialBox
-                                credentials={order.credentials}
-                                orderType={order.order_type}
-                                accessStartsAt={order.access_starts_at}
-                                accessExpiresAt={order.access_expires_at}
-                            />
-                        ) : (
-                            /* Unauthorized Card */
-                            <div className="bg-surface border border-warning/40 rounded-lg p-5 space-y-4">
-                                <div className="flex items-center gap-2 text-warning">
-                                    <ShieldAlert className="w-5 h-5 shrink-0" />
-                                    <h3 className="text-sm font-bold text-text">
-                                        Kredensial Terlindungi
-                                    </h3>
-                                </div>
-                                <p className="text-xs text-text-2 leading-relaxed">
-                                    Kredensial akun disembunyikan untuk menjaga keamanan pembeli. Masukkan nomor WhatsApp yang kamu gunakan saat checkout untuk membuka akses akun.
-                                </p>
-
-                                {verifyError && (
-                                    <div className="p-3 rounded-md bg-danger/10 border border-danger/30 text-xs text-danger flex items-center gap-2">
-                                        <AlertCircle className="w-4 h-4 shrink-0" />
-                                        <span>{verifyError}</span>
-                                    </div>
-                                )}
-
-                                <form onSubmit={handleVerifyPhone} className="space-y-3">
-                                    <div>
-                                        <label
-                                            htmlFor="verify-phone"
-                                            className="block text-xs font-medium text-text-2 mb-1.5"
+                            {/* Batalkan Pesanan (DESIGN_SYSTEM 6.3) */}
+                            {isAuthorized && (
+                                <Dialog open={isCancelModalOpen} onOpenChange={setIsCancelModalOpen}>
+                                    <DialogTrigger asChild>
+                                        <button
+                                            type="button"
+                                            disabled={isConfirming || isCancelling}
+                                            className="w-full h-9 rounded-md border border-danger/40 bg-surface text-danger hover:bg-danger/10 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-danger"
                                         >
-                                            Nomor WhatsApp Terdaftar
-                                        </label>
-                                        <Input
-                                            id="verify-phone"
-                                            type="tel"
-                                            inputMode="tel"
-                                            value={verifyPhone}
-                                            onChange={(e) => setVerifyPhone(e.target.value)}
-                                            placeholder="Contoh: 081234567890"
-                                            hasError={!!verifyError}
-                                        />
-                                    </div>
-
-                                    <Button
-                                        type="submit"
-                                        variant="primary"
-                                        size="default"
-                                        loading={isVerifying}
-                                        disabled={isVerifying || !verifyPhone.trim()}
-                                        className="w-full"
-                                    >
-                                        Buka Kredensial Akun
-                                    </Button>
-                                </form>
-                            </div>
-                        )}
+                                            <XCircle className="w-3.5 h-3.5" />
+                                            <span>Batalkan Pesanan</span>
+                                        </button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-md bg-surface border-border text-text">
+                                        <DialogHeader>
+                                            <DialogTitle className="text-base font-semibold text-text">
+                                                Batalkan Pesanan?
+                                            </DialogTitle>
+                                            <DialogDescription className="text-xs text-text-2">
+                                                Batalkan pesanan ini? Kuota dan akun akan dilepas.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <DialogFooter className="flex sm:justify-end gap-2 pt-2">
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => setIsCancelModalOpen(false)}
+                                                disabled={isCancelling}
+                                            >
+                                                Kembali
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="destructive"
+                                                size="sm"
+                                                loading={isCancelling}
+                                                disabled={isCancelling}
+                                                onClick={handleCancelOrder}
+                                            >
+                                                Ya, Batalkan
+                                            </Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            )}
+                        </div>
                     </div>
                 )}
 
@@ -532,7 +696,33 @@ export default function InvoiceShow({
                         </div>
                     </div>
                 </div>
+
+                {/* (8) Tautan Hubungi Admin via WhatsApp (Ghost) - disembunyikan bila admin_whatsapp kosong */}
+                {cleanAdminPhone && (
+                    <div className="pt-2 flex justify-center">
+                        <a
+                            href={`https://wa.me/${cleanAdminPhone}?text=${encodeURIComponent(`Halo Admin ${storeName}, saya butuh bantuan untuk pesanan #${order.invoice_code}`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-xs font-semibold text-text-2 hover:text-text py-2 px-3 rounded-md hover:bg-surface-2 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                        >
+                            <PhoneCall className="w-3.5 h-3.5 text-accent-text" />
+                            <span>Hubungi Admin via WhatsApp</span>
+                        </a>
+                    </div>
+                )}
             </div>
+
+            {/* Floating Copy Toast (DESIGN_SYSTEM 6.37 & 6.39) */}
+            {showCopyToast && (
+                <div
+                    role="status"
+                    aria-live="polite"
+                    className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-text text-surface text-xs font-semibold rounded-md shadow-lg pointer-events-none transition-opacity duration-150"
+                >
+                    Tersalin
+                </div>
+            )}
         </PublicLayout>
     );
 }

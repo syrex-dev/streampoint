@@ -682,7 +682,7 @@ export default function AdminSettings({ settings, overrides, telegramConfigured 
                                                     value={generalData.telegram_bot_token}
                                                     onChange={(e) => setGeneralData({ ...generalData, telegram_bot_token: e.target.value })}
                                                     placeholder={settings.telegram_has_token ? '••••••••••••••••••••' : 'Contoh: 123456789:ABCdef...'}
-                                                    className="w-full h-10 px-3 pr-10 bg-surface-2 border border-border rounded-md text-xs text-text font-mono focus:outline-none focus:border-accent"
+                                                    className="w-full h-10 px-3 pr-10 bg-surface-2 border border-border rounded-md text-xs text-text font-mono focus:outline-none focus:border-accent [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
                                                 />
                                                 <button
                                                     type="button"

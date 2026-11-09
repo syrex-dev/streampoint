@@ -300,6 +300,17 @@ html.dark .brand-logo-box.has-brand-tint {
     display: none !important;
 }
 
+/* Hilangkan tombol reveal & clear bawaan browser (Edge, IE, Chromium) */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input::-ms-reveal,
+input::-ms-clear {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    pointer-events: none !important;
+}
+
 /* Skeleton Loading (DESIGN_SYSTEM 6.39) */
 @keyframes skeleton-pulse {
     0%, 100% {

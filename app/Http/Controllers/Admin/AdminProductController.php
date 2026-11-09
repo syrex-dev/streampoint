@@ -50,15 +50,15 @@ class AdminProductController extends Controller
 
     public function store(ProductStoreRequest $request, ImageOptimizer $optimizer): RedirectResponse
     {
-        $slug = $request->validated('slug');
-        if (empty($slug)) {
+        $baseSlug = $request->validated('slug');
+        if (empty($baseSlug)) {
             $baseSlug = Str::slug($request->validated('name'));
-            $slug = $baseSlug;
-            $counter = 1;
-            while (Product::where('slug', $slug)->exists()) {
-                $slug = "{$baseSlug}-{$counter}";
-                $counter++;
-            }
+        }
+        $slug = $baseSlug;
+        $counter = 1;
+        while (Product::where('slug', $slug)->exists()) {
+            $slug = "{$baseSlug}-{$counter}";
+            $counter++;
         }
 
         $thumbnailPath = null;
@@ -79,10 +79,10 @@ class AdminProductController extends Controller
             'category' => $request->validated('category'),
             'description' => $request->validated('description'),
             'rules' => $request->validated('rules'),
-            'is_active' => (bool) $request->validated('is_active'),
+            'is_active' => $request->boolean('is_active'),
             'sort_order' => (int) ($request->validated('sort_order') ?? 0),
-            'brand_color' => $request->validated('brand_color'),
-            'has_warranty' => (bool) $request->validated('has_warranty'),
+            'brand_color' => $request->validated('brand_color') ?: null,
+            'has_warranty' => $request->boolean('has_warranty'),
             'thumbnail_path' => $thumbnailPath,
             'cover_path' => $coverPath,
         ]);
@@ -140,10 +140,10 @@ class AdminProductController extends Controller
             'category' => $request->validated('category'),
             'description' => $request->validated('description'),
             'rules' => $request->validated('rules'),
-            'is_active' => (bool) $request->validated('is_active'),
+            'is_active' => $request->boolean('is_active'),
             'sort_order' => (int) ($request->validated('sort_order') ?? 0),
-            'brand_color' => $request->validated('brand_color'),
-            'has_warranty' => (bool) $request->validated('has_warranty'),
+            'brand_color' => $request->validated('brand_color') ?: null,
+            'has_warranty' => $request->boolean('has_warranty'),
         ];
 
         if ($request->hasFile('thumbnail')) {

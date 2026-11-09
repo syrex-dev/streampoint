@@ -133,6 +133,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         return url.startsWith(href);
     };
 
+    const isOtherActive = url.startsWith('/admin/banners') || 
+                          url.startsWith('/admin/payment-methods') || 
+                          url.startsWith('/admin/settings') || 
+                          url.startsWith('/settings');
+
     const handleLogout = () => {
         router.post('/logout');
     };
@@ -197,32 +202,30 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </a>
 
             {/* Mobile Top Bar (56px) */}
-            <header className="lg:hidden sticky top-0 z-40 w-full h-14 bg-surface border-b border-border flex items-center justify-between px-4">
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <button
-                        ref={menuButtonRef}
-                        type="button"
-                        onClick={() => setIsMobileMenuOpen(true)}
-                        className="p-1.5 text-text-2 hover:text-text hover:bg-surface-hover rounded-md transition-colors cursor-pointer"
-                        aria-label="Buka navigasi admin"
-                        aria-expanded={isMobileMenuOpen}
-                    >
-                        <Menu className="w-5 h-5" />
-                    </button>
-                    <Link href="/admin" className="flex items-center gap-2 min-w-0">
-                        <BrandMark
-                            variant="icon-text"
-                            showTagline={false}
-                            logoClassName="w-6 h-6 object-contain shrink-0"
-                            textClassName="text-sm font-bold text-text truncate tracking-tight"
-                        />
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-2 text-text-2 border border-border shrink-0">
-                            Admin
-                        </span>
-                    </Link>
-                </div>
+            <header className="lg:hidden sticky top-0 z-30 w-full h-14 bg-surface border-b border-border flex items-center justify-between px-4">
+                <Link href="/admin" className="flex items-center gap-2 min-w-0">
+                    <BrandMark
+                        variant="icon-text"
+                        showTagline={false}
+                        logoClassName="w-6 h-6 object-contain shrink-0"
+                        textClassName="text-sm font-bold text-text truncate tracking-tight"
+                    />
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-2 text-text-2 border border-border shrink-0">
+                        Admin
+                    </span>
+                </Link>
 
                 <div className="flex items-center gap-2 shrink-0">
+                    <Link
+                        href="/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-text-2 hover:text-text hover:bg-surface-hover rounded-md border border-border transition-colors"
+                        title="Buka etalase toko"
+                    >
+                        <span>Toko</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                    </Link>
                     <ThemeToggle />
                 </div>
             </header>
@@ -369,7 +372,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </aside>
 
             {/* Main Content Area */}
-            <main id="admin-content" className="flex-1 min-w-0 p-4 lg:p-6 max-w-6xl w-full mx-auto space-y-6">
+            <main id="admin-content" className="flex-1 min-w-0 p-4 lg:p-6 max-w-6xl w-full mx-auto space-y-6 pb-24 lg:pb-6">
                 {/* Flash Banner for feedback alerts */}
                 <FlashBanner
                     success={flash?.success}
@@ -379,6 +382,106 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
                 {children}
             </main>
+
+            {/* Mobile Bottom Bar Navigation (<1024px) */}
+            <nav
+                aria-label="Navigasi Bawah Admin"
+                className="lg:hidden fixed bottom-0 inset-x-0 z-40 h-16 bg-surface/95 backdrop-blur-md border-t border-border flex items-center justify-around px-1 pb-[env(safe-area-inset-bottom)]"
+            >
+                {/* 1. Dashboard */}
+                <Link
+                    href="/admin"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`relative flex flex-col items-center justify-center flex-1 h-full py-1 gap-1 text-[11px] transition-colors ${
+                        url === '/admin'
+                            ? 'text-accent-text font-semibold'
+                            : 'text-text-3 hover:text-text'
+                    }`}
+                >
+                    <LayoutDashboard className="w-5 h-5 shrink-0" />
+                    <span className="truncate">Dashboard</span>
+                    {url === '/admin' && (
+                        <span className="absolute top-0 w-8 h-0.5 bg-accent rounded-full" />
+                    )}
+                </Link>
+
+                {/* 2. Order */}
+                <Link
+                    href="/admin/orders"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`relative flex flex-col items-center justify-center flex-1 h-full py-1 gap-1 text-[11px] transition-colors ${
+                        url.startsWith('/admin/orders')
+                            ? 'text-accent-text font-semibold'
+                            : 'text-text-3 hover:text-text'
+                    }`}
+                >
+                    <div className="relative">
+                        <ShoppingBag className="w-5 h-5 shrink-0" />
+                        {typeof verifyingCount === 'number' && verifyingCount > 0 && (
+                            <span className="absolute -top-1.5 -right-2 px-1 min-w-4 h-4 text-[9px] font-mono font-bold rounded-full bg-info text-white flex items-center justify-center shadow-xs">
+                                {verifyingCount > 99 ? '99+' : verifyingCount}
+                            </span>
+                        )}
+                    </div>
+                    <span className="truncate">Order</span>
+                    {url.startsWith('/admin/orders') && (
+                        <span className="absolute top-0 w-8 h-0.5 bg-accent rounded-full" />
+                    )}
+                </Link>
+
+                {/* 3. Produk */}
+                <Link
+                    href="/admin/products"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`relative flex flex-col items-center justify-center flex-1 h-full py-1 gap-1 text-[11px] transition-colors ${
+                        url.startsWith('/admin/products')
+                            ? 'text-accent-text font-semibold'
+                            : 'text-text-3 hover:text-text'
+                    }`}
+                >
+                    <Package className="w-5 h-5 shrink-0" />
+                    <span className="truncate">Produk</span>
+                    {url.startsWith('/admin/products') && (
+                        <span className="absolute top-0 w-8 h-0.5 bg-accent rounded-full" />
+                    )}
+                </Link>
+
+                {/* 4. Stok Akun */}
+                <Link
+                    href="/admin/accounts"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`relative flex flex-col items-center justify-center flex-1 h-full py-1 gap-1 text-[11px] transition-colors ${
+                        url.startsWith('/admin/accounts')
+                            ? 'text-accent-text font-semibold'
+                            : 'text-text-3 hover:text-text'
+                    }`}
+                >
+                    <KeyRound className="w-5 h-5 shrink-0" />
+                    <span className="truncate">Stok</span>
+                    {url.startsWith('/admin/accounts') && (
+                        <span className="absolute top-0 w-8 h-0.5 bg-accent rounded-full" />
+                    )}
+                </Link>
+
+                {/* 5. Menu Lainnya (Drawer Toggle) */}
+                <button
+                    type="button"
+                    onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+                    className={`relative flex flex-col items-center justify-center flex-1 h-full py-1 gap-1 text-[11px] transition-colors cursor-pointer ${
+                        isOtherActive || isMobileMenuOpen
+                            ? 'text-accent-text font-semibold'
+                            : 'text-text-3 hover:text-text'
+                    }`}
+                    aria-label="Buka menu navigasi lainnya"
+                    aria-expanded={isMobileMenuOpen}
+                >
+                    <Menu className="w-5 h-5 shrink-0" />
+                    <span className="truncate">Menu</span>
+                    {(isOtherActive || isMobileMenuOpen) && (
+                        <span className="absolute top-0 w-8 h-0.5 bg-accent rounded-full" />
+                    )}
+                </button>
+            </nav>
         </div>
     );
 }

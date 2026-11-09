@@ -18,21 +18,21 @@ class ImageOptimizer
     protected array $config = [
         self::TYPE_COVER => [
             'max_width' => 800,
-            'max_kb' => 2048,
+            'max_kb' => 10240,
             'directory' => 'covers',
             'quality' => 80,
             'label' => 'Sampul layanan',
         ],
         self::TYPE_BANNER => [
             'max_width' => 1200,
-            'max_kb' => 2048,
+            'max_kb' => 10240,
             'directory' => 'banners',
             'quality' => 80,
             'label' => 'Gambar banner',
         ],
         self::TYPE_LOGO => [
             'max_width' => 256,
-            'max_kb' => 1024,
+            'max_kb' => 5120,
             'directory' => 'logos',
             'quality' => 85,
             'label' => 'Logo',

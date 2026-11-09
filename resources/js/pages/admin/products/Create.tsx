@@ -58,6 +58,11 @@ export default function ProductCreate() {
     const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            if (file.size > 10 * 1024 * 1024) {
+                alert('Ukuran file logo/thumbnail melebihi 10MB. Silakan pilih berkas gambar yang lebih kecil.');
+                e.target.value = '';
+                return;
+            }
             setData('thumbnail', file);
             setPreviewUrl(URL.createObjectURL(file));
         }
@@ -66,6 +71,11 @@ export default function ProductCreate() {
     const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            if (file.size > 10 * 1024 * 1024) {
+                alert('Ukuran file gambar sampul melebihi 10MB. Silakan pilih berkas gambar yang lebih kecil.');
+                e.target.value = '';
+                return;
+            }
             setData('cover', file);
             setCoverPreviewUrl(URL.createObjectURL(file));
         }
@@ -73,7 +83,12 @@ export default function ProductCreate() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post('/admin/products');
+        post('/admin/products', {
+            forceFormData: true,
+            onError: () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            },
+        });
     };
 
     return (
@@ -180,7 +195,7 @@ export default function ProductCreate() {
                         {/* Thumbnail / Logo Upload */}
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold text-text block">
-                                Logo / Ikon Produk (Maks 2MB, JPG/PNG/WEBP)
+                                Logo / Ikon Produk (Maks 10MB, JPG/PNG/WEBP)
                             </label>
                             <div className="flex items-center gap-4">
                                 <div
@@ -227,7 +242,7 @@ export default function ProductCreate() {
                         {/* Sampul Layanan (Cover Image) */}
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold text-text block">
-                                Gambar Sampul Layanan (Rasio 16:10, Maks 2MB - Opsional)
+                                Gambar Sampul Layanan (Rasio 16:10, Maks 10MB - Opsional)
                             </label>
                             <div className="flex items-start gap-4">
                                 <div className="w-24 aspect-[16/10] rounded border border-border overflow-hidden bg-surface-2 shrink-0 flex items-center justify-center">
@@ -354,6 +369,21 @@ export default function ProductCreate() {
                                 onCheckedChange={(checked) => setData('is_active', checked)}
                             />
                         </div>
+
+                        {/* Bottom Error Notification */}
+                        {Object.keys(errors).length > 0 && (
+                            <div className="p-3 bg-danger/10 border border-danger/30 rounded text-xs text-danger flex items-start gap-2">
+                                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                                <div>
+                                    <span className="font-semibold block">Gagal menyimpan! Periksa kolom berikut:</span>
+                                    <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                                        {Object.values(errors).map((err, i) => (
+                                            <li key={i}>{err}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Submit Button */}
                         <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">

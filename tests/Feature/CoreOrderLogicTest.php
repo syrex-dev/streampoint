@@ -284,7 +284,7 @@ class CoreOrderLogicTest extends TestCase
         $this->assertTrue(OrderStatus::EXPIRED->canTransitionTo(OrderStatus::VERIFYING));
         $this->assertFalse(OrderStatus::EXPIRED->canTransitionTo(OrderStatus::PAID));
 
-        $this->assertFalse(OrderStatus::PAID->canTransitionTo(OrderStatus::CANCELLED));
+        $this->assertTrue(OrderStatus::PAID->canTransitionTo(OrderStatus::CANCELLED)); // Allowed for rule violation access revocation
         $this->assertFalse(OrderStatus::CANCELLED->canTransitionTo(OrderStatus::PAID));
 
         // Attempting to reject an already CANCELLED order via Action throws exception

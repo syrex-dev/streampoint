@@ -43,15 +43,19 @@ class CheckoutController extends Controller
                 ownedInvoices: $request->session()->get('owned_invoices', []),
             ));
         } catch (ActiveOrderExistsException $e) {
-            // Buyer already has an active order (e.g. pending payment or verifying).
-            // Directly forward them to their invoice so they can pay or view status!
-            $owned = $request->session()->get('owned_invoices', []);
-            if (! in_array($e->invoiceCode, $owned, true)) {
-                $owned[] = $e->invoiceCode;
-                $request->session()->put('owned_invoices', $owned);
+            if ($e->ownedBySession) {
+                $msg = $e->isVerifying
+                    ? "Pesanan {$e->invoiceCode} sedang diverifikasi admin. Kamu bisa memesan lagi setelah selesai."
+                    : "Kamu masih punya pesanan yang belum selesai ({$e->invoiceCode}). Selesaikan pembayaran atau batalkan dulu.";
+            } else {
+                $msg = $e->isVerifying
+                    ? 'Nomor ini masih punya pesanan yang sedang diverifikasi admin. Tunggu sampai selesai atau gunakan Cek Pesanan.'
+                    : 'Nomor ini masih punya pesanan yang belum selesai. Tunggu sampai selesai atau gunakan Cek Pesanan.';
             }
 
-            return redirect()->to("/invoice/{$e->invoiceCode}");
+            throw ValidationException::withMessages([
+                'customer_phone' => $msg,
+            ]);
         } catch (QuotaFullException) {
             throw ValidationException::withMessages([
                 'variant_id' => 'Kuota sewa hari ini sudah penuh. Silakan coba lagi besok pukul 00:00 WIB.',

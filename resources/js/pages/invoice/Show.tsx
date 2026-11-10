@@ -5,7 +5,6 @@ import {
     AlertCircle,
     CheckCircle2,
     XCircle,
-    UploadCloud,
     Building2,
     QrCode,
     Wallet,
@@ -62,8 +61,6 @@ export default function InvoiceShow({
 }: InvoiceShowProps) {
     // Current status state (can update via polling or countdown expire)
     const [status, setStatus] = useState(order.status);
-    const [proofFile, setProofFile] = useState<File | null>(null);
-    const [proofPreview, setProofPreview] = useState<string | null>(null);
     const [isConfirming, setIsConfirming] = useState(false);
     const [confirmError, setConfirmError] = useState<string | null>(null);
 
@@ -155,48 +152,18 @@ export default function InvoiceShow({
         setStatus(order.status);
     }, [order.status]);
 
-    // Handle Proof selection
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        // Client check: max 3MB
-        if (file.size > 3 * 1024 * 1024) {
-            setConfirmError('Ukuran file bukti pembayaran maksimal 3MB.');
-            return;
-        }
-
-        setConfirmError(null);
-        setProofFile(file);
-        setProofPreview(URL.createObjectURL(file));
-    };
-
-    // Clean up preview blob
-    useEffect(() => {
-        return () => {
-            if (proofPreview) URL.revokeObjectURL(proofPreview);
-        };
-    }, [proofPreview]);
-
     // Confirm Payment submission ("Saya Sudah Bayar")
     const handleConfirmPayment = () => {
         setIsConfirming(true);
         setConfirmError(null);
 
-        const formData = new FormData();
-        if (proofFile) {
-            formData.append('proof', proofFile);
-        }
-
-        router.post(`/invoice/${order.invoice_code}/confirm`, formData, {
+        router.post(`/invoice/${order.invoice_code}/confirm`, {}, {
             preserveScroll: true,
             onFinish: () => {
                 setIsConfirming(false);
             },
             onError: (errs) => {
-                if (errs.proof) {
-                    setConfirmError(errs.proof);
-                } else if (errs.confirm) {
+                if (errs.confirm) {
                     setConfirmError(errs.confirm);
                 } else {
                     setConfirmError('Gagal mengonfirmasi pembayaran. Silakan coba lagi.');
@@ -669,10 +636,10 @@ export default function InvoiceShow({
                             )}
                         </div>
 
-                        {/* (6) Tiga Langkah Singkat Berangka */}
+                        {/* (6) Langkah Pembayaran */}
                         <div className="bg-surface border border-border rounded-lg p-4 sm:p-5 space-y-3">
                             <h4 className="text-xs font-bold text-text tracking-wider uppercase">
-                                3 Langkah Pembayaran
+                                Langkah Pembayaran
                             </h4>
                             <ol className="space-y-2.5 text-xs text-text-2 list-none p-0 m-0">
                                 <li className="flex items-start gap-2.5">
@@ -680,7 +647,7 @@ export default function InvoiceShow({
                                         1
                                     </span>
                                     <span className="leading-relaxed">
-                                        Transfer sesuai nominal tepat sampai 3 digit terakhir.
+                                        Transfer sesuai nominal tepat ke tujuan pembayaran di atas.
                                     </span>
                                 </li>
                                 <li className="flex items-start gap-2.5">
@@ -688,15 +655,7 @@ export default function InvoiceShow({
                                         2
                                     </span>
                                     <span className="leading-relaxed">
-                                        Unggah bukti transfer (opsional) di kolom bawah.
-                                    </span>
-                                </li>
-                                <li className="flex items-start gap-2.5">
-                                    <span className="w-5 h-5 rounded-full bg-surface-2 border border-border-strong text-text font-mono text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">
-                                        3
-                                    </span>
-                                    <span className="leading-relaxed">
-                                        Tekan tombol <strong className="text-text font-semibold">Saya Sudah Bayar</strong>.
+                                        Tekan tombol <strong className="text-text font-semibold">Saya Sudah Bayar</strong> di bawah ini.
                                     </span>
                                 </li>
                             </ol>
@@ -707,7 +666,7 @@ export default function InvoiceShow({
                             <div className="pb-3 border-b border-border">
                                 <h3 className="text-sm font-bold text-text">Konfirmasi Pembayaran</h3>
                                 <p className="text-xs text-text-2 mt-0.5">
-                                    Setelah mentransfer, unggah bukti bayar (opsional) lalu klik tombol konfirmasi di bawah.
+                                    Setelah selesai melakukan transfer, tekan tombol di bawah ini agar pesanan kamu segera diproses oleh admin.
                                 </p>
                             </div>
 
@@ -719,48 +678,6 @@ export default function InvoiceShow({
                                 </div>
                             )}
 
-                            {/* Upload Area */}
-                            <div>
-                                <label
-                                    htmlFor="proof-upload"
-                                    className="block text-xs font-medium text-text-2 mb-2"
-                                >
-                                    Bukti Transfer <span className="text-text-muted">(JPG, PNG, WEBP, maks 3MB)</span>
-                                </label>
-
-                                <div className="border border-dashed border-border-strong rounded-lg p-4 text-center bg-surface-2 hover:bg-surface-hover transition-colors cursor-pointer relative">
-                                    <input
-                                        id="proof-upload"
-                                        type="file"
-                                        accept="image/jpeg,image/png,image/webp"
-                                        onChange={handleFileChange}
-                                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                    />
-                                    {proofPreview ? (
-                                        <div className="space-y-2">
-                                            <img
-                                                src={proofPreview}
-                                                alt="Preview Bukti"
-                                                className="max-h-40 mx-auto rounded border border-border object-contain"
-                                            />
-                                            <p className="text-xs text-accent-text font-medium">
-                                                {proofFile?.name} (klik untuk mengganti)
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center gap-1.5 py-2">
-                                            <UploadCloud className="w-6 h-6 text-text-muted" />
-                                            <span className="text-xs text-text font-medium">
-                                                Pilih file foto atau tangkapan layar transfer
-                                            </span>
-                                            <span className="text-[11px] text-text-2">
-                                                Maksimal 3MB
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
                             <Button
                                 type="button"
                                 variant="primary"
@@ -768,7 +685,7 @@ export default function InvoiceShow({
                                 disabled={isConfirming || isCancelling}
                                 loading={isConfirming}
                                 onClick={handleConfirmPayment}
-                                className="w-full h-11 text-sm font-semibold"
+                                className="w-full h-11 text-sm font-semibold cursor-pointer shadow-xs"
                             >
                                 Saya Sudah Bayar
                             </Button>

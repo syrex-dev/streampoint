@@ -190,7 +190,7 @@ export default function StorefrontIndex({
         {
             num: 3,
             title: 'Konfirmasi',
-            desc: 'Tekan "Saya Sudah Bayar", unggah bukti jika ada.',
+            desc: 'Tekan "Saya Sudah Bayar" setelah transfer.',
             icon: <CheckCheck className="w-4 h-4 text-accent-text" />,
         },
         {

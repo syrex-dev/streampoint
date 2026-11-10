@@ -14,6 +14,7 @@ class ProductAccount extends Model
 
     protected $fillable = [
         'product_id',
+        'variant_id',
         'kind',
         'credential',
         'status',
@@ -35,6 +36,11 @@ class ProductAccount extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
     }
 
     public function order(): BelongsTo

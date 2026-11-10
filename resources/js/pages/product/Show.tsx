@@ -365,25 +365,7 @@ export default function ProductShow({
                         </div>
 
                         {/* Rental Rules & Warranty Card */}
-                        <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3">
-                            <div className="flex items-center gap-2 text-text">
-                                <ShieldCheck className="w-4 h-4 text-accent-text shrink-0" />
-                                <h2 className="text-sm font-bold tracking-tight">
-                                    Syarat Sewa & Garansi
-                                </h2>
-                            </div>
-
-                            <div className="text-xs text-text-2 leading-relaxed space-y-2 whitespace-pre-line">
-                                {product.rules || (
-                                    <>
-                                        <p>• Akun hanya untuk digunakan secara pribadi sesuai profil yang ditentukan.</p>
-                                        <p>• Dilarang mengubah email, password, PIN, atau data profil akun.</p>
-                                        <p>• Durasi sewa dihitung sejak kredensial akun diberikan kepada pembeli.</p>
-                                        <p>• Garansi berlaku penuh selama masa sewa sesuai ketentuan.</p>
-                                    </>
-                                )}
-                            </div>
-                        </div>
+                        <RentalRulesCard rules={product.rules} />
                     </div>
 
                     {/* Right Column: Package Selection & Desktop Summary (7 Cols) */}
@@ -605,5 +587,138 @@ export default function ProductShow({
                 />
             </div>
         </PublicLayout>
+    );
+}
+
+function RentalRulesCard({ rules }: { rules?: string | null }) {
+    const parsed = useMemo(() => {
+        if (!rules || !rules.trim()) {
+            return {
+                warning: 'DILARANG LOGIN LEBIH DARI SATU PERANGKAT / PROFIL.',
+                rules: [
+                    { title: 'Penggunaan Pribadi', text: 'Akun hanya diizinkan untuk 1 perangkat sesuai dengan profil yang diberikan.' },
+                    { title: 'Dilarang Ubah Data', text: 'Dilarang mengubah email, password, PIN, atau data profil akun.' },
+                    { title: 'Proses Instan', text: 'Akun langsung diberikan otomatis setelah pembayaran terverifikasi.' },
+                    { title: 'Garansi Penuh', text: 'Garansi aktif selama durasi sewa paket yang Anda pilih.' },
+                    { title: 'Ketentuan Garansi', text: 'Pelanggaran terhadap aturan login akan menghanguskan garansi.', isWarning: true },
+                ],
+            };
+        }
+
+        const lines = rules
+            .split(/\r?\n/)
+            .map((line) => line.trim())
+            .filter(Boolean);
+
+        let warning = '';
+        const items: { title?: string; text: string; isWarning?: boolean }[] = [];
+
+        for (const line of lines) {
+            const isAllUppercase = line.length > 8 && line === line.toUpperCase() && /[A-Z]/.test(line);
+            const isWarningKeyword = /^(dilarang|peringatan|perhatian|warning|penting|catatan\s*penting)/i.test(line);
+
+            if ((isAllUppercase || isWarningKeyword) && !warning && !line.startsWith('-') && !line.startsWith('*') && !line.startsWith('•')) {
+                warning = line.replace(/^[!*#\-\s]+/, '');
+                continue;
+            }
+
+            const cleaned = line.replace(/^[-*•\d+.)\s]+/, '').trim();
+            if (!cleaned) continue;
+
+            const isWarningItem = /pelanggaran|hangus|dilarang|sanksi/i.test(cleaned);
+            const colonIndex = cleaned.indexOf(':');
+
+            if (colonIndex > 1 && colonIndex < 35) {
+                const title = cleaned.substring(0, colonIndex).trim();
+                const text = cleaned.substring(colonIndex + 1).trim();
+                items.push({ title, text, isWarning: isWarningItem });
+            } else {
+                items.push({ text: cleaned, isWarning: isWarningItem });
+            }
+        }
+
+        return { warning, rules: items };
+    }, [rules]);
+
+    return (
+        <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3.5">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                <div className="flex items-center gap-2.5 text-text">
+                    <div className="w-8 h-8 rounded-xl bg-accent/15 border border-accent/25 flex items-center justify-center text-accent-text shrink-0">
+                        <ShieldCheck className="w-4 h-4" />
+                    </div>
+                    <div>
+                        <h2 className="text-sm font-bold tracking-tight text-text">
+                            Syarat Sewa & Garansi
+                        </h2>
+                        <p className="text-[11px] text-text-3">
+                            Perlindungan resmi & ketentuan pemakaian
+                        </p>
+                    </div>
+                </div>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-accent/10 text-accent-text border border-accent/25">
+                    <Sparkles className="w-3 h-3" />
+                    Garansi Aktif
+                </span>
+            </div>
+
+            {/* Warning Callout */}
+            {parsed.warning && (
+                <div className="p-3 rounded-xl bg-danger/10 border border-danger/30 flex items-start gap-2.5 text-danger">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-danger" />
+                    <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider block opacity-90">
+                            Aturan Utama
+                        </span>
+                        <p className="text-xs font-semibold leading-snug">
+                            {parsed.warning}
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Structured Rules List */}
+            <div className="space-y-2">
+                {parsed.rules.map((rule, idx) => (
+                    <div
+                        key={idx}
+                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border text-xs leading-relaxed transition-colors ${
+                            rule.isWarning
+                                ? 'bg-danger/5 border-danger/20 text-text'
+                                : 'bg-surface-2/60 border-border/50 text-text'
+                        }`}
+                    >
+                        <div
+                            className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                                rule.isWarning
+                                    ? 'bg-danger/20 text-danger'
+                                    : 'bg-accent/20 text-accent-text'
+                            }`}
+                        >
+                            {rule.isWarning ? (
+                                <AlertCircle className="w-2.5 h-2.5" />
+                            ) : (
+                                <Check className="w-2.5 h-2.5" />
+                            )}
+                        </div>
+                        <div className="text-text-2 text-xs">
+                            {rule.title && (
+                                <strong className="text-text font-semibold mr-1.5">
+                                    {rule.title}:
+                                </strong>
+                            )}
+                            <span>{rule.text}</span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Guarantee Footer */}
+            <div className="pt-1 text-[11px] text-text-3 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent-text shrink-0" />
+                <span>Ada kendala login atau akun bermasalah? Admin siap replace unit baru atau refund garansi 100%.</span>
+            </div>
+        </div>
     );
 }

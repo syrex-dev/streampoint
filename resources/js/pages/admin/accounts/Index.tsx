@@ -22,10 +22,24 @@ import {
     ToggleRight
 } from 'lucide-react';
 
+interface VariantSummary {
+    id: number;
+    name: string;
+    type: 'RENT' | 'BUY';
+}
+
+interface ProductItem {
+    id: number;
+    name: string;
+    variants: VariantSummary[];
+}
+
 interface AccountItem {
     id: number;
     product_id: number;
     product_name: string;
+    variant_id: number | null;
+    variant_name: string;
     kind: 'RENT' | 'BUY';
     credential: string;
     status: string;
@@ -60,9 +74,10 @@ interface AccountsIndexProps {
         total: number;
     };
     summary: ProductSummary[];
-    products: { id: number; name: string }[];
+    products: ProductItem[];
     filters: {
         product_id: number | '';
+        variant_id: number | '';
         kind: string;
         status: string;
     };
@@ -70,7 +85,8 @@ interface AccountsIndexProps {
 }
 
 export default function AccountsIndex({ accounts, summary, products, filters, statuses }: AccountsIndexProps) {
-    const [selectedProductId, setSelectedProductId] = useState(filters.product_id);
+    const [selectedProductId, setSelectedProductId] = useState<number | ''>(filters.product_id);
+    const [selectedVariantId, setSelectedVariantId] = useState<number | ''>(filters.variant_id);
     const [selectedKind, setSelectedKind] = useState(filters.kind);
     const [selectedStatus, setSelectedStatus] = useState(filters.status);
 
@@ -87,6 +103,7 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
     // Single account form
     const singleForm = useForm({
         product_id: products[0]?.id || '',
+        variant_id: '' as number | '',
         kind: 'RENT',
         email: '',
         password: '',
@@ -98,19 +115,75 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
     // Bulk account form
     const bulkForm = useForm({
         product_id: products[0]?.id || '',
+        variant_id: '' as number | '',
         kind: 'RENT',
         items_text: '',
     });
 
-    const handleFilterChange = (newProduct: number | '', newKind: string, newStatus: string) => {
+    const selectedProduct = React.useMemo(
+        () => products.find((p) => p.id === selectedProductId),
+        [products, selectedProductId]
+    );
+
+    const activeSingleProduct = React.useMemo(
+        () => products.find((p) => p.id === Number(singleForm.data.product_id)),
+        [products, singleForm.data.product_id]
+    );
+
+    const activeBulkProduct = React.useMemo(
+        () => products.find((p) => p.id === Number(bulkForm.data.product_id)),
+        [products, bulkForm.data.product_id]
+    );
+
+    const handleFilterChange = (
+        newProduct: number | '',
+        newVariant: number | '',
+        newKind: string,
+        newStatus: string
+    ) => {
         router.get('/admin/accounts', {
             product_id: newProduct || undefined,
+            variant_id: newVariant || undefined,
             kind: newKind || undefined,
             status: newStatus || undefined,
         }, {
             preserveState: true,
             replace: true,
         });
+    };
+
+    const handleSingleProductChange = (productId: number) => {
+        singleForm.setData((data) => ({
+            ...data,
+            product_id: productId,
+            variant_id: '',
+        }));
+    };
+
+    const handleSingleVariantChange = (variantId: number | '') => {
+        const variant = activeSingleProduct?.variants.find((v) => v.id === variantId);
+        singleForm.setData((data) => ({
+            ...data,
+            variant_id: variantId,
+            kind: variant ? variant.type : data.kind,
+        }));
+    };
+
+    const handleBulkProductChange = (productId: number) => {
+        bulkForm.setData((data) => ({
+            ...data,
+            product_id: productId,
+            variant_id: '',
+        }));
+    };
+
+    const handleBulkVariantChange = (variantId: number | '') => {
+        const variant = activeBulkProduct?.variants.find((v) => v.id === variantId);
+        bulkForm.setData((data) => ({
+            ...data,
+            variant_id: variantId,
+            kind: variant ? variant.type : data.kind,
+        }));
     };
 
     const toggleVisibility = (id: number) => {
@@ -239,7 +312,8 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                                 key={s.id} 
                                 onClick={() => {
                                     setSelectedProductId(s.id);
-                                    handleFilterChange(s.id, selectedKind, selectedStatus);
+                                    setSelectedVariantId('');
+                                    handleFilterChange(s.id, '', selectedKind, selectedStatus);
                                 }}
                                 className={`p-3 bg-surface border rounded-lg transition-colors cursor-pointer ${
                                     selectedProductId === s.id ? 'border-accent bg-surface-hover/80' : 'border-border hover:bg-surface-hover/50'
@@ -276,7 +350,8 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                         onChange={(e) => {
                             const val = e.target.value ? Number(e.target.value) : '';
                             setSelectedProductId(val);
-                            handleFilterChange(val, selectedKind, selectedStatus);
+                            setSelectedVariantId('');
+                            handleFilterChange(val, '', selectedKind, selectedStatus);
                         }}
                         className="h-8 px-2.5 text-xs bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
                     >
@@ -286,13 +361,31 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                         ))}
                     </select>
 
+                    {/* Filter Varian (aktif jika produk dipilih) */}
+                    {selectedProduct && selectedProduct.variants.length > 0 && (
+                        <select
+                            value={selectedVariantId}
+                            onChange={(e) => {
+                                const val = e.target.value ? Number(e.target.value) : '';
+                                setSelectedVariantId(val);
+                                handleFilterChange(selectedProductId, val, selectedKind, selectedStatus);
+                            }}
+                            className="h-8 px-2.5 text-xs bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
+                        >
+                            <option value="">Semua Varian</option>
+                            {selectedProduct.variants.map((v) => (
+                                <option key={v.id} value={v.id}>{v.name} ({v.type})</option>
+                            ))}
+                        </select>
+                    )}
+
                     {/* Filter Kind */}
                     <select
                         value={selectedKind}
                         onChange={(e) => {
                             const val = e.target.value;
                             setSelectedKind(val);
-                            handleFilterChange(selectedProductId, val, selectedStatus);
+                            handleFilterChange(selectedProductId, selectedVariantId, val, selectedStatus);
                         }}
                         className="h-8 px-2.5 text-xs bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
                     >
@@ -307,7 +400,7 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                         onChange={(e) => {
                             const val = e.target.value;
                             setSelectedStatus(val);
-                            handleFilterChange(selectedProductId, selectedKind, val);
+                            handleFilterChange(selectedProductId, selectedVariantId, selectedKind, val);
                         }}
                         className="h-8 px-2.5 text-xs bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
                     >
@@ -317,14 +410,15 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                         ))}
                     </select>
 
-                    {(selectedProductId !== '' || selectedKind !== '' || selectedStatus !== '') && (
+                    {(selectedProductId !== '' || selectedVariantId !== '' || selectedKind !== '' || selectedStatus !== '') && (
                         <button
                             type="button"
                             onClick={() => {
                                 setSelectedProductId('');
+                                setSelectedVariantId('');
                                 setSelectedKind('');
                                 setSelectedStatus('');
-                                handleFilterChange('', '', '');
+                                handleFilterChange('', '', '', '');
                             }}
                             className="text-xs text-danger hover:underline ml-auto"
                         >
@@ -364,6 +458,17 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                                                     <td className="px-4 py-3">
                                                         <div className="font-mono text-text-3 text-[11px]">#{acc.id}</div>
                                                         <div className="font-semibold text-text">{acc.product_name}</div>
+                                                        <div className="mt-0.5">
+                                                            {acc.variant_id ? (
+                                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-2 text-accent-text border border-accent/20">
+                                                                    {acc.variant_name}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] text-text-3 font-normal bg-surface-2/60 border border-border">
+                                                                    Semua Varian
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <span className={`px-2 py-0.5 rounded text-[11px] font-mono font-semibold ${
@@ -495,6 +600,17 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                                                 <div>
                                                     <span className="font-mono text-text-3 text-[10px]">#{acc.id}</span>
                                                     <h3 className="font-semibold text-xs text-text">{acc.product_name}</h3>
+                                                    <div className="mt-0.5">
+                                                        {acc.variant_id ? (
+                                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-2 text-accent-text border border-accent/20">
+                                                                {acc.variant_name}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] text-text-3 font-normal bg-surface-2/60 border border-border">
+                                                                Semua Varian
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 <div className="flex items-center gap-1.5">
                                                     <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${
@@ -708,7 +824,7 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                                     <label className="font-semibold text-text block">Produk <span className="text-danger">*</span></label>
                                     <select
                                         value={singleForm.data.product_id}
-                                        onChange={(e) => singleForm.setData('product_id', Number(e.target.value))}
+                                        onChange={(e) => handleSingleProductChange(Number(e.target.value))}
                                         required
                                         className="w-full h-8 px-2 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
                                     >
@@ -720,18 +836,35 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="font-semibold text-text block">Kategori <span className="text-danger">*</span></label>
+                                    <label className="font-semibold text-text block">Varian Paket <span className="text-text-3 font-normal">(opsional)</span></label>
                                     <select
-                                        value={singleForm.data.kind}
-                                        onChange={(e) => singleForm.setData('kind', e.target.value)}
-                                        required
+                                        value={singleForm.data.variant_id}
+                                        onChange={(e) => handleSingleVariantChange(e.target.value ? Number(e.target.value) : '')}
                                         className="w-full h-8 px-2 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
                                     >
-                                        <option value="RENT">RENT (Sewa Harian)</option>
-                                        <option value="BUY">BUY (Beli / Langganan)</option>
+                                        <option value="">Semua Varian (Stok Global)</option>
+                                        {activeSingleProduct?.variants.map((v) => (
+                                            <option key={v.id} value={v.id}>
+                                                {v.name} ({v.type})
+                                            </option>
+                                        ))}
                                     </select>
-                                    {singleForm.errors.kind && <p className="text-[11px] text-danger">{singleForm.errors.kind}</p>}
+                                    {singleForm.errors.variant_id && <p className="text-[11px] text-danger">{singleForm.errors.variant_id}</p>}
                                 </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="font-semibold text-text block">Kategori <span className="text-danger">*</span></label>
+                                <select
+                                    value={singleForm.data.kind}
+                                    onChange={(e) => singleForm.setData('kind', e.target.value)}
+                                    required
+                                    className="w-full h-8 px-2 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
+                                >
+                                    <option value="RENT">RENT (Sewa Harian)</option>
+                                    <option value="BUY">BUY (Beli / Langganan)</option>
+                                </select>
+                                {singleForm.errors.kind && <p className="text-[11px] text-danger">{singleForm.errors.kind}</p>}
                             </div>
 
                             <div className="space-y-1">
@@ -852,7 +985,7 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                                     <label className="font-semibold text-text block">Produk <span className="text-danger">*</span></label>
                                     <select
                                         value={bulkForm.data.product_id}
-                                        onChange={(e) => bulkForm.setData('product_id', Number(e.target.value))}
+                                        onChange={(e) => handleBulkProductChange(Number(e.target.value))}
                                         required
                                         className="w-full h-8 px-2 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
                                     >
@@ -860,20 +993,39 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                                             <option key={p.id} value={p.id}>{p.name}</option>
                                         ))}
                                     </select>
+                                    {bulkForm.errors.product_id && <p className="text-[11px] text-danger">{bulkForm.errors.product_id}</p>}
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="font-semibold text-text block">Kategori <span className="text-danger">*</span></label>
+                                    <label className="font-semibold text-text block">Varian Paket <span className="text-text-3 font-normal">(opsional)</span></label>
                                     <select
-                                        value={bulkForm.data.kind}
-                                        onChange={(e) => bulkForm.setData('kind', e.target.value)}
-                                        required
+                                        value={bulkForm.data.variant_id}
+                                        onChange={(e) => handleBulkVariantChange(e.target.value ? Number(e.target.value) : '')}
                                         className="w-full h-8 px-2 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
                                     >
-                                        <option value="RENT">RENT (Sewa Harian)</option>
-                                        <option value="BUY">BUY (Beli / Langganan)</option>
+                                        <option value="">Semua Varian (Stok Global)</option>
+                                        {activeBulkProduct?.variants.map((v) => (
+                                            <option key={v.id} value={v.id}>
+                                                {v.name} ({v.type})
+                                            </option>
+                                        ))}
                                     </select>
+                                    {bulkForm.errors.variant_id && <p className="text-[11px] text-danger">{bulkForm.errors.variant_id}</p>}
                                 </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="font-semibold text-text block">Kategori <span className="text-danger">*</span></label>
+                                <select
+                                    value={bulkForm.data.kind}
+                                    onChange={(e) => bulkForm.setData('kind', e.target.value)}
+                                    required
+                                    className="w-full h-8 px-2 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
+                                >
+                                    <option value="RENT">RENT (Sewa Harian)</option>
+                                    <option value="BUY">BUY (Beli / Langganan)</option>
+                                </select>
+                                {bulkForm.errors.kind && <p className="text-[11px] text-danger">{bulkForm.errors.kind}</p>}
                             </div>
 
                             <div className="space-y-1">

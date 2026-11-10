@@ -20,6 +20,7 @@ class AccountStoreRequest extends FormRequest
     {
         return [
             'product_id' => ['required', 'integer', 'exists:products,id'],
+            'variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
             'kind' => ['required', Rule::enum(OrderType::class)],
             'email' => ['required', 'email', 'max:255'],
             'password' => ['required', 'string', 'max:255'],

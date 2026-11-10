@@ -314,6 +314,43 @@ class AdminManagementAndWarrantyTest extends TestCase
         $this->assertEquals(AccountStatus::AVAILABLE, $acc1->status);
     }
 
+    public function test_admin_can_store_single_and_bulk_accounts_with_specific_variant(): void
+    {
+        $variant = $this->product->variants()->first();
+
+        // Single store with variant
+        $resSingle = $this->actingAs($this->adminUser)->post('/admin/accounts', [
+            'product_id' => $this->product->id,
+            'variant_id' => $variant->id,
+            'kind' => 'RENT',
+            'email' => 'variant_specific@example.com',
+            'password' => 'Secret123',
+            'profile' => 'Profil 1',
+            'pin' => '9999',
+            'note' => 'Khusus varian',
+        ]);
+
+        $resSingle->assertSessionHas('success');
+
+        $singleAccount = ProductAccount::where('variant_id', $variant->id)->where('note', 'Khusus varian')->first();
+        $this->assertNotNull($singleAccount);
+        $this->assertEquals($variant->id, $singleAccount->variant_id);
+        $this->assertEquals('variant_specific@example.com|Secret123|Profil 1|9999', $singleAccount->credential);
+
+        // Bulk store with variant
+        $resBulk = $this->actingAs($this->adminUser)->post('/admin/accounts/bulk', [
+            'product_id' => $this->product->id,
+            'variant_id' => $variant->id,
+            'kind' => 'RENT',
+            'items_text' => "bulk_var1@example.com|pass1|P1\nbulk_var2@example.com|pass2|P2",
+        ]);
+
+        $resBulk->assertSessionHas('success');
+
+        $bulkAccounts = ProductAccount::where('variant_id', $variant->id)->get();
+        $this->assertCount(3, $bulkAccounts);
+    }
+
     /**
      * 5. status unit RESERVED/SOLD/RENTED tidak bisa diubah manual
      */

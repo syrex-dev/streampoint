@@ -20,6 +20,7 @@ class AccountBulkStoreRequest extends FormRequest
     {
         return [
             'product_id' => ['required', 'integer', 'exists:products,id'],
+            'variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
             'kind' => ['required', Rule::enum(OrderType::class)],
             'items_text' => [
                 'required',

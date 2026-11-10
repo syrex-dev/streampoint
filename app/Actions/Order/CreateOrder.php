@@ -72,12 +72,20 @@ class CreateOrder
                 }
             }
 
-            // Reserve an account unit with matching kind (RENT or BUY)
-            $account = ProductAccount::where('product_id', $variant->product_id)
-                ->where('kind', $variant->type)
+            // Reserve an account unit: Prioritize variant-specific unit, fallback to general product unit
+            $account = ProductAccount::where('variant_id', $variant->id)
                 ->where('status', AccountStatus::AVAILABLE)
                 ->lockForUpdate()
                 ->first();
+
+            if (! $account) {
+                $account = ProductAccount::where('product_id', $variant->product_id)
+                    ->whereNull('variant_id')
+                    ->where('kind', $variant->type)
+                    ->where('status', AccountStatus::AVAILABLE)
+                    ->lockForUpdate()
+                    ->first();
+            }
 
             if (! $account) {
                 throw new OutOfStockException();

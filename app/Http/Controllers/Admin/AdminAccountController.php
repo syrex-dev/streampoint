@@ -20,13 +20,17 @@ class AdminAccountController extends Controller
     public function index(Request $request): Response
     {
         $productId = $request->query('product_id');
+        $variantId = $request->query('variant_id');
         $kind = $request->query('kind');
         $status = $request->query('status');
 
-        $query = ProductAccount::with('product')->latest('id');
+        $query = ProductAccount::with(['product', 'variant'])->latest('id');
 
         if ($productId) {
             $query->where('product_id', $productId);
+        }
+        if ($variantId) {
+            $query->where('variant_id', $variantId);
         }
         if ($kind) {
             $query->where('kind', $kind);
@@ -39,6 +43,8 @@ class AdminAccountController extends Controller
             'id' => $acc->id,
             'product_id' => $acc->product_id,
             'product_name' => $acc->product?->name ?? '-',
+            'variant_id' => $acc->variant_id,
+            'variant_name' => $acc->variant?->name ?? 'Semua Varian',
             'kind' => $acc->kind->value,
             'credential' => $acc->credential,
             'status' => $acc->status->value,
@@ -69,7 +75,18 @@ class AdminAccountController extends Controller
                 'available_buy' => (int) $p->available_buy,
             ]);
 
-        $products = Product::orderBy('name')->get(['id', 'name']);
+        $products = Product::with(['variants' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')])
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'variants' => $p->variants->map(fn ($v) => [
+                    'id' => $v->id,
+                    'name' => $v->name,
+                    'type' => $v->type->value,
+                ]),
+            ]);
 
         return Inertia::render('admin/accounts/Index', [
             'accounts' => $accounts,
@@ -77,6 +94,7 @@ class AdminAccountController extends Controller
             'products' => $products,
             'filters' => [
                 'product_id' => $productId ? (int) $productId : '',
+                'variant_id' => $variantId ? (int) $variantId : '',
                 'kind' => $kind ?? '',
                 'status' => $status ?? '',
             ],
@@ -106,6 +124,7 @@ class AdminAccountController extends Controller
 
         ProductAccount::create([
             'product_id' => (int) $request->validated('product_id'),
+            'variant_id' => $request->filled('variant_id') ? (int) $request->validated('variant_id') : null,
             'kind' => OrderType::from($request->validated('kind')),
             'credential' => $credential,
             'status' => AccountStatus::AVAILABLE,
@@ -118,6 +137,7 @@ class AdminAccountController extends Controller
     public function bulkStore(AccountBulkStoreRequest $request): RedirectResponse
     {
         $productId = (int) $request->validated('product_id');
+        $variantId = $request->filled('variant_id') ? (int) $request->validated('variant_id') : null;
         $kind = OrderType::from($request->validated('kind'));
         $lines = preg_split('/\r\n|\r|\n/', trim($request->validated('items_text')));
 
@@ -161,6 +181,7 @@ class AdminAccountController extends Controller
 
             ProductAccount::create([
                 'product_id' => $productId,
+                'variant_id' => $variantId,
                 'kind' => $kind,
                 'credential' => $credential,
                 'status' => AccountStatus::AVAILABLE,

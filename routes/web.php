@@ -52,6 +52,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/orders/{order}/reject', [\App\Http\Controllers\Admin\AdminOrderController::class, 'reject'])->name('orders.reject');
     Route::post('/orders/{order}/reactivate', [\App\Http\Controllers\Admin\AdminOrderController::class, 'reactivate'])->name('orders.reactivate');
     Route::post('/orders/{order}/replace-account', [\App\Http\Controllers\Admin\AdminOrderController::class, 'replaceAccount'])->name('orders.replace-account');
+    Route::post('/orders/{order}/revoke', [\App\Http\Controllers\Admin\AdminOrderController::class, 'revoke'])->name('orders.revoke');
 
     // Products & Variants
     Route::resource('products', \App\Http\Controllers\Admin\AdminProductController::class);

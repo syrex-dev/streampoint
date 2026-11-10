@@ -197,5 +197,28 @@ class AdminOrderController extends Controller
             return back()->withErrors(['action' => $e->getMessage()]);
         }
     }
+
+    public function revoke(Request $request, Order $order, \App\Actions\Order\RevokeAccess $action): RedirectResponse
+    {
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'min:3', 'max:500'],
+            'release_stock' => ['nullable', 'boolean'],
+        ], [
+            'reason.required' => 'Alasan pencabutan akses wajib diisi.',
+            'reason.min' => 'Alasan minimal 3 karakter.',
+            'reason.max' => 'Alasan maksimal 500 karakter.',
+        ]);
+
+        $actor = 'admin:' . $request->user()->id;
+
+        try {
+            $releaseStock = (bool) ($request->input('release_stock', true));
+            $action->handle($order, $validated['reason'], $releaseStock, $actor);
+
+            return back()->with('success', "Akses pesanan {$order->invoice_code} berhasil dicabut karena pelanggaran.");
+        } catch (\Throwable $e) {
+            return back()->withErrors(['action' => $e->getMessage()]);
+        }
+    }
 }
 

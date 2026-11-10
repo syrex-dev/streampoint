@@ -16,7 +16,7 @@ enum OrderStatus: string
             self::PENDING => in_array($to, [self::VERIFYING, self::EXPIRED, self::CANCELLED], true),
             self::VERIFYING => in_array($to, [self::PAID, self::CANCELLED], true),
             self::EXPIRED => in_array($to, [self::PENDING, self::VERIFYING], true),
-            self::PAID => false,
+            self::PAID => in_array($to, [self::CANCELLED], true),
             self::CANCELLED => false,
         };
     }

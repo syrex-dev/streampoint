@@ -82,6 +82,9 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
     const [isReplaceAccountOpen, setIsReplaceAccountOpen] = useState(false);
     const [replaceReason, setReplaceReason] = useState('');
     const [selectedReplaceAccountId, setSelectedReplaceAccountId] = useState<number | ''>('');
+    const [isRevokeOpen, setIsRevokeOpen] = useState(false);
+    const [revokeReason, setRevokeReason] = useState('');
+    const [releaseStock, setReleaseStock] = useState(true);
 
     // Credential visibility toggle
     const [showPassword, setShowPassword] = useState(false);
@@ -98,10 +101,11 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
                 setIsRejectOpen(false);
                 setIsReactivateOpen(false);
                 setIsReplaceAccountOpen(false);
+                setIsRevokeOpen(false);
             }
         };
 
-        if (isApproveOpen || isRejectOpen || isReactivateOpen || isReplaceAccountOpen) {
+        if (isApproveOpen || isRejectOpen || isReactivateOpen || isReplaceAccountOpen || isRevokeOpen) {
             document.addEventListener('keydown', handleKeyDown);
             document.body.style.overflow = 'hidden';
         } else {
@@ -195,6 +199,27 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
         });
     };
 
+    const handleRevokeAccess = () => {
+        if (!revokeReason.trim() || isSubmitting) return;
+
+        setIsSubmitting(true);
+        router.post(
+            `/admin/orders/${order.id}/revoke`,
+            {
+                reason: revokeReason.trim(),
+                release_stock: releaseStock,
+            },
+            {
+                preserveScroll: true,
+                onFinish: () => setIsSubmitting(false),
+                onSuccess: () => {
+                    setIsRevokeOpen(false);
+                    setRevokeReason('');
+                },
+            }
+        );
+    };
+
     const renderStatusBadge = (status: string) => {
         switch (status) {
             case 'PENDING':
@@ -232,16 +257,47 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
         }
     };
 
-    // Parse credential object or string
-    const credentialData = typeof order.account?.credential === 'string'
-        ? (() => {
-            try {
-                return JSON.parse(order.account.credential);
-            } catch {
-                return { Akun: order.account.credential };
+    // Parse credential into structured rows with secret masking flag
+    const parsedCredentials = React.useMemo(() => {
+        if (!order.account?.credential) return [];
+        const raw = order.account.credential;
+
+        if (typeof raw === 'object' && raw !== null) {
+            return Object.entries(raw).map(([key, val]) => ({
+                key,
+                val: String(val),
+                isSecret: key.toLowerCase().includes('pass') || key.toLowerCase().includes('pin') || key.toLowerCase().includes('secret'),
+            }));
+        }
+
+        const str = String(raw).trim();
+        try {
+            const parsed = JSON.parse(str);
+            if (typeof parsed === 'object' && parsed !== null) {
+                return Object.entries(parsed).map(([key, val]) => ({
+                    key,
+                    val: String(val),
+                    isSecret: key.toLowerCase().includes('pass') || key.toLowerCase().includes('pin') || key.toLowerCase().includes('secret'),
+                }));
             }
-        })()
-        : (order.account?.credential || {});
+        } catch {
+            // not JSON
+        }
+
+        // Pipe delimited check: email|password|profile|pin
+        if (str.includes('|')) {
+            const parts = str.split('|').map((s) => s.trim());
+            const items: { key: string; val: string; isSecret: boolean }[] = [];
+            if (parts[0]) items.push({ key: 'Email / Akun', val: parts[0], isSecret: false });
+            if (parts[1]) items.push({ key: 'Password', val: parts[1], isSecret: true });
+            if (parts[2]) items.push({ key: 'Profil Akun', val: parts[2], isSecret: false });
+            if (parts[3]) items.push({ key: 'PIN Profil', val: parts[3], isSecret: true });
+            items.push({ key: 'Format Lengkap (Raw)', val: str, isSecret: true });
+            return items;
+        }
+
+        return [{ key: 'Kredensial Akun', val: str, isSecret: true }];
+    }, [order.account?.credential]);
 
     return (
         <AdminLayout>
@@ -321,17 +377,33 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
                         )}
 
                         {order.status === 'PAID' && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setSelectedReplaceAccountId('');
-                                    setIsReplaceAccountOpen(true);
-                                }}
-                                className="px-3.5 py-2 bg-surface-2 hover:bg-surface-hover text-text border border-border text-xs font-semibold rounded flex items-center gap-1.5 transition-colors cursor-pointer"
-                            >
-                                <RefreshCw className="w-4 h-4 text-warning" />
-                                <span>Ganti Akun (Garansi)</span>
-                            </button>
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedReplaceAccountId('');
+                                        setIsReplaceAccountOpen(true);
+                                    }}
+                                    className="px-3.5 py-2 bg-surface-2 hover:bg-surface-hover text-text border border-border text-xs font-semibold rounded flex items-center gap-1.5 transition-colors cursor-pointer"
+                                >
+                                    <RefreshCw className="w-4 h-4 text-warning" />
+                                    <span>Ganti Akun (Garansi)</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setRevokeReason('');
+                                        setReleaseStock(true);
+                                        setIsRevokeOpen(true);
+                                    }}
+                                    className="px-3.5 py-2 bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30 text-xs font-semibold rounded flex items-center gap-1.5 transition-colors cursor-pointer"
+                                    title="Cabut akses dan hapus kredensial akun dari pembeli karena melanggar aturan"
+                                >
+                                    <ShieldAlert className="w-4 h-4" />
+                                    <span>Cabut Akses (Pelanggaran)</span>
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>
@@ -483,38 +555,53 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    <div className="bg-surface-2 p-3 rounded-md space-y-2 border border-border">
+                                    <div className="bg-surface-2 p-3 rounded-md space-y-2.5 border border-border">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-xs font-medium text-text">Kredensial Akun:</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowPassword(!showPassword)}
-                                                className="text-xs text-text-2 hover:text-text flex items-center gap-1 cursor-pointer"
-                                            >
-                                                {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                                <span>{showPassword ? 'Sembunyikan' : 'Tampilkan'}</span>
-                                            </button>
+                                            <span className="text-xs font-semibold text-text">Kredensial Akun:</span>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="text-xs text-text-2 hover:text-text flex items-center gap-1 cursor-pointer px-2 py-1 rounded bg-surface border border-border hover:bg-surface-hover transition-colors"
+                                                >
+                                                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                                    <span>{showPassword ? 'Sembunyikan' : 'Tampilkan'}</span>
+                                                </button>
+                                                {order.status === 'PAID' && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setRevokeReason('');
+                                                            setReleaseStock(true);
+                                                            setIsRevokeOpen(true);
+                                                        }}
+                                                        className="text-xs text-danger hover:text-danger hover:bg-danger/10 flex items-center gap-1 cursor-pointer px-2 py-1 rounded border border-danger/30 transition-colors"
+                                                        title="Cabut akses akun ini dari pembeli"
+                                                    >
+                                                        <ShieldAlert className="w-3.5 h-3.5" />
+                                                        <span>Cabut Akses</span>
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                            {Object.entries(credentialData).map(([key, val]) => {
-                                                const strVal = String(val);
-                                                const isSecret = key.toLowerCase().includes('pass') || key.toLowerCase().includes('pin');
-                                                const displayVal = isSecret && !showPassword ? '••••••••' : strVal;
+                                            {parsedCredentials.map((item) => {
+                                                const displayVal = item.isSecret && !showPassword ? '••••••••••••' : item.val;
 
                                                 return (
-                                                    <div key={key} className="bg-surface p-2 rounded border border-border flex items-center justify-between">
-                                                        <div>
-                                                            <span className="text-[10px] uppercase text-text-2 block">{key}:</span>
-                                                            <span className="font-mono font-medium text-text">{displayVal}</span>
+                                                    <div key={item.key} className="bg-surface p-2.5 rounded border border-border flex items-center justify-between gap-2">
+                                                        <div className="min-w-0 flex-1">
+                                                            <span className="text-[10px] uppercase tracking-wider text-text-2 font-semibold block">{item.key}:</span>
+                                                            <span className="font-mono font-medium text-text select-all break-all text-xs">{displayVal}</span>
                                                         </div>
                                                         <button
                                                             type="button"
-                                                            onClick={() => handleCopy(strVal, key)}
-                                                            className="p-1 rounded text-text-2 hover:text-text hover:bg-surface-hover"
-                                                            title={`Salin ${key}`}
+                                                            onClick={() => handleCopy(item.val, item.key)}
+                                                            className="p-1.5 rounded text-text-2 hover:text-text hover:bg-surface-hover shrink-0"
+                                                            title={`Salin ${item.key}`}
                                                         >
-                                                            {copiedField === key ? (
+                                                            {copiedField === item.key ? (
                                                                 <Check className="w-3.5 h-3.5 text-accent-text" />
                                                             ) : (
                                                                 <Copy className="w-3.5 h-3.5" />
@@ -841,6 +928,111 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
                                 className="px-4 py-1.5 bg-warning text-on-warning text-xs font-semibold rounded hover:bg-warning/90 transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
                             >
                                 {isSubmitting ? 'Memproses...' : 'Ganti Akun Sekarang'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal: Revoke Access (Pelanggaran Aturan) */}
+            {isRevokeOpen && (
+                <div 
+                    className="fixed inset-0 z-50 bg-overlay flex items-center justify-center p-4"
+                    onClick={() => setIsRevokeOpen(false)}
+                >
+                    <div 
+                        className="w-full max-w-md bg-surface border border-danger/40 rounded-lg p-5 shadow-2xl space-y-4"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center gap-2 text-danger">
+                            <ShieldAlert className="w-5 h-5 shrink-0" />
+                            <h3 className="text-sm font-bold text-text">
+                                Cabut Akses Akun (Pelanggaran Aturan)
+                            </h3>
+                        </div>
+
+                        <p className="text-xs text-text-2 leading-relaxed">
+                            Aksi ini akan mencabut akses kredensial akun dari pembeli, mengubah status pesanan menjadi <strong className="text-danger font-semibold">Dibatalkan</strong>, dan pembeli tidak dapat lagi melihat email/password di halaman invoice.
+                        </p>
+
+                        <div className="space-y-1.5 text-xs">
+                            <label className="font-medium text-text block">
+                                Pilih Cepat Alasan Pelanggaran:
+                            </label>
+                            <div className="flex flex-wrap gap-1.5">
+                                {[
+                                    'Ganti password tanpa izin',
+                                    'Login melebihi batas device',
+                                    'Mengubah profil / PIN pembeli lain',
+                                    'Menyebarkan kredensial akun',
+                                    'Melanggar aturan sewa',
+                                ].map((preset) => (
+                                    <button
+                                        key={preset}
+                                        type="button"
+                                        onClick={() => setRevokeReason(preset)}
+                                        className={`px-2 py-1 rounded text-[11px] border transition-colors cursor-pointer ${
+                                            revokeReason === preset
+                                                ? 'bg-danger/15 border-danger/40 text-danger font-medium'
+                                                : 'bg-surface-2 border-border text-text-2 hover:text-text'
+                                        }`}
+                                    >
+                                        {preset}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5 text-xs">
+                            <label className="font-medium text-text block">
+                                Detail Alasan Pencabutan (Wajib) <span className="text-danger">*</span>:
+                            </label>
+                            <textarea
+                                value={revokeReason}
+                                onChange={(e) => setRevokeReason(e.target.value)}
+                                rows={3}
+                                placeholder="Tuliskan pelanggaran yang dilakukan oleh pembeli..."
+                                className="w-full p-2.5 text-xs bg-surface-2 border border-border rounded text-text placeholder:text-text-2 focus:outline-none focus:border-danger resize-none"
+                            />
+                            {revokeReason.trim().length > 0 && revokeReason.trim().length < 3 && (
+                                <span className="text-[11px] text-danger">Alasan minimal 3 karakter.</span>
+                            )}
+                        </div>
+
+                        <div className="p-3 rounded-md bg-surface-2 border border-border space-y-2 text-xs">
+                            <label className="flex items-center gap-2 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={releaseStock}
+                                    onChange={(e) => setReleaseStock(e.target.checked)}
+                                    className="rounded border-border text-accent focus:ring-accent w-4 h-4"
+                                />
+                                <span className="text-text font-medium">
+                                    Kembalikan unit akun ke stok (Tersedia / AVAILABLE)
+                                </span>
+                            </label>
+                            <p className="text-[11px] text-text-2 pl-6">
+                                Centang jika Anda sudah mengamankan/mereset password akun streaming dan ingin unit ini bisa disewa/dibeli oleh pelanggan lain.
+                            </p>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+                            <button
+                                type="button"
+                                onClick={() => setIsRevokeOpen(false)}
+                                className="px-3.5 py-1.5 text-xs text-text-2 hover:text-text rounded cursor-pointer"
+                                disabled={isSubmitting}
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleRevokeAccess}
+                                disabled={isSubmitting || revokeReason.trim().length < 3}
+                                className="px-4 py-1.5 bg-danger text-white text-xs font-semibold rounded hover:bg-danger/90 transition-colors disabled:opacity-50 cursor-pointer shadow-xs flex items-center gap-1.5"
+                            >
+                                <ShieldAlert className="w-3.5 h-3.5" />
+                                <span>{isSubmitting ? 'Memproses...' : 'Cabut Akses Sekarang'}</span>
                             </button>
                         </div>
                     </div>

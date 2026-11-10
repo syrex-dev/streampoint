@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, ShieldCheck, QrCode, Building2, Wallet, AlertCircle, Clock, Check } from 'lucide-react';
 import { PublicLayout } from '@/layouts/PublicLayout';

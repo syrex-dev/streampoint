@@ -9,6 +9,7 @@ import type { Auth } from '@/types';
 interface PageProps {
     auth: Auth;
     status?: string;
+    [key: string]: unknown;
 }
 
 export default function Profile({ status }: { status?: string }) {

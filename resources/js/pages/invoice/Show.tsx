@@ -94,8 +94,8 @@ export default function InvoiceShow({
                 const existing = JSON.parse(localStorage.getItem(historyKey) || '[]');
                 const item = {
                     invoice_code: order.invoice_code,
-                    product_name: order.product_name,
-                    variant_name: order.variant_name,
+                    product_name: order.product?.name || 'Layanan Streaming',
+                    variant_name: order.variant?.name || 'Paket',
                     total_amount: order.total_amount,
                     status: order.status,
                     created_at: order.created_at || new Date().toISOString(),

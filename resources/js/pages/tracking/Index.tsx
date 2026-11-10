@@ -186,7 +186,7 @@ export default function TrackingIndex({
                                                 {item.invoice_code}
                                             </span>
                                             {item.status && (
-                                                <Badge variant={getBadgeVariant(item.status)} size="sm">
+                                                <Badge variant={getBadgeVariant(item.status)}>
                                                     {item.status}
                                                 </Badge>
                                             )}

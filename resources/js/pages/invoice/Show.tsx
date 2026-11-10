@@ -12,6 +12,8 @@ import {
     ArrowLeft,
     PhoneCall,
     ShieldAlert,
+    RefreshCw,
+    ExternalLink,
 } from 'lucide-react';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import { Button } from '@/components/ui/button';
@@ -372,15 +374,41 @@ export default function InvoiceShow({
 
                 {/* VERIFYING Banner */}
                 {status === 'VERIFYING' && (
-                    <div className="bg-info/10 border border-info/30 rounded-lg p-4 flex items-start gap-3 text-info">
-                        <Clock className="w-5 h-5 shrink-0 mt-0.5" />
-                        <div className="space-y-1">
-                            <h3 className="text-sm font-bold text-text">
-                                Pembayaran Sedang Diverifikasi
-                            </h3>
-                            <p className="text-xs text-text-2 leading-relaxed">
-                                Bukti transfer kamu telah diterima dan sedang diverifikasi oleh admin. Halaman ini akan otomatis diperbarui begitu pesanan disetujui.
-                            </p>
+                    <div className="bg-surface border border-info/40 rounded-xl p-5 shadow-xs space-y-4">
+                        <div className="flex items-start gap-3">
+                            <div className="w-9 h-9 rounded-full bg-info/15 text-info flex items-center justify-center shrink-0">
+                                <Clock className="w-5 h-5 animate-pulse" />
+                            </div>
+                            <div className="space-y-1 flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                    <h3 className="text-sm font-bold text-text">
+                                        Pembayaran Menunggu Verifikasi Admin
+                                    </h3>
+                                    <Badge variant="info">Status: Menunggu Verifikasi</Badge>
+                                </div>
+                                <p className="text-xs text-text-2 leading-relaxed">
+                                    Konfirmasi pembayaran kamu sudah kami terima dan sedang diperiksa oleh admin. Begitu pesanan disetujui, kredensial akun streaming (Email, Password, Profil, PIN) akan <strong>langsung muncul secara otomatis di halaman ini</strong>.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-border flex items-center justify-between flex-wrap gap-2.5">
+                            <Link
+                                href="/cek-pesanan"
+                                className="inline-flex items-center gap-1.5 px-3 py-2 bg-surface-2 hover:bg-surface-hover text-text border border-border text-xs font-semibold rounded-md transition-colors"
+                            >
+                                <span>Cek Riwayat & Detail Pesanan</span>
+                                <ExternalLink className="w-3.5 h-3.5 text-text-2" />
+                            </Link>
+
+                            <button
+                                type="button"
+                                onClick={() => router.reload({ only: ['order', 'isAuthorized'] })}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold rounded-md transition-colors cursor-pointer shadow-xs"
+                            >
+                                <RefreshCw className="w-3.5 h-3.5" />
+                                <span>Periksa Status Sekarang</span>
+                            </button>
                         </div>
                     </div>
                 )}

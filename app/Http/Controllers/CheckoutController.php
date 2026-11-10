@@ -31,7 +31,7 @@ class CheckoutController extends Controller
                 $request->session()->put('owned_invoices', $owned);
             }
 
-            return redirect()->route('invoice.show', $existingInvoice);
+            return redirect()->to("/invoice/{$existingInvoice}");
         }
 
         try {
@@ -43,19 +43,15 @@ class CheckoutController extends Controller
                 ownedInvoices: $request->session()->get('owned_invoices', []),
             ));
         } catch (ActiveOrderExistsException $e) {
-            if ($e->ownedBySession) {
-                $msg = $e->isVerifying
-                    ? "Pesanan {$e->invoiceCode} sedang diverifikasi admin. Kamu bisa memesan lagi setelah selesai."
-                    : "Kamu masih punya pesanan yang belum selesai ({$e->invoiceCode}). Selesaikan pembayaran atau batalkan dulu.";
-            } else {
-                $msg = $e->isVerifying
-                    ? 'Nomor ini masih punya pesanan yang sedang diverifikasi admin. Tunggu sampai selesai atau gunakan Cek Pesanan.'
-                    : 'Nomor ini masih punya pesanan yang belum selesai. Tunggu sampai selesai atau gunakan Cek Pesanan.';
+            // Buyer already has an active order (e.g. pending payment or verifying).
+            // Directly forward them to their invoice so they can pay or view status!
+            $owned = $request->session()->get('owned_invoices', []);
+            if (! in_array($e->invoiceCode, $owned, true)) {
+                $owned[] = $e->invoiceCode;
+                $request->session()->put('owned_invoices', $owned);
             }
 
-            throw ValidationException::withMessages([
-                'customer_phone' => $msg,
-            ]);
+            return redirect()->to("/invoice/{$e->invoiceCode}");
         } catch (QuotaFullException) {
             throw ValidationException::withMessages([
                 'variant_id' => 'Kuota sewa hari ini sudah penuh. Silakan coba lagi besok pukul 00:00 WIB.',
@@ -76,6 +72,6 @@ class CheckoutController extends Controller
             $request->session()->put('owned_invoices', $owned);
         }
 
-        return redirect()->route('invoice.show', $order->invoice_code);
+        return redirect()->to("/invoice/{$order->invoice_code}");
     }
 }

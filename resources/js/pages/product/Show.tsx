@@ -140,6 +140,17 @@ export default function ProductShow({
         setServerErrors({});
     };
 
+    // Safety auto-dismiss for submitting overlay if redirect or response takes unusually long
+    useEffect(() => {
+        let timer: ReturnType<typeof setTimeout>;
+        if (isSubmitting) {
+            timer = setTimeout(() => {
+                setIsSubmitting(false);
+            }, 8000);
+        }
+        return () => clearTimeout(timer);
+    }, [isSubmitting]);
+
     const handleSubmit = () => {
         if (!isReadyToSubmit || isSubmitting || !selectedVariant || !selectedPaymentMethodId) return;
 
@@ -158,12 +169,15 @@ export default function ProductShow({
             },
             {
                 preserveScroll: false,
-                onFinish: () => {
+                onSuccess: () => {
                     setIsSubmitting(false);
                 },
                 onError: (errors) => {
                     setIsSubmitting(false);
                     setServerErrors(errors);
+                },
+                onFinish: () => {
+                    setIsSubmitting(false);
                 },
             }
         );
@@ -724,6 +738,15 @@ export default function ProductShow({
                             <p className="text-xs text-text-2">
                                 Mohon tunggu sebentar, Anda sedang diarahkan ke halaman instruksi pembayaran.
                             </p>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setIsSubmitting(false)}
+                                className="text-xs text-text-3 hover:text-text mt-1"
+                            >
+                                Tutup
+                            </Button>
                         </div>
                     </div>
                 )}

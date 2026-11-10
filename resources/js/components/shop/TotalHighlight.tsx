@@ -13,13 +13,11 @@ export const TotalHighlight: React.FC<TotalHighlightProps> = ({
     uniqueCode,
     className = '',
 }) => {
-    // Format full rupiah: e.g. "Rp 15.123"
-    // Split into prefix and last 3 digits so unique code is highlighted in accent
+    // Format full rupiah: e.g. "Rp 15.000"
     const formattedTotal = new Intl.NumberFormat('id-ID').format(totalAmount);
-    
-    // The last 3 characters of formatted string are the unique digits (e.g., "123")
-    const mainPart = formattedTotal.slice(0, -3);
-    const uniquePart = formattedTotal.slice(-3);
+    const hasUnique = uniqueCode > 0;
+    const mainPart = hasUnique ? formattedTotal.slice(0, -3) : formattedTotal;
+    const uniquePart = hasUnique ? formattedTotal.slice(-3) : '';
 
     return (
         <div
@@ -36,15 +34,21 @@ export const TotalHighlight: React.FC<TotalHighlightProps> = ({
                 <span className="text-sm font-semibold text-text-2 font-mono">Rp</span>
                 <span className="font-mono text-2xl sm:text-3xl font-bold tracking-tight text-text tabular-nums">
                     {mainPart}
-                    <span className="text-accent-text underline decoration-accent/40 underline-offset-4">
-                        {uniquePart}
-                    </span>
+                    {hasUnique && (
+                        <span className="text-accent-text underline decoration-accent/40 underline-offset-4">
+                            {uniquePart}
+                        </span>
+                    )}
                 </span>
             </div>
 
             <div className="flex items-center gap-1.5 mt-2.5 text-xs text-text-2">
                 <AlertCircle className="w-3.5 h-3.5 text-accent-text shrink-0" />
-                <span>Transfer sesuai nominal sampai 3 digit terakhir</span>
+                <span>
+                    {hasUnique
+                        ? 'Transfer sesuai nominal sampai 3 digit terakhir'
+                        : 'Transfer tepat sesuai nominal total pembayaran'}
+                </span>
             </div>
         </div>
     );

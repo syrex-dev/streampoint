@@ -431,10 +431,12 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
                                     <span className="text-text-2 block mb-0.5">Harga Pokok:</span>
                                     <span className="font-mono text-text">{formatRupiah(order.base_price)}</span>
                                 </div>
-                                <div>
-                                    <span className="text-text-2 block mb-0.5">Kode Unik:</span>
-                                    <span className="font-mono text-accent-text font-bold">+{order.unique_code}</span>
-                                </div>
+                                {order.unique_code > 0 && (
+                                    <div>
+                                        <span className="text-text-2 block mb-0.5">Kode Unik:</span>
+                                        <span className="font-mono text-accent-text font-bold">+{order.unique_code}</span>
+                                    </div>
+                                )}
                                 <div>
                                     <span className="text-text-2 block mb-0.5">Total Transfer:</span>
                                     <span className="font-mono font-bold text-sm text-text">

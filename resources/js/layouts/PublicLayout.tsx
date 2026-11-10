@@ -113,14 +113,14 @@ export function PublicLayout({
 
                     {/* Right Action Bar */}
                     <div className="flex items-center gap-2 sm:gap-3">
-                        {/* Cek Pesanan (Desktop & Mobile) */}
+                        {/* Riwayat & Cek Pesanan (Desktop & Mobile) */}
                         <Link
                             href="/cek-pesanan"
                             className="inline-flex items-center gap-1.5 text-xs font-semibold text-text hover:text-accent-text px-2.5 py-1.5 rounded-md hover:bg-surface-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                            title="Cek Status Pesanan"
+                            title="Riwayat & Cek Status Pesanan"
                         >
                             <Search className="w-3.5 h-3.5 text-text-2 shrink-0" />
-                            <span className="hidden xs:inline">Cek Pesanan</span>
+                            <span>Riwayat Pesanan</span>
                         </Link>
 
                         {/* Theme Toggle Button */}

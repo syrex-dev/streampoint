@@ -24,6 +24,8 @@ Route::post('/invoice/{invoiceCode}/verify', [InvoiceController::class, 'verify'
     ->name('invoice.verify');
 
 Route::get('/cek-pesanan', [TrackingController::class, 'index'])->name('tracking.index');
+Route::redirect('/track', '/cek-pesanan');
+Route::redirect('/tracking', '/cek-pesanan');
 Route::post('/cek-pesanan', [TrackingController::class, 'search'])
     ->middleware('throttle:10,1')
     ->name('tracking.search');

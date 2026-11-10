@@ -38,16 +38,41 @@ export function Hero({
         : (quota as { max?: number }).max ?? 0;
 
     const scrollToCatalog = () => {
-        const el = document.getElementById('catalog');
+        const el = document.getElementById('katalog') || document.getElementById('catalog');
         if (el) {
             el.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            window.location.hash = '#katalog';
         }
     };
 
-    // Up to 6 products with logos for mosaic
-    const mosaicProducts = (products || [])
-        .filter((p) => Boolean(p.logo_url || p.thumbnail_path))
-        .slice(0, 6);
+    // Deduplicate products so each platform brand or unique logo only appears once (up to 6)
+    const seenLogos = new Set<string>();
+    const seenPlatforms = new Set<string>();
+
+    const mosaicProducts = (products || []).filter((p) => {
+        const logo = (p.logo_url || p.thumbnail_path || '').trim();
+        if (!logo) return false;
+
+        // Extract simplified platform keyword from product name (e.g., "netflix", "spotify", "youtube", "canva", "disney")
+        const firstWord = (p.name || '').trim().toLowerCase().split(/[\s\-_/]+/)[0] || '';
+
+        // If duplicate logo image URL
+        if (seenLogos.has(logo)) {
+            return false;
+        }
+
+        // If same platform name (e.g. "netflix private" & "netflix shared")
+        if (firstWord.length >= 3 && seenPlatforms.has(firstWord)) {
+            return false;
+        }
+
+        seenLogos.add(logo);
+        if (firstWord.length >= 3) {
+            seenPlatforms.add(firstWord);
+        }
+        return true;
+    }).slice(0, 6);
 
     const verificationText = typeof verificationMedianMinutes === 'number' && verificationMedianMinutes > 0
         ? `± ${verificationMedianMinutes} menit`
@@ -57,7 +82,7 @@ export function Hero({
         <section
             aria-label="Pengenalan Toko"
             data-testid="functional-hero"
-            className="w-full bg-surface border border-border rounded-lg h-auto max-h-[140px] lg:max-h-none lg:h-[160px] p-4 lg:p-5 flex flex-col justify-between overflow-hidden shadow-2xs"
+            className="w-full bg-surface border border-border rounded-lg p-4 lg:p-5 flex flex-col justify-between overflow-hidden shadow-2xs"
         >
             {/* Desktop Layout (>= 1024px) */}
             <div className="hidden lg:flex items-center justify-between gap-6 h-full">
@@ -70,16 +95,19 @@ export function Hero({
                         {HERO_CONFIG.subtitle}
                     </p>
                     <div className="flex items-center gap-3 mt-4">
-                        <button
-                            type="button"
-                            onClick={scrollToCatalog}
+                        <a
+                            href="#katalog"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                scrollToCatalog();
+                            }}
                             className="inline-flex items-center gap-1.5 px-4 py-2 bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold rounded-md transition-colors cursor-pointer shadow-xs"
                         >
                             <span>{HERO_CONFIG.ctaCatalog}</span>
                             <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
+                        </a>
                         <Link
-                            href="/track"
+                            href="/cek-pesanan"
                             className="inline-flex items-center gap-1.5 px-4 py-2 bg-surface-2 hover:bg-surface-hover text-text border border-border text-xs font-semibold rounded-md transition-colors"
                         >
                             <span>{HERO_CONFIG.ctaTrack}</span>
@@ -151,7 +179,7 @@ export function Hero({
             </div>
 
             {/* Mobile Layout (< 1024px) */}
-            <div className="flex lg:hidden flex-col justify-between h-full space-y-2">
+            <div className="flex lg:hidden flex-col justify-between h-full space-y-3">
                 <div>
                     <h1 className="text-lg sm:text-xl font-semibold text-text tracking-tight truncate">
                         {HERO_CONFIG.title}
@@ -161,8 +189,28 @@ export function Hero({
                     </p>
                 </div>
 
+                <div className="flex items-center gap-2">
+                    <a
+                        href="#katalog"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            scrollToCatalog();
+                        }}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold rounded-md transition-colors cursor-pointer shadow-xs shrink-0"
+                    >
+                        <span>{HERO_CONFIG.ctaCatalog}</span>
+                        <ChevronRight className="w-3 h-3" />
+                    </a>
+                    <Link
+                        href="/cek-pesanan"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-surface-2 hover:bg-surface-hover text-text border border-border text-xs font-semibold rounded-md transition-colors shrink-0"
+                    >
+                        <span>{HERO_CONFIG.ctaTrack}</span>
+                    </Link>
+                </div>
+
                 {/* Horizontal scrollable status chips */}
-                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-surface-2 text-[11px] text-text whitespace-nowrap shrink-0">
                         <Clock className="w-3.5 h-3.5 text-text-2" />
                         <span>

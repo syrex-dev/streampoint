@@ -83,7 +83,7 @@ class CreateOrder
                 throw new OutOfStockException();
             }
 
-            $unique = $this->uniqueAmount->generate($variant->price, lock: true);
+            $unique = 0;
             $ttlMinutes = (int) env('ORDER_PAYMENT_TTL_MINUTES', 15);
 
             $order = Order::create([
@@ -97,8 +97,8 @@ class CreateOrder
                 'payment_method_id' => $paymentMethod->id,
                 'payment_method_label' => $paymentMethod->label,
                 'base_price' => $variant->price,
-                'unique_code' => $unique,
-                'total_amount' => $variant->price + $unique,
+                'unique_code' => 0,
+                'total_amount' => $variant->price,
                 'status' => OrderStatus::PENDING,
                 'payment_expires_at' => now()->addMinutes($ttlMinutes),
                 'quota_date' => $date,

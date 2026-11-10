@@ -84,6 +84,28 @@ export default function InvoiceShow({
         };
     }, []);
 
+    // Store in localStorage order history so buyer can easily find it later
+    useEffect(() => {
+        if (order?.invoice_code) {
+            try {
+                const historyKey = 'streampoint_order_history';
+                const existing = JSON.parse(localStorage.getItem(historyKey) || '[]');
+                const item = {
+                    invoice_code: order.invoice_code,
+                    product_name: order.product_name,
+                    variant_name: order.variant_name,
+                    total_amount: order.total_amount,
+                    status: order.status,
+                    created_at: order.created_at || new Date().toISOString(),
+                };
+                const filtered = Array.isArray(existing) ? existing.filter((x: any) => x?.invoice_code !== order.invoice_code) : [];
+                localStorage.setItem(historyKey, JSON.stringify([item, ...filtered].slice(0, 20)));
+            } catch {
+                // Ignore storage error
+            }
+        }
+    }, [order?.invoice_code, order?.status]);
+
     // Clean admin WhatsApp phone number
     const rawWhatsapp = adminWhatsapp || admin_whatsapp || '';
     let cleanAdminPhone = rawWhatsapp.replace(/\D/g, '');
@@ -241,6 +263,13 @@ export default function InvoiceShow({
                         >
                             <ArrowLeft className="w-3.5 h-3.5" />
                             <span>Katalog</span>
+                        </Link>
+                        <span className="text-border">|</span>
+                        <Link
+                            href="/cek-pesanan"
+                            className="inline-flex items-center gap-1.5 text-xs text-text-2 hover:text-text transition-colors"
+                        >
+                            <span>Riwayat</span>
                         </Link>
                         <span className="text-border">|</span>
                         <div className="flex items-center gap-1.5">

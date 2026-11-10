@@ -117,9 +117,8 @@ class CheckoutAndInvoiceTest extends TestCase
         $this->assertEquals(OrderStatus::PENDING, $order->status);
         $this->assertEquals('6281234567890', $order->customer_phone);
         $this->assertEquals(15000, $order->base_price);
-        $this->assertGreaterThanOrEqual(100, $order->unique_code);
-        $this->assertLessThanOrEqual(999, $order->unique_code);
-        $this->assertEquals($order->base_price + $order->unique_code, $order->total_amount);
+        $this->assertEquals(0, $order->unique_code);
+        $this->assertEquals($order->base_price, $order->total_amount);
         $this->assertEquals($this->rentAccount->id, $order->account_id);
 
         $response->assertRedirect("/invoice/{$order->invoice_code}");

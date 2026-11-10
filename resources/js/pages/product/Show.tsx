@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabItem } from '@/components/ui/tabs';
 import { PackageOption } from '@/components/shop/PackageOption';
-import { StickyBottomBar } from '@/components/shop/StickyBottomBar';
 import { formatRupiah } from '@/lib/format';
 import { validatePhone } from '@/lib/phone';
 import { PaymentMethodItem, ProductDetail, ProductVariantData, QuotaData, SharedPendingOrder } from '@/types/shop';
@@ -42,10 +41,8 @@ export default function ProductShow({
     const [phoneTouched, setPhoneTouched] = useState<boolean>(false);
     const [customerNote, setCustomerNote] = useState<string>('');
 
-    // 4. Payment Method
-    const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<number | null>(
-        paymentMethods[0]?.id ?? null
-    );
+    // 4. Payment Method (default null to ensure step-by-step selection)
+    const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<number | null>(null);
 
     // 5. Checkout & Anti-Bot state
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -160,11 +157,12 @@ export default function ProductShow({
                 hp_website: honeypot,
             },
             {
-                preserveScroll: true,
+                preserveScroll: false,
                 onFinish: () => {
                     setIsSubmitting(false);
                 },
                 onError: (errors) => {
+                    setIsSubmitting(false);
                     setServerErrors(errors);
                 },
             }
@@ -717,16 +715,18 @@ export default function ProductShow({
                     </div>
                 </div>
 
-                {/* Mobile Sticky Bottom Bar (< 1024px) */}
-                <StickyBottomBar
-                    totalPrice={selectedVariant?.price ?? null}
-                    isReadyToSubmit={isReadyToSubmit}
-                    isSubmitting={isSubmitting}
-                    buttonLabel={selectedTab === 'RENT' ? 'Sewa Sekarang' : 'Beli Sekarang'}
-                    pendingOrder={pendingOrder}
-                    onSubmit={handleSubmit}
-                />
-
+                {/* Submitting Loading Overlay */}
+                {isSubmitting && (
+                    <div className="fixed inset-0 z-50 bg-overlay backdrop-blur-xs flex flex-col items-center justify-center p-4">
+                        <div className="bg-surface border border-border rounded-xl p-6 shadow-2xl flex flex-col items-center gap-3 max-w-sm text-center">
+                            <div className="w-10 h-10 border-3 border-accent border-t-transparent rounded-full animate-spin" />
+                            <h3 className="text-sm font-bold text-text">Memproses Pesanan Anda...</h3>
+                            <p className="text-xs text-text-2">
+                                Mohon tunggu sebentar, Anda sedang diarahkan ke halaman instruksi pembayaran.
+                            </p>
+                        </div>
+                    </div>
+                )}
             </div>
         </PublicLayout>
     );

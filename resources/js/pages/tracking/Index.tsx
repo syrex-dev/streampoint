@@ -34,6 +34,39 @@ export default function TrackingIndex({
     const [isSearching, setIsSearching] = useState(false);
     const [clientError, setClientError] = useState<string | null>(null);
 
+    // Local device history
+    const [localHistory, setLocalHistory] = useState<Array<{
+        invoice_code: string;
+        product_name?: string;
+        variant_name?: string;
+        total_amount?: number;
+        status?: OrderStatusType;
+        created_at?: string;
+    }>>([]);
+
+    React.useEffect(() => {
+        try {
+            const raw = localStorage.getItem('streampoint_order_history');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) {
+                    setLocalHistory(parsed);
+                }
+            }
+        } catch {
+            // Ignore storage error
+        }
+    }, []);
+
+    const handleClearHistory = () => {
+        try {
+            localStorage.removeItem('streampoint_order_history');
+            setLocalHistory([]);
+        } catch {
+            // Ignore
+        }
+    };
+
     const tabs: TabItem[] = [
         { id: 'invoice', label: 'Kode Invoice + WA' },
         { id: 'phone', label: 'Cari via Nomor WA' },
@@ -114,12 +147,67 @@ export default function TrackingIndex({
                 <div className="space-y-1.5 text-center sm:text-left">
                     <h1 className="text-xl sm:text-2xl font-bold text-text tracking-tight flex items-center justify-center sm:justify-start gap-2.5">
                         <Search className="w-5 h-5 text-accent-text" />
-                        <span>Cek Status Pesanan</span>
+                        <span>Riwayat & Cek Status Pesanan</span>
                     </h1>
                     <p className="text-xs sm:text-sm text-text-2 leading-relaxed">
-                        Pantau status verifikasi, bayar tagihan, atau buka kredensial akun streaming kamu.
+                        Pantau status pesanan kamu secara real-time, bayar tagihan sewa, atau buka kredensial akun streaming yang telah aktif.
                     </p>
                 </div>
+
+                {/* Local Device Order History */}
+                {localHistory.length > 0 && (
+                    <div className="bg-surface border border-accent/30 rounded-xl p-4 sm:p-5 space-y-3 shadow-xs">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-accent-text" />
+                                <h2 className="text-xs sm:text-sm font-bold text-text">
+                                    Pesanan Terakhir di Perangkat Ini ({localHistory.length})
+                                </h2>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleClearHistory}
+                                className="text-[11px] text-text-3 hover:text-danger transition-colors cursor-pointer"
+                            >
+                                Hapus Riwayat
+                            </button>
+                        </div>
+
+                        <div className="space-y-2">
+                            {localHistory.map((item) => (
+                                <Link
+                                    key={item.invoice_code}
+                                    href={`/invoice/${item.invoice_code}`}
+                                    className="p-3 bg-surface-2 hover:bg-surface-hover border border-border hover:border-accent/50 rounded-lg flex items-center justify-between gap-3 transition-colors group block"
+                                >
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                                            <span className="font-mono text-xs font-bold text-text">
+                                                {item.invoice_code}
+                                            </span>
+                                            {item.status && (
+                                                <Badge variant={getBadgeVariant(item.status)} size="sm">
+                                                    {item.status}
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-text-2 truncate">
+                                            {item.product_name ? `${item.product_name} - ${item.variant_name || ''}` : 'Pesanan Streaming'}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        {typeof item.total_amount === 'number' && (
+                                            <span className="font-mono text-xs font-semibold text-text hidden sm:inline">
+                                                Rp {new Intl.NumberFormat('id-ID').format(item.total_amount)}
+                                            </span>
+                                        )}
+                                        <ArrowRight className="w-4 h-4 text-text-3 group-hover:text-accent-text group-hover:translate-x-0.5 transition-transform" />
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Search Box */}
                 <div className="bg-surface border border-border rounded-lg p-4 sm:p-6 space-y-5">

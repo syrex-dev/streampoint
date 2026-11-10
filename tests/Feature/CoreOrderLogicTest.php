@@ -336,7 +336,7 @@ class CoreOrderLogicTest extends TestCase
     }
 
     /**
-     * Test 8 (spec 11): total_amount is unique among active orders.
+     * Test 8 (spec 11): total_amount equals base_price and unique_code is 0.
      */
     public function test_total_amount_is_unique_among_active_orders(): void
     {
@@ -346,10 +346,10 @@ class CoreOrderLogicTest extends TestCase
         $order1 = $createOrder->handle(new CreateOrderData($this->rentVariant->id, '081234567801', $this->paymentMethod->id));
         $order2 = $createOrder->handle(new CreateOrderData($this->rentVariant->id, '081234567802', $this->paymentMethod->id));
 
-        $this->assertNotEquals($order1->total_amount, $order2->total_amount);
-        $this->assertNotEquals($order1->unique_code, $order2->unique_code);
-        $this->assertGreaterThanOrEqual(1, $order1->unique_code);
-        $this->assertLessThanOrEqual(999, $order1->unique_code);
+        $this->assertEquals($order1->base_price, $order1->total_amount);
+        $this->assertEquals(0, $order1->unique_code);
+        $this->assertEquals($order2->base_price, $order2->total_amount);
+        $this->assertEquals(0, $order2->unique_code);
     }
 
     /**

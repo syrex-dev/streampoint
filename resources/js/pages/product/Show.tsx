@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabItem } from '@/components/ui/tabs';
 import { PackageOption } from '@/components/shop/PackageOption';
 import { CheckoutModal } from '@/components/shop/CheckoutModal';
+import { ProductReviews } from '@/components/shop/ProductReviews';
 import { formatRupiah } from '@/lib/format';
 import { validatePhone } from '@/lib/phone';
-import { PaymentMethodItem, ProductDetail, ProductVariantData, QuotaData, SharedPendingOrder } from '@/types/shop';
+import { PaymentMethodItem, ProductDetail, ProductVariantData, QuotaData, SharedPendingOrder, ProductReviewsData } from '@/types/shop';
 
 interface ProductShowProps {
     storeName?: string;
@@ -17,6 +18,7 @@ interface ProductShowProps {
     variants: ProductVariantData[];
     quota: QuotaData;
     paymentMethods: PaymentMethodItem[];
+    reviewsData?: ProductReviewsData;
 }
 
 export default function ProductShow({
@@ -26,6 +28,18 @@ export default function ProductShow({
     variants = [],
     quota,
     paymentMethods = [],
+    reviewsData = {
+        average_rating: 0,
+        total_reviews: 0,
+        breakdown: [
+            { stars: 5, count: 0, percentage: 0 },
+            { stars: 4, count: 0, percentage: 0 },
+            { stars: 3, count: 0, percentage: 0 },
+            { stars: 2, count: 0, percentage: 0 },
+            { stars: 1, count: 0, percentage: 0 },
+        ],
+        reviews: [],
+    },
 }: ProductShowProps) {
     const { pendingOrder } = usePage<{ pendingOrder?: SharedPendingOrder }>().props;
     const hasActiveOrder = Boolean(pendingOrder);
@@ -500,6 +514,15 @@ export default function ProductShow({
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Penilaian & Ulasan Pembeli (Orvaki Style) */}
+                <div className="mt-10 pt-8 border-t border-border">
+                    <ProductReviews
+                        reviewsData={reviewsData}
+                        storeName={storeName}
+                        productName={product.name}
+                    />
                 </div>
 
                 {/* Mobile Floating Sticky Bottom Bar (Only 1 Clean Action Button) */}

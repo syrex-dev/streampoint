@@ -14,6 +14,7 @@ import {
     ShieldAlert,
     RefreshCw,
     ExternalLink,
+    Star,
 } from 'lucide-react';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,8 @@ interface InvoiceShowProps {
     serverNow: string;
     order: OrderInvoiceData;
     errors?: Record<string, string>;
+    userReview?: { rating: number; comment: string | null; created_at: string } | null;
+    canReview?: boolean;
 }
 
 export default function InvoiceShow({
@@ -54,6 +57,8 @@ export default function InvoiceShow({
     serverNow,
     order,
     errors = {},
+    userReview,
+    canReview = false,
 }: InvoiceShowProps) {
     // Current status state (can update via polling or countdown expire)
     const [status, setStatus] = useState(order.status);
@@ -61,6 +66,13 @@ export default function InvoiceShow({
     const [proofPreview, setProofPreview] = useState<string | null>(null);
     const [isConfirming, setIsConfirming] = useState(false);
     const [confirmError, setConfirmError] = useState<string | null>(null);
+
+    // Review form state
+    const [reviewRating, setReviewRating] = useState(5);
+    const [hoverRating, setHoverRating] = useState(0);
+    const [reviewComment, setReviewComment] = useState('');
+    const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+    const [reviewError, setReviewError] = useState<string | null>(null);
 
     // Cancel order state
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
@@ -311,12 +323,133 @@ export default function InvoiceShow({
                         </div>
 
                         {isAuthorized ? (
-                            <CredentialBox
-                                credentials={order.credentials}
-                                orderType={order.order_type}
-                                accessStartsAt={order.access_starts_at}
-                                accessExpiresAt={order.access_expires_at}
-                            />
+                            <>
+                                <CredentialBox
+                                    credentials={order.credentials}
+                                    orderType={order.order_type}
+                                    accessStartsAt={order.access_starts_at}
+                                    accessExpiresAt={order.access_expires_at}
+                                />
+
+                                {/* Verified Buyer Review Card (Anti-Spam) */}
+                                {userReview ? (
+                                    <div className="bg-surface border border-border rounded-xl p-4 sm:p-5 space-y-2.5 shadow-2xs">
+                                        <div className="flex items-center justify-between pb-2 border-b border-border">
+                                            <div className="flex items-center gap-2">
+                                                <CheckCircle2 className="w-4 h-4 text-accent-text" />
+                                                <h4 className="text-xs sm:text-sm font-bold text-text">Ulasan Anda Telah Terkirim</h4>
+                                            </div>
+                                            <span className="text-[11px] text-text-2">{userReview.created_at}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <Star
+                                                    key={star}
+                                                    className={`w-4 h-4 ${
+                                                        userReview.rating >= star
+                                                            ? 'fill-amber-400 text-amber-400'
+                                                            : 'text-border fill-transparent'
+                                                    }`}
+                                                />
+                                            ))}
+                                            <span className="text-xs font-bold text-text ml-2">
+                                                {userReview.rating} / 5
+                                            </span>
+                                        </div>
+                                        {userReview.comment && (
+                                            <p className="text-xs text-text bg-surface-2 p-3 rounded-lg border border-border">
+                                                "{userReview.comment}"
+                                            </p>
+                                        )}
+                                    </div>
+                                ) : canReview ? (
+                                    <form
+                                        onSubmit={(e) => {
+                                            e.preventDefault();
+                                            setIsSubmittingReview(true);
+                                            setReviewError(null);
+                                            router.post(
+                                                `/invoice/${order.invoice_code}/review`,
+                                                { rating: reviewRating, comment: reviewComment },
+                                                {
+                                                    preserveScroll: true,
+                                                    onFinish: () => setIsSubmittingReview(false),
+                                                    onError: (errs) => {
+                                                        setReviewError(errs.review || errs.rating || errs.comment || 'Gagal mengirim ulasan.');
+                                                    },
+                                                }
+                                            );
+                                        }}
+                                        className="bg-surface border border-border rounded-xl p-4 sm:p-5 space-y-3.5 shadow-2xs"
+                                    >
+                                        <div className="pb-2 border-b border-border">
+                                            <h4 className="text-sm font-bold text-text">Beri Penilaian & Ulasan Pesanan</h4>
+                                            <p className="text-xs text-text-2 mt-0.5">
+                                                Bagikan pengalaman kamu untuk membantu pembeli lain. 1 transaksi hanya dapat diulas 1 kali.
+                                            </p>
+                                        </div>
+
+                                        {reviewError && (
+                                            <p className="text-xs text-danger font-medium p-2.5 rounded-lg bg-danger/10 border border-danger/30">
+                                                {reviewError}
+                                            </p>
+                                        )}
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-semibold text-text block">Bintang Penilaian</label>
+                                            <div className="flex items-center gap-1">
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <button
+                                                        key={star}
+                                                        type="button"
+                                                        onClick={() => setReviewRating(star)}
+                                                        onMouseEnter={() => setHoverRating(star)}
+                                                        onMouseLeave={() => setHoverRating(0)}
+                                                        className="p-1 cursor-pointer transition-transform hover:scale-110"
+                                                        aria-label={`Beri ${star} bintang`}
+                                                    >
+                                                        <Star
+                                                            className={`w-6 h-6 ${
+                                                                (hoverRating || reviewRating) >= star
+                                                                    ? 'fill-amber-400 text-amber-400'
+                                                                    : 'text-border fill-transparent'
+                                                            }`}
+                                                        />
+                                                    </button>
+                                                ))}
+                                                <span className="text-xs font-bold text-text ml-2">
+                                                    {hoverRating || reviewRating} / 5
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label htmlFor="review-comment" className="text-xs font-semibold text-text block">
+                                                Ulasan / Testimoni (Opsional)
+                                            </label>
+                                            <textarea
+                                                id="review-comment"
+                                                value={reviewComment}
+                                                onChange={(e) => setReviewComment(e.target.value)}
+                                                rows={3}
+                                                maxLength={500}
+                                                placeholder="Tulis ulasan pengalaman kamu..."
+                                                className="w-full p-2.5 text-xs bg-surface border border-border rounded-lg text-text placeholder:text-text-2 focus:outline-none focus:border-accent"
+                                            />
+                                        </div>
+
+                                        <Button
+                                            type="submit"
+                                            variant="primary"
+                                            size="sm"
+                                            loading={isSubmittingReview}
+                                            className="w-full sm:w-auto text-xs font-semibold px-5"
+                                        >
+                                            Kirim Ulasan Terverifikasi
+                                        </Button>
+                                    </form>
+                                ) : null}
+                            </>
                         ) : (
                             /* Unauthorized Card */
                             <div className="bg-surface border border-warning/40 rounded-lg p-5 space-y-4">

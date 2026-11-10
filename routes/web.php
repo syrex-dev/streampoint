@@ -22,6 +22,9 @@ Route::post('/invoice/{invoiceCode}/cancel', [InvoiceController::class, 'cancel'
 Route::post('/invoice/{invoiceCode}/verify', [InvoiceController::class, 'verify'])
     ->middleware('throttle:5,1')
     ->name('invoice.verify');
+Route::post('/invoice/{invoiceCode}/review', [\App\Http\Controllers\ReviewController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('invoice.review');
 
 Route::get('/cek-pesanan', [TrackingController::class, 'index'])->name('tracking.index');
 Route::redirect('/track', '/cek-pesanan');
@@ -75,6 +78,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Banners
     Route::resource('banners', \App\Http\Controllers\Admin\AdminBannerController::class);
+
+    // Reviews Moderation
+    Route::get('/reviews', [\App\Http\Controllers\Admin\AdminReviewController::class, 'index'])->name('reviews.index');
+    Route::patch('/reviews/{review}/visibility', [\App\Http\Controllers\Admin\AdminReviewController::class, 'toggleVisibility'])->name('reviews.visibility');
+    Route::delete('/reviews/{review}', [\App\Http\Controllers\Admin\AdminReviewController::class, 'destroy'])->name('reviews.destroy');
 
     Route::get('/settings', [\App\Http\Controllers\Admin\AdminSettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [\App\Http\Controllers\Admin\AdminSettingController::class, 'update'])->name('settings.update');

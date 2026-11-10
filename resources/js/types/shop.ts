@@ -153,3 +153,30 @@ export interface TrackingOrderItem {
     created_at: string;
 }
 
+export interface ReviewItem {
+    id: number;
+    rating: number;
+    comment: string | null;
+    customer_name: string;
+    variant_name?: string | null;
+    created_at: string;
+    is_verified_buyer: boolean;
+}
+
+export interface ReviewBreakdownItem {
+    stars: number;
+    count: number;
+    percentage: number;
+}
+
+export interface ProductReviewsData {
+    average_rating: number;
+    total_reviews: number;
+    breakdown: ReviewBreakdownItem[];
+    reviews: ReviewItem[];
+    user_pending_order_for_review?: {
+        invoice_code: string;
+        variant_name: string;
+    } | null;
+}
+

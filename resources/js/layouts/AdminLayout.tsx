@@ -12,7 +12,9 @@ import {
     Menu, 
     X, 
     ExternalLink,
-    User
+    User,
+    Star,
+    MessageSquare,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/shop/ThemeToggle';
 import { BrandMark } from '@/components/shop/BrandMark';
@@ -100,6 +102,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     label: 'Banner',
                     href: '/admin/banners',
                     icon: ImageIcon,
+                    exact: false,
+                    badge: null,
+                },
+                {
+                    label: 'Ulasan Pembeli',
+                    href: '/admin/reviews',
+                    icon: Star,
                     exact: false,
                     badge: null,
                 },

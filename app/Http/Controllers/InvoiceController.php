@@ -20,7 +20,7 @@ class InvoiceController extends Controller
      */
     public function show(string $invoiceCode, Request $request): Response
     {
-        $order = Order::with(['product', 'variant', 'paymentMethod', 'account'])
+        $order = Order::with(['product', 'variant', 'paymentMethod', 'account', 'review'])
             ->where('invoice_code', $invoiceCode)
             ->firstOrFail();
 
@@ -100,6 +100,12 @@ class InvoiceController extends Controller
                 'credentials' => $credentials,
                 'created_at' => $order->created_at->toIso8601String(),
             ],
+            'userReview' => $order->review ? [
+                'rating' => (int) $order->review->rating,
+                'comment' => $order->review->comment,
+                'created_at' => $order->review->created_at->format('d M Y, H:i'),
+            ] : null,
+            'canReview' => $isAuthorized && $order->status === OrderStatus::PAID && ! $order->review,
         ]);
     }
 

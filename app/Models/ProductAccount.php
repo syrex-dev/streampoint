@@ -7,6 +7,8 @@ use App\Enums\OrderType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Crypt;
+use Throwable;
 
 class ProductAccount extends Model
 {
@@ -27,10 +29,36 @@ class ProductAccount extends Model
     {
         return [
             'kind' => OrderType::class,
-            'credential' => 'encrypted',
             'status' => AccountStatus::class,
             'rented_until' => 'datetime',
         ];
+    }
+
+    public function getCredentialAttribute($value): string
+    {
+        if (empty($value)) {
+            return '';
+        }
+
+        try {
+            return Crypt::decryptString($value);
+        } catch (Throwable) {
+            return (string) $value;
+        }
+    }
+
+    public function setCredentialAttribute($value): void
+    {
+        if (empty($value)) {
+            $this->attributes['credential'] = '';
+            return;
+        }
+
+        try {
+            $this->attributes['credential'] = Crypt::encryptString((string) $value);
+        } catch (Throwable) {
+            $this->attributes['credential'] = (string) $value;
+        }
     }
 
     public function product(): BelongsTo

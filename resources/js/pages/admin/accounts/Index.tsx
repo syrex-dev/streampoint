@@ -82,9 +82,10 @@ interface AccountsIndexProps {
         status: string;
     };
     statuses: { value: string; label: string }[];
+    error_message?: string;
 }
 
-export default function AccountsIndex({ accounts, summary, products, filters, statuses }: AccountsIndexProps) {
+export default function AccountsIndex({ accounts, summary, products, filters, statuses, error_message }: AccountsIndexProps) {
     const [selectedProductId, setSelectedProductId] = useState<number | ''>(filters.product_id);
     const [selectedVariantId, setSelectedVariantId] = useState<number | ''>(filters.variant_id);
     const [selectedKind, setSelectedKind] = useState(filters.kind);
@@ -300,6 +301,13 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                         </button>
                     </div>
                 </PageHeader>
+
+                {error_message && (
+                    <div className="p-3.5 rounded-lg bg-danger/10 border border-danger/30 text-danger text-xs flex items-center gap-2.5">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>{error_message}</span>
+                    </div>
+                )}
 
                 {/* Stock Summary per Product */}
                 <div className="space-y-2">

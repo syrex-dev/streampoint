@@ -19,9 +19,10 @@ interface FooterProps {
         label: string;
         logo_url?: string | null;
     }>;
+    className?: string;
 }
 
-export function Footer({ storeName = 'StreamPoint', settings, socialLinks, paymentMethods = [] }: FooterProps) {
+export function Footer({ storeName = 'StreamPoint', settings, socialLinks, paymentMethods = [], className = '' }: FooterProps) {
     const currentYear = new Date().getFullYear();
     const adminPhone = settings?.admin_whatsapp;
     const businessHours = settings?.business_hours || 'Setiap hari, 09.00 - 21.00 WIB';
@@ -52,7 +53,7 @@ export function Footer({ storeName = 'StreamPoint', settings, socialLinks, payme
     };
 
     return (
-        <footer className="w-full border-t border-border bg-bg mt-16 sm:mt-24 transition-colors">
+        <footer className={`hidden md:block w-full border-t border-border bg-bg mt-16 sm:mt-24 transition-colors ${className}`}>
             <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-12 space-y-8">
                 {/* 4 Columns Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-8 text-xs">

@@ -218,7 +218,7 @@ export default function StorefrontIndex({
         <PublicLayout storeName={storeName} paymentMethods={paymentMethods}>
             <Head title={`Sewa & Beli Akun Streaming - ${storeName}`} />
 
-            <div className="w-full space-y-6 sm:space-y-7 pb-8">
+            <div className="w-full space-y-6 sm:space-y-7 pb-16 sm:pb-8">
                 {/* Above-the-fold Top Area: Banner/Hero + Quota Bar */}
                 <div className="space-y-2.5 sm:space-y-3">
                     {/* 1. Banner Slider (DESIGN_SYSTEM 6.26) atau Hero Fungsional (6.2) */}

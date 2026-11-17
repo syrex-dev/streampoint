@@ -5,6 +5,7 @@ use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 
@@ -33,4 +34,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        $exceptions->render(function (ThrottleRequestsException $e, Request $request) {
+            if ($request->header('X-Inertia')) {
+                return back()->with([
+                    'error' => 'Terlalu banyak permintaan. Mohon tunggu sekitar 1 menit sebelum mencoba lagi.',
+                ])->withErrors([
+                    'customer_phone' => 'Terlalu banyak permintaan. Mohon tunggu sekitar 1 menit sebelum mencoba lagi.',
+                    'general' => 'Terlalu banyak permintaan. Mohon tunggu sekitar 1 menit sebelum mencoba lagi.',
+                ]);
+            }
+        });
     })->create();

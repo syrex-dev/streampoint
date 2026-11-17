@@ -1,10 +1,11 @@
-import React, { ReactNode, useState, useEffect, useRef } from 'react';
+import React, { ReactNode } from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import { Search, Menu, X, ArrowRight } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { ThemeToggle } from '@/components/shop/ThemeToggle';
 import { PendingOrderBanner } from '@/components/shop/PendingOrderBanner';
 import { Footer } from '@/components/shop/Footer';
 import { FloatingWhatsApp } from '@/components/shop/FloatingWhatsApp';
+import { MobileBottomNav } from '@/components/shop/MobileBottomNav';
 import { SharedSettings, SharedPendingOrder } from '@/types/shop';
 
 import { BrandMark } from '@/components/shop/BrandMark';
@@ -41,30 +42,6 @@ export function PublicLayout({
             tiktok?: string | null;
         } | null;
     }>().props;
-
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const mobileMenuRef = useRef<HTMLDivElement>(null);
-
-    // Close mobile menu on Escape key
-    useEffect(() => {
-        function handleKeyDown(e: KeyboardEvent) {
-            if (e.key === 'Escape' && isMobileMenuOpen) {
-                setIsMobileMenuOpen(false);
-            }
-        }
-
-        if (isMobileMenuOpen) {
-            document.addEventListener('keydown', handleKeyDown);
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
-
-        return () => {
-            document.removeEventListener('keydown', handleKeyDown);
-            document.body.style.overflow = '';
-        };
-    }, [isMobileMenuOpen]);
 
     const navLinks = [
         { label: 'Layanan', href: '/#katalog' },
@@ -113,10 +90,10 @@ export function PublicLayout({
 
                     {/* Right Action Bar */}
                     <div className="flex items-center gap-2 sm:gap-3">
-                        {/* Riwayat & Cek Pesanan (Desktop & Mobile) */}
+                        {/* Riwayat & Cek Pesanan (Desktop & Tablet) */}
                         <Link
                             href="/cek-pesanan"
-                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-text hover:text-accent-text px-2.5 py-1.5 rounded-md hover:bg-surface-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                            className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-text hover:text-accent-text px-2.5 py-1.5 rounded-md hover:bg-surface-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent"
                             title="Riwayat & Cek Status Pesanan"
                         >
                             <Search className="w-3.5 h-3.5 text-text-2 shrink-0" />
@@ -125,77 +102,25 @@ export function PublicLayout({
 
                         {/* Theme Toggle Button */}
                         <ThemeToggle />
-
-                        {/* Mobile Hamburger Toggle Button */}
-                        <button
-                            type="button"
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            aria-label={isMobileMenuOpen ? 'Tutup menu navigasi' : 'Buka menu navigasi'}
-                            aria-expanded={isMobileMenuOpen}
-                            className="md:hidden w-9 h-9 rounded-md border border-border bg-surface hover:bg-surface-hover text-text flex items-center justify-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer"
-                        >
-                            {isMobileMenuOpen ? (
-                                <X className="w-4 h-4" />
-                            ) : (
-                                <Menu className="w-4 h-4" />
-                            )}
-                        </button>
                     </div>
                 </div>
             </header>
-
-            {/* Mobile Menu Panel Drawer / Overlay */}
-            {isMobileMenuOpen && (
-                <div
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Menu navigasi"
-                    className="fixed inset-0 top-14 z-40 bg-overlay md:hidden"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                >
-                    <div
-                        ref={mobileMenuRef}
-                        className="bg-surface border-b border-border p-4 shadow-none space-y-1"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {navLinks.map((link) => (
-                            <a
-                                key={link.label}
-                                href={link.href}
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="flex items-center justify-between px-3 py-3 text-sm font-medium text-text hover:bg-surface-hover rounded-md transition-colors"
-                            >
-                                <span>{link.label}</span>
-                                <ArrowRight className="w-4 h-4 text-text-2" />
-                            </a>
-                        ))}
-                        <Link
-                            href="/cek-pesanan"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center justify-between px-3 py-3 text-sm font-medium text-accent-text hover:bg-surface-hover rounded-md transition-colors"
-                        >
-                            <span className="flex items-center gap-2">
-                                <Search className="w-4 h-4" />
-                                <span>Cek Pesanan</span>
-                            </span>
-                            <ArrowRight className="w-4 h-4 text-text-2" />
-                        </Link>
-                    </div>
-                </div>
-            )}
 
             {/* Pending Order Notification Banner */}
             <PendingOrderBanner order={pendingOrder} currentInvoiceCode={currentInvoiceCode} />
 
             {/* Main Content Area */}
-            <main id="main-content" className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-3.5 sm:py-4">
+            <main id="main-content" className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-3.5 sm:py-4 pb-20 md:pb-6">
                 {children}
             </main>
 
-            {/* Footer */}
+            {/* Footer (Hidden on Mobile) */}
             <Footer storeName={storeName} settings={settings} socialLinks={socialLinks} paymentMethods={paymentMethods} />
 
-            {/* Floating WhatsApp Help Button */}
+            {/* Mobile Bottom Navigation Bar (Active on Mobile, Replaces Hamburger & Footer) */}
+            <MobileBottomNav adminWhatsapp={settings?.admin_whatsapp} isProductPage={isProductPage} />
+
+            {/* Floating WhatsApp Help Button (Only on Desktop, or Mobile Product Page) */}
             <FloatingWhatsApp phone={settings?.admin_whatsapp} isProductPage={isProductPage} />
         </div>
     );

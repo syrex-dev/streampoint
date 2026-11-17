@@ -23,8 +23,8 @@ export function FloatingWhatsApp({ phone, isProductPage = false }: FloatingWhats
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Hubungi Admin WhatsApp"
-            className={`fixed right-4 z-40 h-12 px-3.5 rounded-lg border border-border-strong bg-surface hover:bg-surface-hover text-text transition-all flex items-center gap-2 shadow-none outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                isProductPage ? 'bottom-20 lg:bottom-4' : 'bottom-4'
+            className={`fixed right-4 z-40 h-12 px-3.5 rounded-lg border border-border-strong bg-surface hover:bg-surface-hover text-text transition-all items-center gap-2 shadow-none outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                isProductPage ? 'flex bottom-20 lg:bottom-4' : 'hidden md:flex bottom-4'
             }`}
         >
             <MessageCircle className="w-5 h-5 text-accent-text shrink-0" />

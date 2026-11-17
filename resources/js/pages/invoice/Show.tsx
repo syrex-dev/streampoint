@@ -236,43 +236,47 @@ export default function InvoiceShow({
 
             <div className="w-full max-w-3xl mx-auto pb-20 pt-2 space-y-5">
                 {/* (1) Kode Invoice + Badge Status & Back Link */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface border border-border rounded-lg p-4">
-                    <div className="flex items-center gap-3">
-                        <Link
-                            href="/"
-                            className="inline-flex items-center gap-1.5 text-xs text-text-2 hover:text-text transition-colors"
-                        >
-                            <ArrowLeft className="w-3.5 h-3.5" />
-                            <span>Katalog</span>
-                        </Link>
-                        <span className="text-border">|</span>
-                        <Link
-                            href="/cek-pesanan"
-                            className="inline-flex items-center gap-1.5 text-xs text-text-2 hover:text-text transition-colors"
-                        >
-                            <span>Riwayat</span>
-                        </Link>
-                        <span className="text-border">|</span>
-                        <div className="flex items-center gap-1.5">
-                            <span className="font-mono text-sm font-bold text-text">
-                                #{order.invoice_code}
-                            </span>
-                            <CopyButton text={order.invoice_code} label="Salin Kode" />
+                <div className="bg-surface border border-border rounded-xl p-3.5 sm:p-4 shadow-2xs space-y-3">
+                    {/* Top Row: Navigation Breadcrumb & Status Badge */}
+                    <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2.5">
+                        <div className="flex items-center gap-2 text-xs">
+                            <Link
+                                href="/"
+                                className="inline-flex items-center gap-1 text-text-2 hover:text-text font-medium transition-colors"
+                            >
+                                <ArrowLeft className="w-3.5 h-3.5" />
+                                <span>Katalog</span>
+                            </Link>
+                            <span className="text-border">/</span>
+                            <Link
+                                href="/cek-pesanan"
+                                className="text-text-2 hover:text-text font-medium transition-colors"
+                            >
+                                Riwayat Pesanan
+                            </Link>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            <Badge variant={getBadgeVariant(status)} className="text-[11px] font-semibold px-2.5 py-0.5">
+                                {order.status_label}
+                            </Badge>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs text-text-2">Status:</span>
-                        <Badge variant={getBadgeVariant(status)}>
-                            {order.status_label}
-                        </Badge>
+                    {/* Bottom Row: Invoice Code & Copy Button */}
+                    <div className="flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-xs text-text-2 shrink-0">Invoice:</span>
+                            <span className="font-mono text-xs sm:text-sm font-bold text-text tracking-wide select-all whitespace-nowrap">
+                                #{order.invoice_code}
+                            </span>
+                        </div>
+                        <CopyButton text={order.invoice_code} label="Salin Kode" />
                     </div>
                 </div>
 
                 {/* (2) Stepper Status (DESIGN_SYSTEM 6.35) */}
-                <div className="bg-surface border border-border rounded-lg p-3 sm:p-4">
-                    <OrderStepper status={status} />
-                </div>
+                <OrderStepper status={status} />
 
                 {/* (3) Credential Box for PAID status (moves to position 3 per 6.37) */}
                 {status === 'PAID' && (
@@ -492,10 +496,10 @@ export default function InvoiceShow({
                             </div>
                         </div>
 
-                        <div className="pt-3 border-t border-border flex items-center justify-between flex-wrap gap-2.5">
+                        <div className="pt-3 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
                             <Link
                                 href="/cek-pesanan"
-                                className="inline-flex items-center gap-1.5 px-3 py-2 bg-surface-2 hover:bg-surface-hover text-text border border-border text-xs font-semibold rounded-md transition-colors"
+                                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-surface-2 hover:bg-surface-hover text-text border border-border text-xs font-semibold rounded-md transition-colors"
                             >
                                 <span>Cek Riwayat & Detail Pesanan</span>
                                 <ExternalLink className="w-3.5 h-3.5 text-text-2" />
@@ -504,7 +508,7 @@ export default function InvoiceShow({
                             <button
                                 type="button"
                                 onClick={() => router.reload({ only: ['order', 'isAuthorized'] })}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold rounded-md transition-colors cursor-pointer shadow-xs"
+                                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold rounded-md transition-colors cursor-pointer shadow-xs"
                             >
                                 <RefreshCw className="w-3.5 h-3.5" />
                                 <span>Periksa Status Sekarang</span>

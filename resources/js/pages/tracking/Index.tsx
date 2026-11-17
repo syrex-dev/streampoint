@@ -384,7 +384,10 @@ export default function TrackingIndex({
                                         </div>
 
                                         <div className="pt-2 border-t border-border/60">
-                                            <OrderStepper status={item.status as OrderStepStatus} />
+                                            <OrderStepper
+                                                status={item.status as OrderStepStatus}
+                                                className="border-0 bg-transparent p-1 sm:p-2 shadow-none"
+                                            />
                                         </div>
                                     </div>
                                 ))}

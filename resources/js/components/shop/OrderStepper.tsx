@@ -9,7 +9,7 @@ interface OrderStepperProps {
 }
 
 export function OrderStepper({ status, className = '' }: OrderStepperProps) {
-    // 4 standard steps: Dibuat -> Dibayar -> Diverifikasi -> Selesai
+    // 4 standard steps: Dibuat -> Dibayar -> Verifikasi -> Selesai
     const steps = [
         { id: 1, key: 'created', label: 'Dibuat' },
         { 
@@ -21,7 +21,7 @@ export function OrderStepper({ status, className = '' }: OrderStepperProps) {
                     ? 'Dibatalkan' 
                     : 'Dibayar' 
         },
-        { id: 3, key: 'verifying', label: 'Diverifikasi' },
+        { id: 3, key: 'verifying', label: 'Verifikasi' },
         { id: 4, key: 'completed', label: 'Selesai' },
     ];
 
@@ -54,70 +54,82 @@ export function OrderStepper({ status, className = '' }: OrderStepperProps) {
 
     return (
         <div
-            aria-label="Langkah pesanan"
-            className={`w-full bg-surface border border-border rounded-lg p-3 sm:p-4 ${className}`}
+            aria-label="Langkah status pesanan"
+            className={`w-full bg-surface border border-border rounded-xl p-3.5 sm:p-5 shadow-2xs ${className}`}
         >
-            <ol className="flex flex-col min-[480px]:flex-row items-start min-[480px]:items-center justify-between gap-3 min-[480px]:gap-0 relative">
+            <ol className="flex items-start w-full relative">
                 {steps.map((step, idx) => {
                     const state = getStepState(step.id);
                     const isLast = idx === steps.length - 1;
-                    const isActive = state === 'active' || state === 'failed';
+                    const isActive = state === 'active';
+                    const isCompleted = state === 'completed';
+                    const isFailed = state === 'failed';
+                    const nextStep = !isLast ? steps[idx + 1] : null;
+                    const nextStepState = nextStep ? getStepState(nextStep.id) : 'upcoming';
 
                     return (
                         <li
                             key={step.id}
                             aria-current={isActive ? 'step' : undefined}
-                            className="flex items-center min-[480px]:flex-1 w-full min-[480px]:w-auto last:flex-none"
+                            className="relative flex-1 flex flex-col items-center group"
                         >
-                            <div className="flex items-center gap-2.5 min-[480px]:flex-col min-[480px]:text-center shrink-0">
-                                {/* Step Circle (24px) */}
+                            {/* Connecting Line to Next Step */}
+                            {!isLast && (
                                 <div
-                                    className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                                        state === 'completed'
-                                            ? 'bg-accent text-on-accent'
-                                            : state === 'active'
-                                            ? 'border-2 border-accent bg-surface'
-                                            : state === 'failed'
-                                            ? 'border border-danger bg-danger/10 text-danger'
-                                            : 'border border-border-strong bg-surface-2 text-text-muted'
-                                    }`}
+                                    aria-hidden="true"
+                                    className="absolute top-3.5 sm:top-4 left-1/2 w-full h-[2px] -translate-y-1/2 z-0 px-2 sm:px-3 pointer-events-none"
                                 >
-                                    {state === 'completed' ? (
-                                        <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                                    ) : state === 'active' ? (
-                                        <div className="w-2 h-2 rounded-full bg-accent" />
-                                    ) : state === 'failed' ? (
-                                        <X className="w-3.5 h-3.5 stroke-[2.5]" />
-                                    ) : (
-                                        <span className="text-[11px] font-mono">{step.id}</span>
-                                    )}
+                                    <div
+                                        className={`w-full h-full transition-colors duration-300 rounded-full ${
+                                            isCompleted && (nextStepState === 'completed' || nextStepState === 'active')
+                                                ? 'bg-accent'
+                                                : isFailed
+                                                ? 'bg-danger/40'
+                                                : 'bg-border'
+                                        }`}
+                                    />
                                 </div>
+                            )}
 
-                                {/* Step Label */}
+                            {/* Step Indicator Node (Circle) */}
+                            <div
+                                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 relative z-10 ${
+                                    isCompleted
+                                        ? 'bg-accent text-on-accent shadow-xs'
+                                        : isActive
+                                        ? 'border-2 border-accent bg-surface text-accent ring-4 ring-accent/20'
+                                        : isFailed
+                                        ? 'border-2 border-danger bg-danger/10 text-danger ring-4 ring-danger/20'
+                                        : 'border border-border bg-surface-2 text-text-muted'
+                                }`}
+                            >
+                                {isCompleted ? (
+                                    <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+                                ) : isActive ? (
+                                    <span className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" />
+                                ) : isFailed ? (
+                                    <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+                                ) : (
+                                    <span className="text-[11px] sm:text-xs font-mono font-medium">{step.id}</span>
+                                )}
+                            </div>
+
+                            {/* Step Label */}
+                            <div className="mt-1.5 sm:mt-2 text-center w-full px-0.5">
                                 <span
-                                    className={`text-xs font-medium ${
-                                        state === 'completed'
+                                    className={`block text-[11px] sm:text-xs tracking-tight leading-tight select-none ${
+                                        isCompleted
                                             ? 'text-text font-semibold'
-                                            : state === 'active'
-                                            ? 'text-accent-text font-semibold'
-                                            : state === 'failed'
+                                            : isActive
+                                            ? 'text-accent-text font-bold'
+                                            : isFailed
                                             ? 'text-danger font-semibold'
-                                            : 'text-text-muted'
+                                            : 'text-text-muted font-normal'
                                     }`}
                                 >
                                     {step.label}
                                 </span>
                             </div>
-
-                            {/* Connecting Line (Horizontal >= 480px) */}
-                            {!isLast && (
-                                <div
-                                    aria-hidden="true"
-                                    className={`hidden min-[480px]:block flex-1 h-0.5 mx-2 min-[480px]:mt-[-16px] transition-colors ${
-                                        state === 'completed' ? 'bg-accent' : 'bg-border'
-                                    }`}
-                                />
-                            )}
                         </li>
                     );
                 })}

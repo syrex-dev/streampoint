@@ -12,6 +12,8 @@ use App\Models\Product;
 use App\Models\ProductAccount;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -24,12 +26,18 @@ class AdminAccountController extends Controller
         $kind = $request->query('kind');
         $status = $request->query('status');
 
-        $query = ProductAccount::with(['product', 'variant'])->latest('id');
+        $hasVariantCol = Schema::hasColumn('product_accounts', 'variant_id');
+        $withRelations = ['product'];
+        if ($hasVariantCol) {
+            $withRelations[] = 'variant';
+        }
+
+        $query = ProductAccount::with($withRelations)->latest('id');
 
         if ($productId) {
             $query->where('product_id', $productId);
         }
-        if ($variantId) {
+        if ($hasVariantCol && $variantId) {
             $query->where('variant_id', $variantId);
         }
         if ($kind) {
@@ -43,8 +51,8 @@ class AdminAccountController extends Controller
             'id' => $acc->id,
             'product_id' => $acc->product_id,
             'product_name' => $acc->product?->name ?? '-',
-            'variant_id' => $acc->variant_id,
-            'variant_name' => $acc->variant?->name ?? 'Semua Varian',
+            'variant_id' => $hasVariantCol ? $acc->variant_id : null,
+            'variant_name' => ($hasVariantCol && $acc->variant) ? $acc->variant->name : 'Semua Varian',
             'kind' => $acc->kind->value,
             'credential' => $acc->credential,
             'status' => $acc->status->value,
@@ -107,68 +115,11 @@ class AdminAccountController extends Controller
 
     public function store(AccountStoreRequest $request): RedirectResponse
     {
-        $email = trim($request->validated('email'));
-        $password = trim($request->validated('password'));
-        $profile = $request->filled('profile') ? trim($request->validated('profile')) : '';
-        $pin = $request->filled('pin') ? trim($request->validated('pin')) : '';
-
-        $credentialParts = [$email, $password];
-        if (! empty($profile) || ! empty($pin)) {
-            $credentialParts[] = $profile;
-        }
-        if (! empty($pin)) {
-            $credentialParts[] = $pin;
-        }
-
-        $credential = implode('|', $credentialParts);
-
-        ProductAccount::create([
-            'product_id' => (int) $request->validated('product_id'),
-            'variant_id' => $request->filled('variant_id') ? (int) $request->validated('variant_id') : null,
-            'kind' => OrderType::from($request->validated('kind')),
-            'credential' => $credential,
-            'status' => AccountStatus::AVAILABLE,
-            'note' => $request->validated('note'),
-        ]);
-
-        return back()->with('success', 'Unit akun berhasil ditambahkan ke stok.');
-    }
-
-    public function bulkStore(AccountBulkStoreRequest $request): RedirectResponse
-    {
-        $productId = (int) $request->validated('product_id');
-        $variantId = $request->filled('variant_id') ? (int) $request->validated('variant_id') : null;
-        $kind = OrderType::from($request->validated('kind'));
-        $lines = preg_split('/\r\n|\r|\n/', trim($request->validated('items_text')));
-
-        $successCount = 0;
-        $invalidLines = [];
-
-        foreach ($lines as $index => $line) {
-            $lineNumber = $index + 1;
-            $trimmed = trim($line);
-
-            if (empty($trimmed)) {
-                $invalidLines[] = $lineNumber;
-                continue;
-            }
-
-            $parts = explode('|', $trimmed);
-            if (count($parts) < 2) {
-                $invalidLines[] = $lineNumber;
-                continue;
-            }
-
-            $email = trim($parts[0]);
-            $password = trim($parts[1]);
-
-            if (empty($email) || ! filter_var($email, FILTER_VALIDATE_EMAIL) || empty($password)) {
-                $invalidLines[] = $lineNumber;
-                continue;
-            }
-
-            $profile = isset($parts[2]) ? trim($parts[2]) : '';
-            $pin = isset($parts[3]) ? trim($parts[3]) : '';
+        try {
+            $email = trim($request->validated('email'));
+            $password = trim($request->validated('password'));
+            $profile = $request->filled('profile') ? trim($request->validated('profile')) : '';
+            $pin = $request->filled('pin') ? trim($request->validated('pin')) : '';
 
             $credentialParts = [$email, $password];
             if (! empty($profile) || ! empty($pin)) {
@@ -177,31 +128,119 @@ class AdminAccountController extends Controller
             if (! empty($pin)) {
                 $credentialParts[] = $pin;
             }
+
             $credential = implode('|', $credentialParts);
 
-            ProductAccount::create([
-                'product_id' => $productId,
-                'variant_id' => $variantId,
-                'kind' => $kind,
+            $data = [
+                'product_id' => (int) $request->validated('product_id'),
+                'kind' => OrderType::from($request->validated('kind')),
                 'credential' => $credential,
                 'status' => AccountStatus::AVAILABLE,
+                'note' => $request->validated('note'),
+            ];
+
+            if (Schema::hasColumn('product_accounts', 'variant_id')) {
+                $data['variant_id'] = $request->filled('variant_id') ? (int) $request->validated('variant_id') : null;
+            }
+
+            ProductAccount::create($data);
+
+            return back()->with('success', 'Unit akun berhasil ditambahkan ke stok.');
+        } catch (\Throwable $e) {
+            Log::error('AdminAccountController@store failed: ' . $e->getMessage(), [
+                'exception' => $e,
             ]);
 
-            $successCount++;
-        }
-
-        if ($successCount === 0) {
             return back()->withErrors([
-                'items_text' => 'Tidak ada baris valid yang berhasil diimpor. Baris tidak valid: ' . implode(', ', $invalidLines),
+                'general' => 'Gagal menyimpan unit akun: ' . $e->getMessage(),
             ]);
         }
+    }
 
-        $message = "Berhasil mengimpor {$successCount} unit akun.";
-        if (! empty($invalidLines)) {
-            $message .= ' Baris tidak valid dilewati: nomor ' . implode(', ', $invalidLines) . '.';
+    public function bulkStore(AccountBulkStoreRequest $request): RedirectResponse
+    {
+        try {
+            $productId = (int) $request->validated('product_id');
+            $hasVariantCol = Schema::hasColumn('product_accounts', 'variant_id');
+            $variantId = $request->filled('variant_id') ? (int) $request->validated('variant_id') : null;
+            $kind = OrderType::from($request->validated('kind'));
+            $lines = preg_split('/\r\n|\r|\n/', trim($request->validated('items_text')));
+
+            $successCount = 0;
+            $invalidLines = [];
+
+            foreach ($lines as $index => $line) {
+                $lineNumber = $index + 1;
+                $trimmed = trim($line);
+
+                if (empty($trimmed)) {
+                    $invalidLines[] = $lineNumber;
+                    continue;
+                }
+
+                $parts = explode('|', $trimmed);
+                if (count($parts) < 2) {
+                    $invalidLines[] = $lineNumber;
+                    continue;
+                }
+
+                $email = trim($parts[0]);
+                $password = trim($parts[1]);
+
+                if (empty($email) || ! filter_var($email, FILTER_VALIDATE_EMAIL) || empty($password)) {
+                    $invalidLines[] = $lineNumber;
+                    continue;
+                }
+
+                $profile = isset($parts[2]) ? trim($parts[2]) : '';
+                $pin = isset($parts[3]) ? trim($parts[3]) : '';
+
+                $credentialParts = [$email, $password];
+                if (! empty($profile) || ! empty($pin)) {
+                    $credentialParts[] = $profile;
+                }
+                if (! empty($pin)) {
+                    $credentialParts[] = $pin;
+                }
+                $credential = implode('|', $credentialParts);
+
+                $data = [
+                    'product_id' => $productId,
+                    'kind' => $kind,
+                    'credential' => $credential,
+                    'status' => AccountStatus::AVAILABLE,
+                ];
+
+                if ($hasVariantCol) {
+                    $data['variant_id'] = $variantId;
+                }
+
+                ProductAccount::create($data);
+
+                $successCount++;
+            }
+
+            if ($successCount === 0) {
+                return back()->withErrors([
+                    'items_text' => 'Tidak ada baris valid yang berhasil diimpor. Baris tidak valid: ' . implode(', ', $invalidLines),
+                ]);
+            }
+
+            $message = "Berhasil mengimpor {$successCount} unit akun.";
+            if (! empty($invalidLines)) {
+                $message .= ' Baris tidak valid dilewati: nomor ' . implode(', ', $invalidLines) . '.';
+            }
+
+            return back()->with('success', $message);
+        } catch (\Throwable $e) {
+            Log::error('AdminAccountController@bulkStore failed: ' . $e->getMessage(), [
+                'exception' => $e,
+            ]);
+
+            return back()->withErrors([
+                'general' => 'Gagal mengimpor unit akun: ' . $e->getMessage(),
+            ]);
         }
-
-        return back()->with('success', $message);
     }
 
     public function updateStatus(Request $request, ProductAccount $account): RedirectResponse

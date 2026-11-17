@@ -19,6 +19,7 @@ use App\Services\QuotaService;
 use App\Services\UniqueAmountGenerator;
 use App\Support\Phone;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class CreateOrder
 {
@@ -73,18 +74,26 @@ class CreateOrder
             }
 
             // Reserve an account unit: Prioritize variant-specific unit, fallback to general product unit
-            $account = ProductAccount::where('variant_id', $variant->id)
-                ->where('status', AccountStatus::AVAILABLE)
-                ->lockForUpdate()
-                ->first();
+            $hasVariantCol = Schema::hasColumn('product_accounts', 'variant_id');
+            $account = null;
 
-            if (! $account) {
-                $account = ProductAccount::where('product_id', $variant->product_id)
-                    ->whereNull('variant_id')
-                    ->where('kind', $variant->type)
+            if ($hasVariantCol) {
+                $account = ProductAccount::where('variant_id', $variant->id)
                     ->where('status', AccountStatus::AVAILABLE)
                     ->lockForUpdate()
                     ->first();
+            }
+
+            if (! $account) {
+                $query = ProductAccount::where('product_id', $variant->product_id)
+                    ->where('kind', $variant->type)
+                    ->where('status', AccountStatus::AVAILABLE);
+
+                if ($hasVariantCol) {
+                    $query->whereNull('variant_id');
+                }
+
+                $account = $query->lockForUpdate()->first();
             }
 
             if (! $account) {

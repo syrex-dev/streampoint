@@ -819,6 +819,12 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                         </div>
 
                         <form onSubmit={handleSingleSubmit} className="space-y-3 text-xs">
+                            {(singleForm.errors as Record<string, string | undefined>).general && (
+                                <div className="p-2.5 rounded bg-danger/10 border border-danger/30 text-danger text-xs flex items-center gap-2">
+                                    <AlertCircle className="w-4 h-4 shrink-0" />
+                                    <span>{(singleForm.errors as Record<string, string | undefined>).general}</span>
+                                </div>
+                            )}
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-1">
                                     <label className="font-semibold text-text block">Produk <span className="text-danger">*</span></label>
@@ -980,6 +986,12 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                         </p>
 
                         <form onSubmit={handleBulkSubmit} className="space-y-3 text-xs">
+                            {(bulkForm.errors as Record<string, string | undefined>).general && (
+                                <div className="p-2.5 rounded bg-danger/10 border border-danger/30 text-danger text-xs flex items-center gap-2">
+                                    <AlertCircle className="w-4 h-4 shrink-0" />
+                                    <span>{(bulkForm.errors as Record<string, string | undefined>).general}</span>
+                                </div>
+                            )}
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-1">
                                     <label className="font-semibold text-text block">Produk <span className="text-danger">*</span></label>

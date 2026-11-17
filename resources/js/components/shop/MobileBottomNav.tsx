@@ -96,3 +96,4 @@ export function MobileBottomNav({ adminWhatsapp, isProductPage = false }: Mobile
 }
 
 export default MobileBottomNav;
+

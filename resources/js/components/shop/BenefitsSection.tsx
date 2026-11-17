@@ -22,21 +22,22 @@ interface BenefitsSectionProps {
 
 export function BenefitsSection({ stats, verificationMedianMinutes }: BenefitsSectionProps) {
     const renderIcon = (iconName: BenefitItem['icon']) => {
+        const iconClasses = "w-4 h-4 sm:w-5 sm:h-5 text-accent-text";
         switch (iconName) {
             case 'ShieldCheck':
-                return <ShieldCheck className="w-5 h-5 text-accent-text" />;
+                return <ShieldCheck className={iconClasses} />;
             case 'Users':
-                return <Users className="w-5 h-5 text-accent-text" />;
+                return <Users className={iconClasses} />;
             case 'LifeBuoy':
-                return <LifeBuoy className="w-5 h-5 text-accent-text" />;
+                return <LifeBuoy className={iconClasses} />;
             case 'Receipt':
-                return <Receipt className="w-5 h-5 text-accent-text" />;
+                return <Receipt className={iconClasses} />;
             case 'KeyRound':
-                return <KeyRound className="w-5 h-5 text-accent-text" />;
+                return <KeyRound className={iconClasses} />;
             case 'SearchCheck':
-                return <SearchCheck className="w-5 h-5 text-accent-text" />;
+                return <SearchCheck className={iconClasses} />;
             default:
-                return <ShieldCheck className="w-5 h-5 text-accent-text" />;
+                return <ShieldCheck className={iconClasses} />;
         }
     };
 
@@ -101,21 +102,21 @@ export function BenefitsSection({ stats, verificationMedianMinutes }: BenefitsSe
                 </div>
             )}
 
-            {/* Benefits Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {/* Benefits Grid - 2 cols on mobile, 3 cols on desktop */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
                 {benefits.slice(0, 6).map((item) => (
                     <div
                         key={item.id}
-                        className="bg-surface border border-border rounded-lg p-3.5 flex items-start gap-3 min-h-[76px] max-h-[96px] transition-colors"
+                        className="bg-surface border border-border rounded-xl p-2.5 sm:p-3.5 flex flex-col sm:flex-row items-start gap-2 sm:gap-3 shadow-2xs hover:border-border-strong transition-colors"
                     >
-                        <div className="w-9 h-9 rounded-md bg-surface-2 border border-border flex items-center justify-center shrink-0">
+                        <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-md bg-surface-2 border border-border flex items-center justify-center shrink-0">
                             {renderIcon(item.icon)}
                         </div>
-                        <div className="min-w-0 space-y-0.5">
-                            <h3 className="text-sm font-semibold text-text truncate">
+                        <div className="min-w-0">
+                            <h3 className="text-xs sm:text-sm font-semibold text-text line-clamp-1">
                                 {item.title}
                             </h3>
-                            <p className="text-[13px] text-text-2 leading-snug line-clamp-2">
+                            <p className="text-[11px] sm:text-xs text-text-2 leading-tight sm:leading-snug mt-0.5 line-clamp-2">
                                 {item.description}
                             </p>
                         </div>

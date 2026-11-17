@@ -315,11 +315,33 @@ export default function StorefrontIndex({
                         title="Cara Pemesanan 5 Langkah Mudah"
                     />
 
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                    {/* Mobile View: 1 Unified Clean Timeline Card */}
+                    <div className="md:hidden bg-surface border border-border rounded-xl p-4 shadow-2xs">
+                        <div className="relative pl-6 space-y-3.5 before:absolute before:left-2 before:top-2.5 before:bottom-2.5 before:w-0.5 before:bg-border">
+                            {orderSteps.map((step) => (
+                                <div key={step.num} className="relative flex items-start gap-3">
+                                    <span className="absolute -left-6 top-0.5 w-4.5 h-4.5 rounded-full bg-surface border border-accent text-accent-text text-[10px] font-mono font-bold flex items-center justify-center shadow-xs">
+                                        {step.num}
+                                    </span>
+                                    <div className="min-w-0">
+                                        <div className="text-xs font-semibold text-text">
+                                            {step.title}
+                                        </div>
+                                        <p className="text-[11px] text-text-2 leading-tight mt-0.5">
+                                            {step.desc}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Desktop View: 5 Cards Grid */}
+                    <div className="hidden md:grid md:grid-cols-5 gap-3">
                         {orderSteps.map((step) => (
                             <div
                                 key={step.num}
-                                className="bg-surface border border-border rounded-lg p-4 space-y-2 relative"
+                                className="bg-surface border border-border rounded-lg p-4 space-y-2 relative shadow-2xs"
                             >
                                 <div className="flex items-center justify-between">
                                     <div className="w-8 h-8 rounded-md bg-surface-2 border border-border flex items-center justify-center shrink-0">
@@ -341,61 +363,52 @@ export default function StorefrontIndex({
                     </div>
                 </section>
 
-                {/* 7. Pusat Bantuan & Tanya Jawab (Q&A Ringkas On-Demand) */}
+                {/* 7. Pusat Bantuan & Layanan Khusus (Unified Card) */}
                 <section id="faq" aria-label="Tanya Jawab dan Bantuan" className="scroll-mt-20">
-                    <div className="bg-surface border border-border rounded-lg p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="flex items-start sm:items-center gap-3">
-                            <div className="w-9 h-9 rounded-md bg-surface-2 border border-border flex items-center justify-center shrink-0">
-                                <HelpCircle className="w-4.5 h-4.5 text-accent-text" />
+                    <div className="bg-surface border border-border rounded-xl p-4 sm:p-5 shadow-2xs">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4">
+                            <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-md bg-surface-2 border border-border flex items-center justify-center shrink-0 mt-0.5">
+                                    <HelpCircle className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-accent-text" />
+                                </div>
+                                <div className="space-y-0.5">
+                                    <h3 className="text-xs sm:text-sm font-semibold text-text">
+                                        Pusat Bantuan & Layanan Khusus
+                                    </h3>
+                                    <p className="text-[11px] sm:text-xs text-text-2 leading-relaxed">
+                                        Pelajari garansi & tata cara sewa di FAQ, atau tanyakan ketersediaan durasi/layanan khusus ke admin.
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="text-xs sm:text-sm font-semibold text-text">
-                                    Punya Pertanyaan Seputar Pemesanan?
-                                </h3>
-                                <p className="text-xs text-text-2 mt-0.5">
-                                    Pelajari garansi akun, kuota harian, dan cara klaim akun di Pusat Tanya Jawab.
-                                </p>
+
+                            <div className="flex items-center gap-2 pt-1 sm:pt-0">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setIsFaqModalOpen(true)}
+                                    className="text-xs font-semibold gap-1.5 flex-1 sm:flex-none justify-center h-8.5 px-3.5 cursor-pointer"
+                                >
+                                    <HelpCircle className="w-3.5 h-3.5" />
+                                    <span>Buka FAQ</span>
+                                </Button>
+                                {customRequest?.enabled && adminWhatsapp && (
+                                    <a
+                                        href={`https://wa.me/${cleanAdminPhone}?text=${encodeURIComponent(
+                                            'Halo Admin StreamPoint, saya ingin menanyakan ketersediaan layanan khusus...'
+                                        )}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center justify-center gap-1.5 px-3.5 h-8.5 text-xs font-semibold rounded-md bg-accent text-on-accent hover:bg-accent-hover transition-colors flex-1 sm:flex-none shadow-xs"
+                                    >
+                                        <MessageCircle className="w-3.5 h-3.5" />
+                                        <span>Tanya Admin</span>
+                                    </a>
+                                )}
                             </div>
                         </div>
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => setIsFaqModalOpen(true)}
-                            className="shrink-0 inline-flex items-center gap-1.5 cursor-pointer"
-                        >
-                            <HelpCircle className="w-3.5 h-3.5" />
-                            <span>Buka Tanya Jawab (Q&A)</span>
-                        </Button>
                     </div>
                 </section>
-
-                {/* 8. Ajakan Pesanan Custom (DESIGN_SYSTEM 6.32) */}
-                {customRequest?.enabled && adminWhatsapp && (
-                    <section aria-label="Pesanan Khusus">
-                        <div className="border border-border rounded-lg p-4 bg-surface flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                            <div>
-                                <h3 className="text-base font-semibold text-text">
-                                    Belum menemukan layanan yang kamu cari?
-                                </h3>
-                                <p className="text-sm text-text-2 mt-0.5">
-                                    Punya permintaan akun atau durasi khusus? Tanyakan ketersediaannya langsung ke admin kami.
-                                </p>
-                            </div>
-                            <a
-                                href={`https://wa.me/${cleanAdminPhone}?text=${encodeURIComponent(
-                                    'Halo Admin StreamPoint, saya ingin menanyakan ketersediaan layanan khusus...'
-                                )}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-md border border-border bg-surface-2 text-text hover:bg-surface-hover hover:border-border-strong shrink-0 transition-colors"
-                            >
-                                <MessageCircle className="w-4 h-4 text-accent-text" />
-                                <span>Tanya Admin via WhatsApp</span>
-                            </a>
-                        </div>
-                    </section>
-                )}
 
                 {/* FAQ Modal Dialog (Opens cleanly on demand without bloating the homepage) */}
                 <FaqModal

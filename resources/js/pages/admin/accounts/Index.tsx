@@ -20,7 +20,12 @@ import {
     CheckCheck,
     ToggleLeft,
     ToggleRight,
-    ExternalLink
+    ExternalLink,
+    Tv,
+    UserCheck,
+    Link2,
+    Ticket,
+    Package
 } from 'lucide-react';
 
 export type CredentialFormatType = 'STREAMING_PROFILE' | 'STANDARD_ACCOUNT' | 'INVITE_LINK' | 'VOUCHER' | 'CUSTOM';
@@ -355,7 +360,8 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                 <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-1">
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-2 text-text-2 border border-border">
-                            <span>🎬 Profil</span>
+                            <Tv className="w-2.5 h-2.5 text-accent-text" />
+                            <span>Profil</span>
                         </span>
                         {parts[2] && (
                             <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-accent/10 text-accent-text border border-accent/20">
@@ -389,7 +395,8 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
             return (
                 <div className="space-y-1">
                     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-2 text-text-2 border border-border">
-                        <span>👤 Akun Private</span>
+                        <UserCheck className="w-2.5 h-2.5 text-accent-text" />
+                        <span>Akun Private</span>
                     </span>
                     <div className="font-mono text-xs">
                         {isVisible ? (
@@ -411,7 +418,8 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
         return (
             <div className="space-y-1">
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-2 text-text-2 border border-border">
-                    <span>🎟️ Voucher / Kode</span>
+                    <Ticket className="w-2.5 h-2.5 text-warning" />
+                    <span>Voucher / Kode</span>
                 </span>
                 <div className="font-mono text-xs">
                     {isVisible ? (
@@ -501,35 +509,44 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                     <h2 className="text-xs font-semibold uppercase tracking-wider text-text-2">
                         Ringkasan Stok Tersedia (AVAILABLE)
                     </h2>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {summary.map((s) => (
-                            <div 
-                                key={s.id} 
-                                onClick={() => {
-                                    setSelectedProductId(s.id);
-                                    setSelectedVariantId('');
-                                    handleFilterChange(s.id, '', selectedKind, selectedStatus);
-                                }}
-                                className={`p-3 bg-surface border rounded-lg transition-colors cursor-pointer ${
-                                    selectedProductId === s.id ? 'border-accent bg-surface-hover/80' : 'border-border hover:bg-surface-hover/50'
-                                }`}
-                            >
-                                <div className="font-semibold text-xs text-text truncate mb-2">
-                                    {s.name}
-                                </div>
-                                <div className="flex items-center justify-between text-xs font-mono">
-                                    <div className="flex items-center gap-1 text-info">
-                                        <span className="text-[10px] uppercase font-sans font-medium text-text-3">Sewa:</span>
-                                        <span className="font-bold">{s.available_rent}</span>
+                    {summary.length === 0 ? (
+                        <div className="p-5 bg-surface border border-border rounded-lg text-center space-y-2">
+                            <Package className="w-8 h-8 text-text-3 mx-auto opacity-50" />
+                            <p className="text-xs text-text-2">
+                                Belum ada ringkasan stok. Buat produk baru di menu Produk untuk mulai mengelola unit akun.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                            {summary.map((s) => (
+                                <div 
+                                    key={s.id} 
+                                    onClick={() => {
+                                        setSelectedProductId(s.id);
+                                        setSelectedVariantId('');
+                                        handleFilterChange(s.id, '', selectedKind, selectedStatus);
+                                    }}
+                                    className={`p-3 bg-surface border rounded-lg transition-colors cursor-pointer ${
+                                        selectedProductId === s.id ? 'border-accent bg-surface-hover/80' : 'border-border hover:bg-surface-hover/50'
+                                    }`}
+                                >
+                                    <div className="font-semibold text-xs text-text truncate mb-2">
+                                        {s.name}
                                     </div>
-                                    <div className="flex items-center gap-1 text-accent-text">
-                                        <span className="text-[10px] uppercase font-sans font-medium text-text-3">Beli:</span>
-                                        <span className="font-bold">{s.available_buy}</span>
+                                    <div className="flex items-center justify-between text-xs font-mono">
+                                        <div className="flex items-center gap-1 text-info">
+                                            <span className="text-[10px] uppercase font-sans font-medium text-text-3">Sewa:</span>
+                                            <span className="font-bold">{s.available_rent}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-accent-text">
+                                            <span className="text-[10px] uppercase font-sans font-medium text-text-3">Beli:</span>
+                                            <span className="font-bold">{s.available_buy}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Filter Toolbar */}
@@ -1006,144 +1023,162 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                             </button>
                         </div>
 
-                        <form onSubmit={handleSingleSubmit} className="space-y-3.5 text-xs">
-                            {(singleForm.errors as Record<string, string | undefined>).general && (
-                                <div className="p-2.5 rounded bg-danger/10 border border-danger/30 text-danger text-xs flex items-center gap-2">
-                                    <AlertCircle className="w-4 h-4 shrink-0" />
-                                    <span>{(singleForm.errors as Record<string, string | undefined>).general}</span>
-                                </div>
-                            )}
-                            <div className="grid grid-cols-2 gap-3">
+                        {products.length === 0 ? (
+                            <div className="py-6 px-4 bg-surface-2/60 border border-border rounded-md text-center space-y-3">
+                                <Package className="w-8 h-8 text-text-3 mx-auto opacity-50" />
                                 <div className="space-y-1">
-                                    <label className="font-semibold text-text block">Produk <span className="text-danger">*</span></label>
+                                    <h4 className="text-xs font-semibold text-text">Belum Ada Produk di Katalog</h4>
+                                    <p className="text-[11px] text-text-2 max-w-xs mx-auto">
+                                        Silakan buat produk terlebih dahulu sebelum menambahkan unit stok akun.
+                                    </p>
+                                </div>
+                                <Link
+                                    href="/admin/products/create"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold rounded transition-colors"
+                                >
+                                    <Plus className="w-3.5 h-3.5" />
+                                    <span>Buat Produk Sekarang</span>
+                                </Link>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleSingleSubmit} className="space-y-3.5 text-xs">
+                                {(singleForm.errors as Record<string, string | undefined>).general && (
+                                    <div className="p-2.5 rounded bg-danger/10 border border-danger/30 text-danger text-xs flex items-center gap-2">
+                                        <AlertCircle className="w-4 h-4 shrink-0" />
+                                        <span>{(singleForm.errors as Record<string, string | undefined>).general}</span>
+                                    </div>
+                                )}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                        <label className="font-semibold text-text block">Produk <span className="text-danger">*</span></label>
+                                        <select
+                                            value={singleForm.data.product_id}
+                                            onChange={(e) => handleSingleProductChange(Number(e.target.value))}
+                                            required
+                                            className="w-full h-8 px-2 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
+                                        >
+                                            {products.map((p) => (
+                                                <option key={p.id} value={p.id}>{p.name}</option>
+                                            ))}
+                                        </select>
+                                        {singleForm.errors.product_id && <p className="text-[11px] text-danger">{singleForm.errors.product_id}</p>}
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <label className="font-semibold text-text block">Varian Paket <span className="text-text-3 font-normal">(opsional)</span></label>
+                                        <select
+                                            value={singleForm.data.variant_id}
+                                            onChange={(e) => handleSingleVariantChange(e.target.value ? Number(e.target.value) : '')}
+                                            className="w-full h-8 px-2 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
+                                        >
+                                            <option value="">Semua Varian (Stok Global)</option>
+                                            {activeSingleProduct?.variants.map((v) => (
+                                                <option key={v.id} value={v.id}>
+                                                    {v.name} ({v.type})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {singleForm.errors.variant_id && <p className="text-[11px] text-danger">{singleForm.errors.variant_id}</p>}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="font-semibold text-text block">Kategori <span className="text-danger">*</span></label>
                                     <select
-                                        value={singleForm.data.product_id}
-                                        onChange={(e) => handleSingleProductChange(Number(e.target.value))}
+                                        value={singleForm.data.kind}
+                                        onChange={(e) => singleForm.setData('kind', e.target.value)}
                                         required
                                         className="w-full h-8 px-2 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
                                     >
-                                        {products.map((p) => (
-                                            <option key={p.id} value={p.id}>{p.name}</option>
-                                        ))}
+                                        <option value="RENT">RENT (Sewa Harian)</option>
+                                        <option value="BUY">BUY (Beli / Langganan)</option>
                                     </select>
-                                    {singleForm.errors.product_id && <p className="text-[11px] text-danger">{singleForm.errors.product_id}</p>}
+                                    {singleForm.errors.kind && <p className="text-[11px] text-danger">{singleForm.errors.kind}</p>}
                                 </div>
 
-                                <div className="space-y-1">
-                                    <label className="font-semibold text-text block">Varian Paket <span className="text-text-3 font-normal">(opsional)</span></label>
-                                    <select
-                                        value={singleForm.data.variant_id}
-                                        onChange={(e) => handleSingleVariantChange(e.target.value ? Number(e.target.value) : '')}
-                                        className="w-full h-8 px-2 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
-                                    >
-                                        <option value="">Semua Varian (Stok Global)</option>
-                                        {activeSingleProduct?.variants.map((v) => (
-                                            <option key={v.id} value={v.id}>
-                                                {v.name} ({v.type})
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {singleForm.errors.variant_id && <p className="text-[11px] text-danger">{singleForm.errors.variant_id}</p>}
+                                {/* Format Kredensial Platform Pills */}
+                                <div className="space-y-1.5 p-2.5 bg-surface-2/60 border border-border rounded-md">
+                                    <label className="font-semibold text-text text-[11px] block">
+                                        Format Kredensial Platform <span className="text-danger">*</span>
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSingleFormatType('STREAMING_PROFILE');
+                                                singleForm.setData('credential_type', 'STREAMING_PROFILE');
+                                            }}
+                                            className={`p-2.5 rounded-md border text-left cursor-pointer transition-all ${
+                                                singleFormatType === 'STREAMING_PROFILE'
+                                                    ? 'bg-accent/15 border-accent text-accent-text font-bold ring-1 ring-accent/30'
+                                                    : 'bg-surface border-border hover:bg-surface-hover text-text'
+                                            }`}
+                                        >
+                                            <div className="text-xs font-semibold flex items-center gap-1.5">
+                                                <Tv className="w-3.5 h-3.5 text-accent-text shrink-0" />
+                                                <span>Akun Profil / Sharing</span>
+                                            </div>
+                                            <p className="text-[10px] text-text-3 font-normal mt-0.5">Netflix, Disney+, Prime, Vidio</p>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSingleFormatType('STANDARD_ACCOUNT');
+                                                singleForm.setData('credential_type', 'STANDARD_ACCOUNT');
+                                            }}
+                                            className={`p-2.5 rounded-md border text-left cursor-pointer transition-all ${
+                                                singleFormatType === 'STANDARD_ACCOUNT'
+                                                    ? 'bg-accent/15 border-accent text-accent-text font-bold ring-1 ring-accent/30'
+                                                    : 'bg-surface border-border hover:bg-surface-hover text-text'
+                                            }`}
+                                        >
+                                            <div className="text-xs font-semibold flex items-center gap-1.5">
+                                                <UserCheck className="w-3.5 h-3.5 text-accent-text shrink-0" />
+                                                <span>Akun Private / Standar</span>
+                                            </div>
+                                            <p className="text-[10px] text-text-3 font-normal mt-0.5">Spotify, ChatGPT, Canva</p>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSingleFormatType('INVITE_LINK');
+                                                singleForm.setData('credential_type', 'INVITE_LINK');
+                                            }}
+                                            className={`p-2.5 rounded-md border text-left cursor-pointer transition-all ${
+                                                singleFormatType === 'INVITE_LINK'
+                                                    ? 'bg-accent/15 border-accent text-accent-text font-bold ring-1 ring-accent/30'
+                                                    : 'bg-surface border-border hover:bg-surface-hover text-text'
+                                            }`}
+                                        >
+                                            <div className="text-xs font-semibold flex items-center gap-1.5">
+                                                <Link2 className="w-3.5 h-3.5 text-info shrink-0" />
+                                                <span>Link Invite / Undangan</span>
+                                            </div>
+                                            <p className="text-[10px] text-text-3 font-normal mt-0.5">YouTube Family, Canva Team</p>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSingleFormatType('VOUCHER');
+                                                singleForm.setData('credential_type', 'VOUCHER');
+                                            }}
+                                            className={`p-2.5 rounded-md border text-left cursor-pointer transition-all ${
+                                                singleFormatType === 'VOUCHER'
+                                                    ? 'bg-accent/15 border-accent text-accent-text font-bold ring-1 ring-accent/30'
+                                                    : 'bg-surface border-border hover:bg-surface-hover text-text'
+                                            }`}
+                                        >
+                                            <div className="text-xs font-semibold flex items-center gap-1.5">
+                                                <Ticket className="w-3.5 h-3.5 text-warning shrink-0" />
+                                                <span>Kode Voucher / Lisensi</span>
+                                            </div>
+                                            <p className="text-[10px] text-text-3 font-normal mt-0.5">Kode Redeem, Lisensi Game/App</p>
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div className="space-y-1">
-                                <label className="font-semibold text-text block">Kategori <span className="text-danger">*</span></label>
-                                <select
-                                    value={singleForm.data.kind}
-                                    onChange={(e) => singleForm.setData('kind', e.target.value)}
-                                    required
-                                    className="w-full h-8 px-2 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
-                                >
-                                    <option value="RENT">RENT (Sewa Harian)</option>
-                                    <option value="BUY">BUY (Beli / Langganan)</option>
-                                </select>
-                                {singleForm.errors.kind && <p className="text-[11px] text-danger">{singleForm.errors.kind}</p>}
-                            </div>
-
-                            {/* Format Kredensial Platform Pills */}
-                            <div className="space-y-1.5 p-2.5 bg-surface-2/60 border border-border rounded-md">
-                                <label className="font-semibold text-text text-[11px] block">
-                                    Format Kredensial Platform <span className="text-danger">*</span>
-                                </label>
-                                <div className="grid grid-cols-2 gap-1.5">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setSingleFormatType('STREAMING_PROFILE');
-                                            singleForm.setData('credential_type', 'STREAMING_PROFILE');
-                                        }}
-                                        className={`p-2 rounded border text-left cursor-pointer transition-colors ${
-                                            singleFormatType === 'STREAMING_PROFILE'
-                                                ? 'bg-accent/15 border-accent text-accent-text font-bold'
-                                                : 'bg-surface border-border hover:bg-surface-hover text-text'
-                                        }`}
-                                    >
-                                        <div className="text-xs font-semibold flex items-center gap-1">
-                                            <span>🎬</span>
-                                            <span>Akun Profil / Sharing</span>
-                                        </div>
-                                        <p className="text-[10px] text-text-3 font-normal mt-0.5">Netflix, Disney+, Prime, Vidio</p>
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setSingleFormatType('STANDARD_ACCOUNT');
-                                            singleForm.setData('credential_type', 'STANDARD_ACCOUNT');
-                                        }}
-                                        className={`p-2 rounded border text-left cursor-pointer transition-colors ${
-                                            singleFormatType === 'STANDARD_ACCOUNT'
-                                                ? 'bg-accent/15 border-accent text-accent-text font-bold'
-                                                : 'bg-surface border-border hover:bg-surface-hover text-text'
-                                        }`}
-                                    >
-                                        <div className="text-xs font-semibold flex items-center gap-1">
-                                            <span>👤</span>
-                                            <span>Akun Private / Standar</span>
-                                        </div>
-                                        <p className="text-[10px] text-text-3 font-normal mt-0.5">Spotify, ChatGPT, Canva</p>
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setSingleFormatType('INVITE_LINK');
-                                            singleForm.setData('credential_type', 'INVITE_LINK');
-                                        }}
-                                        className={`p-2 rounded border text-left cursor-pointer transition-colors ${
-                                            singleFormatType === 'INVITE_LINK'
-                                                ? 'bg-accent/15 border-accent text-accent-text font-bold'
-                                                : 'bg-surface border-border hover:bg-surface-hover text-text'
-                                        }`}
-                                    >
-                                        <div className="text-xs font-semibold flex items-center gap-1">
-                                            <span>🔗</span>
-                                            <span>Link Invite / Undangan</span>
-                                        </div>
-                                        <p className="text-[10px] text-text-3 font-normal mt-0.5">YouTube Family, Canva Team</p>
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setSingleFormatType('VOUCHER');
-                                            singleForm.setData('credential_type', 'VOUCHER');
-                                        }}
-                                        className={`p-2 rounded border text-left cursor-pointer transition-colors ${
-                                            singleFormatType === 'VOUCHER'
-                                                ? 'bg-accent/15 border-accent text-accent-text font-bold'
-                                                : 'bg-surface border-border hover:bg-surface-hover text-text'
-                                        }`}
-                                    >
-                                        <div className="text-xs font-semibold flex items-center gap-1">
-                                            <span>🎟️</span>
-                                            <span>Kode Voucher / Lisensi</span>
-                                        </div>
-                                        <p className="text-[10px] text-text-3 font-normal mt-0.5">Kode Redeem, Lisensi Game/App</p>
-                                    </button>
-                                </div>
-                            </div>
 
                             {/* Dynamic Inputs Based on Format */}
                             {singleFormatType === 'INVITE_LINK' && (
@@ -1316,7 +1351,8 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                                 </button>
                             </div>
                         </form>
-                    </div>
+                    )}
+                </div>
                 </div>
             )}
 
@@ -1344,47 +1380,70 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                             </button>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="font-semibold text-text text-[11px] block">
-                                Pilihan Format Impor
-                            </label>
-                            <div className="flex flex-wrap gap-1">
-                                {[
-                                    { id: 'AUTO', label: '🔄 Sesuai Varian' },
-                                    { id: 'STREAMING_PROFILE', label: '🎬 Netflix/Profil' },
-                                    { id: 'STANDARD_ACCOUNT', label: '👤 Akun Private' },
-                                    { id: 'INVITE_LINK', label: '🔗 Link Invite' },
-                                    { id: 'VOUCHER', label: '🎟️ Voucher' },
-                                ].map((tab) => (
-                                    <button
-                                        key={tab.id}
-                                        type="button"
-                                        onClick={() => setBulkFormatType(tab.id as any)}
-                                        className={`px-2 py-1 text-[11px] rounded border cursor-pointer transition-colors ${
-                                            bulkFormatType === tab.id
-                                                ? 'bg-accent/20 border-accent text-accent-text font-bold'
-                                                : 'bg-surface-2 border-border hover:bg-surface-hover text-text-2'
-                                        }`}
-                                    >
-                                        {tab.label}
-                                    </button>
-                                ))}
+                        {products.length === 0 ? (
+                            <div className="py-6 px-4 bg-surface-2/60 border border-border rounded-md text-center space-y-3">
+                                <Package className="w-8 h-8 text-text-3 mx-auto opacity-50" />
+                                <div className="space-y-1">
+                                    <h4 className="text-xs font-semibold text-text">Belum Ada Produk di Katalog</h4>
+                                    <p className="text-[11px] text-text-2 max-w-xs mx-auto">
+                                        Silakan buat produk terlebih dahulu sebelum mengimpor stok akun massal.
+                                    </p>
+                                </div>
+                                <Link
+                                    href="/admin/products/create"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold rounded transition-colors"
+                                >
+                                    <Plus className="w-3.5 h-3.5" />
+                                    <span>Buat Produk Sekarang</span>
+                                </Link>
                             </div>
-                        </div>
+                        ) : (
+                            <>
+                                <div className="space-y-2">
+                                    <label className="font-semibold text-text text-[11px] block">
+                                        Pilihan Format Impor
+                                    </label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {[
+                                            { id: 'AUTO', label: 'Sesuai Varian', icon: Layers },
+                                            { id: 'STREAMING_PROFILE', label: 'Netflix / Profil', icon: Tv },
+                                            { id: 'STANDARD_ACCOUNT', label: 'Akun Private', icon: UserCheck },
+                                            { id: 'INVITE_LINK', label: 'Link Invite', icon: Link2 },
+                                            { id: 'VOUCHER', label: 'Voucher / Lisensi', icon: Ticket },
+                                        ].map((tab) => {
+                                            const IconComp = tab.icon;
+                                            return (
+                                                <button
+                                                    key={tab.id}
+                                                    type="button"
+                                                    onClick={() => setBulkFormatType(tab.id as any)}
+                                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border cursor-pointer transition-colors ${
+                                                        bulkFormatType === tab.id
+                                                            ? 'bg-accent/20 border-accent text-accent-text font-semibold'
+                                                            : 'bg-surface-2 border-border hover:bg-surface-hover text-text-2'
+                                                    }`}
+                                                >
+                                                    <IconComp className="w-3 h-3 shrink-0" />
+                                                    <span>{tab.label}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
 
-                        <div className="p-2.5 bg-surface-2 rounded border border-border text-xs text-text-2">
-                            {bulkFormatType === 'INVITE_LINK' ? (
-                                <span>Masukkan <strong>1 tautan undangan per baris</strong>. Contoh: <code className="text-accent-text font-mono bg-surface px-1 py-0.5 rounded">https://families.google.com/join/...</code></span>
-                            ) : bulkFormatType === 'VOUCHER' ? (
-                                <span>Masukkan <strong>1 kode voucher per baris</strong>. Contoh: <code className="text-accent-text font-mono bg-surface px-1 py-0.5 rounded">VOUCHER-XXXX-YYYY</code></span>
-                            ) : bulkFormatType === 'STANDARD_ACCOUNT' ? (
-                                <span>Format per baris: <code className="text-accent-text font-mono bg-surface px-1 py-0.5 rounded">email|password</code></span>
-                            ) : (
-                                <span>Format per baris: <code className="text-accent-text font-mono bg-surface px-1 py-0.5 rounded">email|password|profil|pin</code> (profil & pin opsional).</span>
-                            )}
-                        </div>
+                                <div className="p-2.5 bg-surface-2 rounded border border-border text-xs text-text-2">
+                                    {bulkFormatType === 'INVITE_LINK' ? (
+                                        <span>Masukkan <strong>1 tautan undangan per baris</strong>. Contoh: <code className="text-accent-text font-mono bg-surface px-1 py-0.5 rounded">https://families.google.com/join/...</code></span>
+                                    ) : bulkFormatType === 'VOUCHER' ? (
+                                        <span>Masukkan <strong>1 kode voucher per baris</strong>. Contoh: <code className="text-accent-text font-mono bg-surface px-1 py-0.5 rounded">VOUCHER-XXXX-YYYY</code></span>
+                                    ) : bulkFormatType === 'STANDARD_ACCOUNT' ? (
+                                        <span>Format per baris: <code className="text-accent-text font-mono bg-surface px-1 py-0.5 rounded">email|password</code></span>
+                                    ) : (
+                                        <span>Format per baris: <code className="text-accent-text font-mono bg-surface px-1 py-0.5 rounded">email|password|profil|pin</code> (profil & pin opsional).</span>
+                                    )}
+                                </div>
 
-                        <form onSubmit={handleBulkSubmit} className="space-y-3 text-xs">
+                                <form onSubmit={handleBulkSubmit} className="space-y-3 text-xs">
                             {(bulkForm.errors as Record<string, string | undefined>).general && (
                                 <div className="p-2.5 rounded bg-danger/10 border border-danger/30 text-danger text-xs flex items-center gap-2">
                                     <AlertCircle className="w-4 h-4 shrink-0" />
@@ -1486,7 +1545,9 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                                 </button>
                             </div>
                         </form>
-                    </div>
+                    </>
+                )}
+            </div>
                 </div>
             )}
 

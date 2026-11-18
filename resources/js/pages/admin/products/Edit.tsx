@@ -16,7 +16,11 @@ import {
     Trash2, 
     X,
     ExternalLink,
-    AlertTriangle
+    AlertTriangle,
+    Tv,
+    UserCheck,
+    Link2,
+    Ticket
 } from 'lucide-react';
 
 interface VariantItem {
@@ -1131,54 +1135,58 @@ export default function ProductEdit({ product, variants }: EditProps) {
                                         <label className="font-semibold text-text text-[11px] block">
                                             Format Kolom Stok (Pemisah tanda '|')
                                         </label>
-                                        <div className="flex flex-wrap gap-1">
+                                        <div className="flex flex-wrap gap-1.5">
                                             <button
                                                 type="button"
                                                 onClick={() => setVariantForm({ ...variantForm, stock_fields: ['email', 'password', 'profil', 'pin'] })}
-                                                className={`px-1.5 py-0.5 text-[10px] rounded border transition-colors ${
+                                                className={`inline-flex items-center gap-1.5 px-2 py-1 text-[11px] rounded border transition-colors ${
                                                     variantForm.stock_fields.join(',') === 'email,password,profil,pin'
-                                                        ? 'bg-accent/20 border-accent text-accent-text font-bold'
+                                                        ? 'bg-accent/20 border-accent text-accent-text font-semibold'
                                                         : 'bg-surface border-border hover:bg-surface-hover text-text'
                                                 }`}
                                                 title="Untuk Netflix, Disney+, Prime Video, Vidio (dengan profil & PIN)"
                                             >
-                                                🎬 Netflix/Profil
+                                                <Tv className="w-3 h-3 text-accent-text shrink-0" />
+                                                <span>Netflix / Profil</span>
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setVariantForm({ ...variantForm, stock_fields: ['email', 'password'] })}
-                                                className={`px-1.5 py-0.5 text-[10px] rounded border transition-colors ${
+                                                className={`inline-flex items-center gap-1.5 px-2 py-1 text-[11px] rounded border transition-colors ${
                                                     variantForm.stock_fields.join(',') === 'email,password'
-                                                        ? 'bg-accent/20 border-accent text-accent-text font-bold'
+                                                        ? 'bg-accent/20 border-accent text-accent-text font-semibold'
                                                         : 'bg-surface border-border hover:bg-surface-hover text-text'
                                                 }`}
                                                 title="Untuk Spotify, ChatGPT, Akun Private, YouTube Akun Jadi"
                                             >
-                                                👤 Akun Private
+                                                <UserCheck className="w-3 h-3 text-accent-text shrink-0" />
+                                                <span>Akun Private</span>
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setVariantForm({ ...variantForm, stock_fields: ['link'] })}
-                                                className={`px-1.5 py-0.5 text-[10px] rounded border transition-colors ${
+                                                className={`inline-flex items-center gap-1.5 px-2 py-1 text-[11px] rounded border transition-colors ${
                                                     variantForm.stock_fields.join(',') === 'link'
-                                                        ? 'bg-accent/20 border-accent text-accent-text font-bold'
+                                                        ? 'bg-accent/20 border-accent text-accent-text font-semibold'
                                                         : 'bg-surface border-border hover:bg-surface-hover text-text'
                                                 }`}
                                                 title="Untuk YouTube Family Invite, Canva Team Invite, Spotify Family Link"
                                             >
-                                                🔗 Link Invite
+                                                <Link2 className="w-3 h-3 text-info shrink-0" />
+                                                <span>Link Invite</span>
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setVariantForm({ ...variantForm, stock_fields: ['kode_voucher'] })}
-                                                className={`px-1.5 py-0.5 text-[10px] rounded border transition-colors ${
+                                                className={`inline-flex items-center gap-1.5 px-2 py-1 text-[11px] rounded border transition-colors ${
                                                     variantForm.stock_fields.join(',') === 'kode_voucher'
-                                                        ? 'bg-accent/20 border-accent text-accent-text font-bold'
+                                                        ? 'bg-accent/20 border-accent text-accent-text font-semibold'
                                                         : 'bg-surface border-border hover:bg-surface-hover text-text'
                                                 }`}
                                                 title="Untuk Kode Voucher, Game Key, Lisensi Digital"
                                             >
-                                                🎟️ Voucher
+                                                <Ticket className="w-3 h-3 text-warning shrink-0" />
+                                                <span>Voucher</span>
                                             </button>
                                         </div>
                                     </div>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AccountStatus;
+use App\Enums\DeliveryType;
 use App\Enums\OrderStatus;
 use App\Enums\OrderType;
 use App\Models\Banner;
@@ -59,7 +60,10 @@ class StorefrontController extends Controller
             $hasRentVariant = $product->variants->contains(fn ($v) => $v->type === OrderType::RENT);
             $hasBuyVariant = $product->variants->contains(fn ($v) => $v->type === OrderType::BUY);
 
-            $anyVariantAvailable = $product->variants->isNotEmpty() && $totalStock > 0;
+            $anyVariantAvailable = $product->variants->isNotEmpty() && (
+                $totalStock > 0 ||
+                $product->variants->contains(fn ($v) => $v->delivery_type !== DeliveryType::STOCK)
+            );
 
             if (! $anyVariantAvailable) {
                 $status = 'out_of_stock';

@@ -25,23 +25,24 @@ class ProductVariantStoreRequest extends FormRequest
             'type' => ['required', Rule::enum(OrderType::class)],
             'delivery_type' => [
                 'nullable',
-                function (string $attribute, mixed $value, Closure $fail) {
-                    if (! empty($value) && $value !== 'STOCK') {
-                        $fail('Jenis pengiriman ini belum tersedia.');
-                    }
-                },
+                Rule::in(['STOCK', 'INVITE', 'MANUAL']),
             ],
             'buyer_fields' => [
                 'nullable',
                 'array',
                 'max:5',
                 function (string $attribute, mixed $value, Closure $fail) {
-                    if (! is_array($value)) {
+                    if (! is_array($value) || empty($value)) {
                         return;
                     }
-                    $errors = \App\Support\BuyerFieldsSchema::validateDefinition($value);
-                    foreach ($errors as $err) {
-                        $fail($err);
+                    try {
+                        \App\Support\BuyerFieldsSchema::validateDefinition($value);
+                    } catch (\Illuminate\Validation\ValidationException $e) {
+                        foreach ($e->errors() as $fieldErrors) {
+                            foreach ($fieldErrors as $err) {
+                                $fail($err);
+                            }
+                        }
                     }
                 },
             ],

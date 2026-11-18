@@ -107,7 +107,8 @@ export default function ProductShow({
                 if (v.type === 'RENT') {
                     return !quota.is_full && product.available_rent_stock > 0;
                 }
-                return product.available_buy_stock > 0;
+                const isStock = v.delivery_type === 'STOCK' || !v.delivery_type;
+                return !isStock || product.available_buy_stock > 0;
             }) || tabVariants[0];
             setSelectedVariant(firstAvailable);
         }
@@ -184,7 +185,8 @@ export default function ProductShow({
                 if (v.type === 'RENT') {
                     return !quota.is_full && product.available_rent_stock > 0;
                 }
-                return product.available_buy_stock > 0;
+                const isStock = v.delivery_type === 'STOCK' || !v.delivery_type;
+                return !isStock || product.available_buy_stock > 0;
             }) || tabVariants[0];
             setSelectedVariant(available);
         }
@@ -229,7 +231,7 @@ export default function ProductShow({
     const activeVariant = selectedVariant || tabVariants[0] || null;
     const isOutOfStock = selectedTab === 'RENT'
         ? (quota.is_full || product.available_rent_stock === 0)
-        : product.available_buy_stock === 0;
+        : (activeVariant?.delivery_type === 'STOCK' || !activeVariant?.delivery_type ? product.available_buy_stock === 0 : false);
 
     return (
         <PublicLayout storeName={storeName} isProductPage={true}>
@@ -427,7 +429,8 @@ export default function ProductShow({
                                                     disabledReason = 'Stok akun sewa habis';
                                                 }
                                             } else {
-                                                if (product.available_buy_stock === 0) {
+                                                const isStock = variant.delivery_type === 'STOCK' || !variant.delivery_type;
+                                                if (isStock && product.available_buy_stock === 0) {
                                                     isDisabled = true;
                                                     disabledReason = 'Stok akun habis';
                                                 }

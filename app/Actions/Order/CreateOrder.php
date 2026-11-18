@@ -78,27 +78,46 @@ class CreateOrder
 
             // Check availability according to delivery type
             $deliveryType = $variant->delivery_type ?? DeliveryType::STOCK;
-            if ($deliveryType !== DeliveryType::STOCK) {
-                throw new OutOfStockException('Jenis layanan ini belum tersedia.');
-            }
 
-            // Reserve an account unit: Prioritize variant-specific unit, fallback to general product unit
-            $account = ProductAccount::where('variant_id', $variant->id)
-                ->where('status', AccountStatus::AVAILABLE)
-                ->lockForUpdate()
-                ->first();
-
-            if (! $account) {
-                $account = ProductAccount::where('product_id', $variant->product_id)
-                    ->where('kind', $variant->type)
+            $account = null;
+            if ($deliveryType === DeliveryType::STOCK) {
+                // Reserve an account unit: Prioritize variant-specific unit, fallback to general product unit
+                $account = ProductAccount::where('variant_id', $variant->id)
                     ->where('status', AccountStatus::AVAILABLE)
-                    ->whereNull('variant_id')
                     ->lockForUpdate()
                     ->first();
-            }
 
-            if (! $account) {
-                throw new OutOfStockException();
+                if (! $account) {
+                    $account = ProductAccount::where('product_id', $variant->product_id)
+                        ->where('kind', $variant->type)
+                        ->where('status', AccountStatus::AVAILABLE)
+                        ->whereNull('variant_id')
+                        ->lockForUpdate()
+                        ->first();
+                }
+
+                if (! $account) {
+                    throw new OutOfStockException();
+                }
+            } else {
+                // For INVITE and MANUAL, check stock_limit if set
+                if ($variant->stock_limit !== null) {
+                    $activeCount = Order::where('variant_id', $variant->id)
+                        ->whereIn('status', [OrderStatus::PENDING, OrderStatus::VERIFYING, OrderStatus::PAID])
+                        ->where(function ($q) {
+                            $q->whereNull('fulfillment_status')
+                                ->orWhereIn('fulfillment_status', [
+                                    \App\Enums\FulfillmentStatus::AWAITING_ACTION,
+                                    \App\Enums\FulfillmentStatus::INVITE_SENT,
+                                    \App\Enums\FulfillmentStatus::ACTIVE,
+                                ]);
+                        })
+                        ->count();
+
+                    if ($activeCount >= $variant->stock_limit) {
+                        throw new OutOfStockException('Slot kuota untuk paket ini sedang penuh.');
+                    }
+                }
             }
 
             $unique = 0;
@@ -109,12 +128,12 @@ class CreateOrder
                 'invoice_code' => $this->invoice->generate(),
                 'product_id' => $variant->product_id,
                 'variant_id' => $variant->id,
-                'account_id' => $account->id,
+                'account_id' => $account?->id,
                 'order_type' => $variant->type,
                 'customer_phone' => Phone::normalize($data->phone),
                 'customer_note' => $data->note,
                 'buyer_inputs' => ! empty($sanitizedBuyerInputs) ? $sanitizedBuyerInputs : null,
-                'fulfillment_status' => null,
+                'fulfillment_status' => $deliveryType === DeliveryType::STOCK ? null : \App\Enums\FulfillmentStatus::AWAITING_ACTION,
                 'payment_method_id' => $paymentMethod->id,
                 'payment_method_label' => $paymentMethod->label,
                 'base_price' => $variant->price,
@@ -125,25 +144,27 @@ class CreateOrder
                 'quota_date' => $date,
             ]);
 
-            $account->update([
-                'status' => AccountStatus::RESERVED,
-                'order_id' => $order->id,
-            ]);
+            if ($account) {
+                $account->update([
+                    'status' => AccountStatus::RESERVED,
+                    'order_id' => $order->id,
+                ]);
 
-            // If remaining AVAILABLE stock for this product + kind <= 2, notify admin (deduped per 6 hours)
-            $remainingStock = ProductAccount::where('product_id', $variant->product_id)
-                ->where('kind', $variant->type)
-                ->where('status', AccountStatus::AVAILABLE)
-                ->count();
+                // If remaining AVAILABLE stock for this product + kind <= 2, notify admin (deduped per 6 hours)
+                $remainingStock = ProductAccount::where('product_id', $variant->product_id)
+                    ->where('kind', $variant->type)
+                    ->where('status', AccountStatus::AVAILABLE)
+                    ->count();
 
-            if ($remainingStock <= 2) {
-                $cacheKey = "stock_low_notified_{$variant->product_id}_{$variant->type->value}";
-                if (\Illuminate\Support\Facades\Cache::add($cacheKey, true, now()->addHours(6))) {
-                    SendAdminNotification::dispatch('stock.low', [
-                        'product_id' => $variant->product_id,
-                        'kind' => $variant->type->value,
-                        'remaining' => $remainingStock,
-                    ])->afterCommit();
+                if ($remainingStock <= 2) {
+                    $cacheKey = "stock_low_notified_{$variant->product_id}_{$variant->type->value}";
+                    if (\Illuminate\Support\Facades\Cache::add($cacheKey, true, now()->addHours(6))) {
+                        SendAdminNotification::dispatch('stock.low', [
+                            'product_id' => $variant->product_id,
+                            'kind' => $variant->type->value,
+                            'remaining' => $remainingStock,
+                        ])->afterCommit();
+                    }
                 }
             }
 

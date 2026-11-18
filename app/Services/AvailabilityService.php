@@ -4,6 +4,9 @@ namespace App\Services;
 
 use App\Enums\AccountStatus;
 use App\Enums\DeliveryType;
+use App\Enums\FulfillmentStatus;
+use App\Enums\OrderStatus;
+use App\Models\Order;
 use App\Models\ProductAccount;
 use App\Models\ProductVariant;
 
@@ -20,16 +23,7 @@ class AvailabilityService
 
         return match ($deliveryType) {
             DeliveryType::STOCK => $this->checkStockAvailability($variant),
-            DeliveryType::INVITE => [
-                'available' => false,
-                'remaining' => 0,
-                'reason' => 'Undangan keluarga segera hadir',
-            ],
-            DeliveryType::MANUAL => [
-                'available' => false,
-                'remaining' => 0,
-                'reason' => 'Layanan manual segera hadir',
-            ],
+            DeliveryType::INVITE, DeliveryType::MANUAL => $this->checkSlotAvailability($variant),
         };
     }
 
@@ -64,6 +58,51 @@ class AvailabilityService
         return [
             'available' => true,
             'remaining' => $totalAvailable,
+            'reason' => null,
+        ];
+    }
+
+    /**
+     * Check slot availability for INVITE and MANUAL variants.
+     * If stock_limit is null, slots are unlimited.
+     *
+     * @return array{available: bool, remaining: ?int, reason: ?string}
+     */
+    protected function checkSlotAvailability(ProductVariant $variant): array
+    {
+        if ($variant->stock_limit === null) {
+            return [
+                'available' => true,
+                'remaining' => null,
+                'reason' => null,
+            ];
+        }
+
+        $activeOrdersCount = Order::where('variant_id', $variant->id)
+            ->whereIn('status', [OrderStatus::PENDING, OrderStatus::VERIFYING, OrderStatus::PAID])
+            ->where(function ($q) {
+                $q->whereNull('fulfillment_status')
+                    ->orWhereIn('fulfillment_status', [
+                        FulfillmentStatus::AWAITING_ACTION,
+                        FulfillmentStatus::INVITE_SENT,
+                        FulfillmentStatus::ACTIVE,
+                    ]);
+            })
+            ->count();
+
+        $remaining = max(0, $variant->stock_limit - $activeOrdersCount);
+
+        if ($remaining <= 0) {
+            return [
+                'available' => false,
+                'remaining' => 0,
+                'reason' => 'Slot kuota penuh',
+            ];
+        }
+
+        return [
+            'available' => true,
+            'remaining' => $remaining,
             'reason' => null,
         ];
     }

@@ -1065,81 +1065,134 @@ export default function ProductEdit({ product, variants }: EditProps) {
                                 </div>
                             )}
 
-                            {/* Jenis Pengiriman (Fase 9A) */}
+                            {/* Jenis Pengiriman */}
                             <div className="space-y-2 pt-2 border-t border-border">
                                 <label className="font-semibold text-text block">
                                     Metode Pengiriman <span className="text-danger">*</span>
                                 </label>
                                 <div className="grid grid-cols-3 gap-2">
-                                    <div className="p-2.5 rounded border border-accent bg-accent/10 text-text space-y-1">
-                                        <div className="flex items-center gap-1.5 font-bold text-accent-text">
-                                            <span>STOCK</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setVariantForm({ ...variantForm, delivery_type: 'STOCK' })}
+                                        className={`p-2.5 rounded border text-left transition-all cursor-pointer ${
+                                            variantForm.delivery_type === 'STOCK'
+                                                ? 'border-accent bg-accent/15 text-text ring-1 ring-accent'
+                                                : 'border-border bg-surface-2 text-text-2 hover:bg-surface-hover'
+                                        }`}
+                                    >
+                                        <div className={`font-bold text-xs ${variantForm.delivery_type === 'STOCK' ? 'text-accent-text' : 'text-text'}`}>
+                                            STOCK
                                         </div>
-                                        <p className="text-[10px] text-text-2 leading-tight">
+                                        <p className="text-[10px] text-text-2 leading-tight mt-1">
                                             Kredensial instan di invoice
                                         </p>
-                                    </div>
-                                    <div className="p-2.5 rounded border border-border bg-surface-2 opacity-60 text-text-muted space-y-1">
-                                        <div className="flex items-center justify-between">
-                                            <span className="font-bold">INVITE</span>
-                                            <span className="text-[9px] px-1 py-0.5 rounded bg-surface border border-border">Segera</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setVariantForm({ ...variantForm, delivery_type: 'INVITE' })}
+                                        className={`p-2.5 rounded border text-left transition-all cursor-pointer ${
+                                            variantForm.delivery_type === 'INVITE'
+                                                ? 'border-accent bg-accent/15 text-text ring-1 ring-accent'
+                                                : 'border-border bg-surface-2 text-text-2 hover:bg-surface-hover'
+                                        }`}
+                                    >
+                                        <div className={`font-bold text-xs ${variantForm.delivery_type === 'INVITE' ? 'text-accent-text' : 'text-text'}`}>
+                                            INVITE
                                         </div>
-                                        <p className="text-[10px] leading-tight">Undangan link/email</p>
-                                    </div>
-                                    <div className="p-2.5 rounded border border-border bg-surface-2 opacity-60 text-text-muted space-y-1">
-                                        <div className="flex items-center justify-between">
-                                            <span className="font-bold">MANUAL</span>
-                                            <span className="text-[9px] px-1 py-0.5 rounded bg-surface border border-border">Segera</span>
+                                        <p className="text-[10px] text-text-2 leading-tight mt-1">
+                                            Undangan link / email
+                                        </p>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setVariantForm({ ...variantForm, delivery_type: 'MANUAL' })}
+                                        className={`p-2.5 rounded border text-left transition-all cursor-pointer ${
+                                            variantForm.delivery_type === 'MANUAL'
+                                                ? 'border-accent bg-accent/15 text-text ring-1 ring-accent'
+                                                : 'border-border bg-surface-2 text-text-2 hover:bg-surface-hover'
+                                        }`}
+                                    >
+                                        <div className={`font-bold text-xs ${variantForm.delivery_type === 'MANUAL' ? 'text-accent-text' : 'text-text'}`}>
+                                            MANUAL
                                         </div>
-                                        <p className="text-[10px] leading-tight">Diproses manual</p>
-                                    </div>
+                                        <p className="text-[10px] text-text-2 leading-tight mt-1">
+                                            Diproses manual admin
+                                        </p>
+                                    </button>
                                 </div>
                             </div>
 
-                            {/* Stock Fields (Schema Kolom Stok Akun) */}
-                            <div className="space-y-2 p-3 bg-surface-2/60 border border-border rounded-md">
-                                <div className="flex items-center justify-between">
-                                    <label className="font-semibold text-text text-[11px] block">
-                                        Format Kolom Stok (Pemisah tanda '|')
-                                    </label>
-                                    <div className="flex gap-1">
-                                        <button
-                                            type="button"
-                                            onClick={() => setVariantForm({ ...variantForm, stock_fields: ['email', 'password'] })}
-                                            className="px-1.5 py-0.5 text-[9px] rounded bg-surface border border-border hover:bg-surface-hover text-text"
-                                        >
-                                            Akun
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setVariantForm({ ...variantForm, stock_fields: ['code'] })}
-                                            className="px-1.5 py-0.5 text-[9px] rounded bg-surface border border-border hover:bg-surface-hover text-text"
-                                        >
-                                            Voucher
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setVariantForm({ ...variantForm, stock_fields: ['url'] })}
-                                            className="px-1.5 py-0.5 text-[9px] rounded bg-surface border border-border hover:bg-surface-hover text-text"
-                                        >
-                                            Link
-                                        </button>
+                            {/* Stock Fields (Schema Kolom Stok Akun) - tampil jika STOCK */}
+                            {variantForm.delivery_type === 'STOCK' ? (
+                                <div className="space-y-2 p-3 bg-surface-2/60 border border-border rounded-md">
+                                    <div className="flex items-center justify-between">
+                                        <label className="font-semibold text-text text-[11px] block">
+                                            Format Kolom Stok (Pemisah tanda '|')
+                                        </label>
+                                        <div className="flex gap-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => setVariantForm({ ...variantForm, stock_fields: ['email', 'password'] })}
+                                                className="px-1.5 py-0.5 text-[9px] rounded bg-surface border border-border hover:bg-surface-hover text-text"
+                                            >
+                                                Akun
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setVariantForm({ ...variantForm, stock_fields: ['code'] })}
+                                                className="px-1.5 py-0.5 text-[9px] rounded bg-surface border border-border hover:bg-surface-hover text-text"
+                                            >
+                                                Voucher
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setVariantForm({ ...variantForm, stock_fields: ['url'] })}
+                                                className="px-1.5 py-0.5 text-[9px] rounded bg-surface border border-border hover:bg-surface-hover text-text"
+                                            >
+                                                Link
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={variantForm.stock_fields.join(', ')}
+                                        onChange={(e) => setVariantForm({
+                                            ...variantForm,
+                                            stock_fields: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+                                        })}
+                                        placeholder="Contoh: email, password, pin"
+                                        className="w-full h-8 px-2.5 font-mono text-[11px] bg-surface border border-border rounded text-text focus:outline-none focus:border-accent"
+                                    />
+                                    <p className="text-[10px] text-text-3">
+                                        Format saat import akun: <span className="font-mono">{variantForm.stock_fields.join(' | ')}</span>
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-2 p-3 bg-accent/5 border border-accent/20 rounded-md">
+                                    <div className="text-xs font-semibold text-text flex items-center justify-between">
+                                        <span>Metode Pengiriman Non-Stok Aktif</span>
+                                        <span className="text-[10px] px-2 py-0.5 rounded bg-accent/15 text-accent-text font-bold">
+                                            {variantForm.delivery_type}
+                                        </span>
+                                    </div>
+                                    <p className="text-[11px] text-text-2 leading-relaxed">
+                                        Pada metode ini, pesanan tidak memerlukan akun stok di awal. Anda dapat mengatur panduan pengiriman atau tautan yang tampil di invoice, serta meminta data pembeli di bawah.
+                                    </p>
+                                    <div className="pt-1 flex items-center gap-2">
+                                        <label className="text-[11px] font-semibold text-text shrink-0">Batas Slot (Opsional):</label>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            value={variantForm.stock_limit ?? ''}
+                                            onChange={(e) => setVariantForm({ ...variantForm, stock_limit: e.target.value ? Number(e.target.value) : null })}
+                                            placeholder="Tak Terbatas"
+                                            className="w-28 h-7 px-2 text-xs font-mono bg-surface border border-border rounded text-text"
+                                        />
                                     </div>
                                 </div>
-                                <input
-                                    type="text"
-                                    value={variantForm.stock_fields.join(', ')}
-                                    onChange={(e) => setVariantForm({
-                                        ...variantForm,
-                                        stock_fields: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
-                                    })}
-                                    placeholder="Contoh: email, password, pin"
-                                    className="w-full h-8 px-2.5 font-mono text-[11px] bg-surface border border-border rounded text-text focus:outline-none focus:border-accent"
-                                />
-                                <p className="text-[10px] text-text-3">
-                                    Format saat import akun: <span className="font-mono">{variantForm.stock_fields.join(' | ')}</span>
-                                </p>
-                            </div>
+                            )}
 
                             {/* Buyer Fields Editor */}
                             <div className="space-y-2 p-3 bg-surface-2/60 border border-border rounded-md">

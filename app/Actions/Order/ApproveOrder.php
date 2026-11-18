@@ -62,26 +62,31 @@ class ApproveOrder
                 $order->account_id = $newAccount->id;
             }
 
-            $assignedAccount = ProductAccount::where('id', $order->account_id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
+            $assignedAccount = null;
             $now = now();
             $durationHours = max(1, (int) $variant->duration_hours);
             $accessExpiresAt = (clone $now)->addHours($durationHours);
 
-            if ($order->order_type === OrderType::BUY) {
-                $assignedAccount->update([
-                    'status' => AccountStatus::SOLD,
-                    'order_id' => $order->id,
-                    'rented_until' => null,
-                ]);
-            } else {
-                $assignedAccount->update([
-                    'status' => AccountStatus::RENTED,
-                    'order_id' => $order->id,
-                    'rented_until' => $accessExpiresAt,
-                ]);
+            if ($order->account_id) {
+                $assignedAccount = ProductAccount::where('id', $order->account_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($assignedAccount) {
+                    if ($order->order_type === OrderType::BUY) {
+                        $assignedAccount->update([
+                            'status' => AccountStatus::SOLD,
+                            'order_id' => $order->id,
+                            'rented_until' => null,
+                        ]);
+                    } else {
+                        $assignedAccount->update([
+                            'status' => AccountStatus::RENTED,
+                            'order_id' => $order->id,
+                            'rented_until' => $accessExpiresAt,
+                        ]);
+                    }
+                }
             }
 
             $from = $order->status;
@@ -92,13 +97,13 @@ class ApproveOrder
             };
 
             $order->update([
-                'account_id' => $assignedAccount->id,
+                'account_id' => $assignedAccount?->id,
                 'status' => OrderStatus::PAID,
                 'fulfillment_status' => $fulfillmentStatus,
                 'fulfilled_at' => $deliveryType === DeliveryType::STOCK ? $now : null,
                 'paid_at' => $now,
                 'access_starts_at' => $now,
-                'access_expires_at' => $accessExpiresAt,
+                'access_expires_at' => $variant->duration_hours ? $accessExpiresAt : null,
             ]);
 
             $order->events()->create([

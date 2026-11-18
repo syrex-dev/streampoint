@@ -15,7 +15,7 @@ export interface BrandMarkProps {
 
 export function BrandMark({ 
     className = '', 
-    logoClassName = 'w-7 h-7 object-contain shrink-0',
+    logoClassName,
     textClassName = 'text-[15px] font-semibold text-text tracking-tight leading-none',
     taglineClassName = 'text-xs text-muted-foreground truncate max-w-[260px] leading-tight mt-0.5',
     showLogo = true,
@@ -34,6 +34,13 @@ export function BrandMark({
     const storeLogoDark = settings?.store_logo_dark_path;
     const brandFormat = settings?.navbar_brand_format ?? 'logo_only';
     const storeTagline = propTagline ?? settings?.store_tagline;
+
+    const isLogoOnly = brandFormat === 'logo_only' || variant === 'full';
+    const effectiveLogoClass = isLogoOnly
+        ? (logoClassName && !logoClassName.includes('w-6') && !logoClassName.includes('w-7')
+            ? logoClassName
+            : 'h-8 sm:h-9 max-h-10 w-auto max-w-[190px] sm:max-w-[240px] object-contain shrink-0')
+        : (logoClassName || 'h-7 sm:h-8 w-auto max-w-[140px] object-contain shrink-0');
 
     // 1. Text only format chosen by admin
     if (brandFormat === 'text_only') {
@@ -60,12 +67,12 @@ export function BrandMark({
                         <img
                             src={storeLogo}
                             alt={storeName}
-                            className={`dark:hidden ${logoClassName}`}
+                            className={`dark:hidden ${effectiveLogoClass}`}
                         />
                         <img
                             src={storeLogoDark}
                             alt={storeName}
-                            className={`hidden dark:block ${logoClassName}`}
+                            className={`hidden dark:block ${effectiveLogoClass}`}
                         />
                     </>
                 );
@@ -74,7 +81,7 @@ export function BrandMark({
                 <img
                     src={storeLogo}
                     alt={storeName}
-                    className={logoClassName}
+                    className={effectiveLogoClass}
                 />
             );
         };
@@ -126,6 +133,8 @@ export function BrandMark({
         );
     }
 
+    const fallbackIconClass = logoClassName || 'w-7 h-7 object-contain shrink-0';
+
     // Icon only
     if (variant === 'icon-only') {
         return (
@@ -133,14 +142,14 @@ export function BrandMark({
                 <img
                     src="/brand/logo-icon-light.svg"
                     alt={storeName}
-                    className={`dark:hidden ${logoClassName}`}
+                    className={`dark:hidden ${fallbackIconClass}`}
                     width={28}
                     height={28}
                 />
                 <img
                     src="/brand/logo-icon-dark.svg"
                     alt={storeName}
-                    className={`hidden dark:block ${logoClassName}`}
+                    className={`hidden dark:block ${fallbackIconClass}`}
                     width={28}
                     height={28}
                 />
@@ -156,14 +165,14 @@ export function BrandMark({
                     <img
                         src="/brand/logo-icon-light.svg"
                         alt={storeName}
-                        className={`dark:hidden ${logoClassName}`}
+                        className={`dark:hidden ${fallbackIconClass}`}
                         width={28}
                         height={28}
                     />
                     <img
                         src="/brand/logo-icon-dark.svg"
                         alt={storeName}
-                        className={`hidden dark:block ${logoClassName}`}
+                        className={`hidden dark:block ${fallbackIconClass}`}
                         width={28}
                         height={28}
                     />

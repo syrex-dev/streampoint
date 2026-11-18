@@ -216,7 +216,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     <BrandMark
                         variant="icon-text"
                         showTagline={false}
-                        logoClassName="w-6 h-6 object-contain shrink-0"
+                        logoClassName="h-7 w-auto max-w-[130px] object-contain shrink-0"
                         textClassName="text-sm font-bold text-text truncate tracking-tight"
                     />
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-2 text-text-2 border border-border shrink-0">
@@ -264,7 +264,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                             >
                                 <BrandMark
                                     showTagline={false}
-                                    logoClassName="w-6 h-6 rounded-[6px] object-contain shrink-0"
+                                    logoClassName="h-7 w-auto max-w-[130px] object-contain shrink-0"
                                     textClassName="text-sm font-bold text-text truncate tracking-tight"
                                 />
                                 <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-2 text-text-2 border border-border shrink-0">
@@ -329,7 +329,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                         <BrandMark
                             variant="icon-text"
                             showTagline={false}
-                            logoClassName="w-6 h-6 object-contain shrink-0"
+                            logoClassName="h-7 sm:h-8 w-auto max-w-[145px] object-contain shrink-0"
                             textClassName="text-sm font-bold text-text truncate tracking-tight"
                         />
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-2 text-text-2 border border-border shrink-0">

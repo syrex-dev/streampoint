@@ -150,7 +150,7 @@ export default function TrackingIndex({
                         <span>Riwayat & Cek Status Pesanan</span>
                     </h1>
                     <p className="text-xs sm:text-sm text-text-2 leading-relaxed">
-                        Pantau status pesanan kamu secara real-time, bayar tagihan sewa, atau buka kredensial akun streaming yang telah aktif.
+                        Pantau status pesanan kamu secara real-time, bayar tagihan, atau buka akses kredensial produk digital yang telah aktif.
                     </p>
                 </div>
 
@@ -192,7 +192,7 @@ export default function TrackingIndex({
                                             )}
                                         </div>
                                         <p className="text-xs text-text-2 truncate">
-                                            {item.product_name ? `${item.product_name} - ${item.variant_name || ''}` : 'Pesanan Streaming'}
+                                            {item.product_name ? `${item.product_name} - ${item.variant_name || ''}` : 'Pesanan Produk Digital'}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">

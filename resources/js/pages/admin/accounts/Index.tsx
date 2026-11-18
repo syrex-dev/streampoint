@@ -474,8 +474,8 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
 
             <div className="space-y-6">
                 <PageHeader
-                    title="Stok Unit Akun"
-                    description="Manajemen inventaris kredensial akun streaming (Sewa & Beli)."
+                    title="Stok Unit & Akses Digital"
+                    description="Manajemen inventaris kredensial akun, link invite, voucher, dan lisensi digital (Sewa & Beli)."
                 >
                     <div className="flex items-center gap-2">
                         <button

@@ -54,7 +54,7 @@ export default function ProductsIndex({ products }: IndexProps) {
             <div className="space-y-6">
                 <PageHeader
                     title="Kelola Produk & Layanan"
-                    description="Daftar semua layanan langganan streaming, paket varian, dan aturan garansi."
+                    description="Daftar semua produk digital premium, aplikasi berlangganan, paket varian, dan aturan garansi."
                 >
                     <Link
                         href="/admin/products/create"

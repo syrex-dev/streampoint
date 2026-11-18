@@ -170,7 +170,7 @@ export default function ProductCreate() {
                                     type="text"
                                     value={data.category}
                                     onChange={(e) => setData('category', e.target.value)}
-                                    placeholder="Streaming, Musik, Gaming, dll."
+                                    placeholder="Streaming, Musik, Produktivitas, AI, Desain, Voucher, dll."
                                     required
                                     className="w-full h-9 px-3 text-xs bg-surface-2 border border-border rounded text-text placeholder:text-text-3 focus:outline-none focus:border-accent"
                                 />

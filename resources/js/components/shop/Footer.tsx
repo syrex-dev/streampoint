@@ -63,7 +63,7 @@ export function Footer({ storeName = 'StreamPoint', settings, socialLinks, payme
                             <BrandMark variant="full" showTagline={false} />
                         </Link>
                         <p className="text-text-2 leading-relaxed max-w-sm">
-                            Platform sewa harian dan beli akun streaming dengan kuota terkontrol setiap hari dan verifikasi manual.
+                            Platform langganan aplikasi premium, akun hiburan, tools produktivitas, AI, voucher, dan lisensi digital dengan proses instan & bergaransi.
                         </p>
 
                         {/* Social Links (only filled ones) */}

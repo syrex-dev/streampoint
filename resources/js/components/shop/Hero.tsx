@@ -1,7 +1,7 @@
 import React from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { Clock, Package, ShieldCheck, ChevronRight } from 'lucide-react';
-import { QuotaData } from '@/types/shop';
+import { QuotaData, SharedSettings } from '@/types/shop';
 import { HERO_CONFIG } from '@/data/hero';
 
 interface HeroProps {
@@ -30,6 +30,12 @@ export function Hero({
     deliveryEta,
     products = [],
 }: HeroProps) {
+    const { settings, storeTagline: propTagline } = usePage<{
+        settings?: SharedSettings;
+        storeTagline?: string | null;
+    }>().props;
+    const heroTitle = propTagline || settings?.store_tagline || HERO_CONFIG.title;
+
     const available = 'remaining' in quota && typeof quota.remaining === 'number'
         ? quota.remaining
         : (quota as { available?: number }).available ?? 0;
@@ -88,10 +94,10 @@ export function Hero({
             <div className="hidden lg:flex items-center justify-between gap-6 h-full">
                 {/* Left Column: Heading, Subtitle, CTAs */}
                 <div className="flex-1 min-w-0 pr-4">
-                    <h1 className="text-2xl font-semibold text-text tracking-tight truncate">
-                        {HERO_CONFIG.title}
+                    <h1 className="text-2xl font-semibold text-text tracking-tight leading-snug line-clamp-2">
+                        {heroTitle}
                     </h1>
-                    <p className="text-sm text-text-2 mt-1 truncate">
+                    <p className="text-sm text-text-2 mt-1 leading-relaxed line-clamp-2">
                         {HERO_CONFIG.subtitle}
                     </p>
                     <div className="flex items-center gap-3 mt-4">
@@ -179,10 +185,10 @@ export function Hero({
             {/* Mobile Layout (< 1024px) */}
             <div className="flex lg:hidden flex-col justify-between h-full space-y-3">
                 <div>
-                    <h1 className="text-lg sm:text-xl font-semibold text-text tracking-tight truncate">
-                        {HERO_CONFIG.title}
+                    <h1 className="text-lg sm:text-xl font-semibold text-text tracking-tight leading-snug line-clamp-2">
+                        {heroTitle}
                     </h1>
-                    <p className="text-xs text-text-2 truncate mt-0.5">
+                    <p className="text-xs text-text-2 leading-relaxed line-clamp-2 mt-0.5">
                         {HERO_CONFIG.subtitle}
                     </p>
                 </div>

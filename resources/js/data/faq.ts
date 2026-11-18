@@ -12,13 +12,13 @@ export const faqData: FaqItem[] = [
     },
     {
         id: 'faq-2',
-        question: 'Kapan masa sewa akun mulai dihitung?',
-        answer: 'Masa sewa mulai dihitung tepat saat admin menyetujui pembayaran dan kredensial akun diterbitkan ke halaman invoice kamu, bukan sejak waktu transfer.',
+        question: 'Kapan durasi sewa atau masa aktif produk mulai dihitung?',
+        answer: 'Masa aktif mulai dihitung tepat saat pembayaran diverifikasi admin dan kredensial/akses produk digital diterbitkan ke halaman invoice kamu, bukan sejak waktu transfer.',
     },
     {
         id: 'faq-3',
-        question: 'Mengapa slot sewa dibatasi per hari?',
-        answer: 'Kami menerapkan kuota sewa harian untuk menjaga stabilitas dan kualitas akun agar tidak terjadi pemakaian berlebih. Kuota akan otomatis direset setiap pukul 00:00 WIB, atau terbuka kembali jika ada pesanan tertunda yang kedaluwarsa.',
+        question: 'Bagaimana ketersediaan stok produk digital dan aplikasi?',
+        answer: 'Seluruh stok akun, link invite, voucher, dan lisensi dipantau secara real-time. Kamu dapat langsung memesan produk digital yang berstatus tersedia di katalog tanpa antrean.',
     },
     {
         id: 'faq-4',
@@ -28,21 +28,21 @@ export const faqData: FaqItem[] = [
     {
         id: 'faq-5',
         question: 'Bagaimana jika saya sudah transfer tetapi pesanan telanjur kedaluwarsa?',
-        answer: 'Jangan khawatir. Segera hubungi admin via WhatsApp dengan menyertakan kode invoice dan bukti transfer. Selama slot kuota masih tersedia, pesanan kamu dapat diaktifkan kembali oleh admin.',
+        answer: 'Jangan khawatir. Segera hubungi admin via WhatsApp dengan menyertakan kode invoice dan bukti transfer. Pesanan kamu dapat diaktifkan kembali oleh admin.',
     },
     {
         id: 'faq-6',
         question: 'Apa saja metode pembayaran yang didukung?',
-        answer: 'Kami menerima pembayaran melalui QRIS (dapat dipindai dari BCA, Mandiri, GoPay, OVO, Dana, dll.), transfer rekening bank, serta e-wallet sesuai opsi aktif di halaman checkout. Seluruh transaksi diverifikasi secara manual oleh admin.',
+        answer: 'Kami menerima pembayaran melalui QRIS (dapat dipindai dari BCA, Mandiri, GoPay, OVO, Dana, dll.), transfer rekening bank, serta e-wallet sesuai opsi aktif di halaman checkout.',
     },
     {
         id: 'faq-7',
-        question: 'Apa yang harus dilakukan jika akun mengalami kendala saat dipakai?',
-        answer: 'Hubungi admin melalui WhatsApp dengan menyebutkan kode invoice kamu. Kami memberikan garansi penuh selama masa sewa atau garansi beli berupa penggantian akun atau penyesuaian masa aktif.',
+        question: 'Apa yang harus dilakukan jika produk atau akun mengalami kendala?',
+        answer: 'Hubungi admin melalui WhatsApp dengan menyebutkan kode invoice kamu. Kami memberikan garansi penuh selama durasi sewa atau masa garansi beli berupa penggantian unit atau perbaikan akses.',
     },
     {
         id: 'faq-8',
-        question: 'Apakah pembeli boleh mengubah password, email, atau profil akun?',
-        answer: 'Dilarang keras mengubah email, password, PIN profil, maupun nama profil yang telah dialokasikan. Pelanggaran terhadap aturan ini akan membatalkan garansi secara sepihak demi kenyamanan bersama.',
+        question: 'Bagaimana aturan penggunaan akun bersama atau lisensi?',
+        answer: 'Untuk paket akun profil bersama, dilarang mengubah email, password, PIN, atau profil. Untuk produk berupa voucher atau lisensi pribadi, kamu mendapatkan hak akses penuh sesuai instruksi.',
     },
 ];

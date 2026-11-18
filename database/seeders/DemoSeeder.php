@@ -208,7 +208,7 @@ class DemoSeeder extends Seeder
             'announcement_text' => 'Info: Layanan aktif normal setiap hari. Hubungi WhatsApp admin bila butuh bantuan cepat.',
             'announcement_url' => '/#katalog',
             'announcement_active' => false,
-            'store_tagline' => 'Sewa & Beli Akun Streaming',
+            'store_tagline' => 'Produk Digital Premium & Subscription Apps',
             'delivery_eta' => 'setelah verifikasi admin',
             'min_sold_display' => 5,
             'custom_request_enabled' => true,

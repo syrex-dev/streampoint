@@ -202,7 +202,7 @@ export default function StorefrontIndex({
 
     return (
         <PublicLayout storeName={storeName} paymentMethods={paymentMethods}>
-            <Head title={`Sewa & Beli Akun Streaming - ${storeName}`} />
+            <Head title={`Produk Digital Premium & Subscription Apps - ${storeName}`} />
 
             <div className="w-full space-y-6 sm:space-y-7 pb-16 sm:pb-8">
                 {/* 1. Banner Slider (DESIGN_SYSTEM 6.26) atau Hero Fungsional (6.2) */}
@@ -219,10 +219,10 @@ export default function StorefrontIndex({
                 )}
 
                 {/* 2. Toolbar Katalog & Grid Layanan */}
-                <section id="katalog" aria-label="Katalog Layanan Streaming" className="scroll-mt-20">
+                <section id="katalog" aria-label="Katalog Produk Digital & Subscription Apps" className="scroll-mt-20">
                     <SectionHeading
-                        eyebrow="KATALOG LAYANAN"
-                        title="Pilihan Layanan Streaming"
+                        eyebrow="KATALOG PRODUK"
+                        title="Pilihan Produk Digital & Aplikasi Premium"
                     />
 
                     <div className="space-y-2.5 sm:space-y-3">

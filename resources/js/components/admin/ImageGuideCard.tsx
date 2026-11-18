@@ -29,7 +29,7 @@ export const imageGuides: ImageGuideItem[] = [
         ratio: '16:9',
         recommendedDim: '1200 × 675 px',
         maxSize: '2 MB',
-        instructions: 'Rasio 16:9 (1200 × 675 px), JPG/PNG/WebP, maks 2 MB. Header detail paket streaming.',
+        instructions: 'Rasio 16:9 (1200 × 675 px), JPG/PNG/WebP, maks 2 MB. Header detail produk / paket digital.',
     },
     {
         component: 'Logo Layanan / Katalog',

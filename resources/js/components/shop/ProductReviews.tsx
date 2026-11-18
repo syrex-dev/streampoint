@@ -173,7 +173,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                             onChange={(e) => setComment(e.target.value)}
                             rows={3}
                             maxLength={500}
-                            placeholder="Bagikan pengalaman kamu memakai layanan akun streaming ini..."
+                            placeholder="Bagikan pengalaman kamu memakai produk digital atau aplikasi ini..."
                             className="w-full p-3 text-xs bg-surface border border-border rounded-xl text-text placeholder:text-text-2 focus:outline-none focus:border-accent transition-colors"
                         />
                     </div>

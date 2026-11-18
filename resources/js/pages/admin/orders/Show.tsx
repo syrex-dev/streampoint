@@ -1012,7 +1012,7 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
                                 </span>
                             </label>
                             <p className="text-[11px] text-text-2 pl-6">
-                                Centang jika Anda sudah mengamankan/mereset password akun streaming dan ingin unit ini bisa disewa/dibeli oleh pelanggan lain.
+                                Centang jika Anda sudah mengamankan/mereset kredensial akun atau data akses digital ini dan ingin unit ini bisa disewa/dibeli oleh pelanggan lain.
                             </p>
                         </div>
 

@@ -33,7 +33,7 @@ export default function Privacy({ storeName = 'NamaToko' }: { storeName?: string
                     <section className="space-y-2">
                         <h2 className="text-sm font-semibold text-text">1. Informasi yang Kami Kumpulkan</h2>
                         <p>
-                            Kami hanya mengumpulkan informasi yang esensial untuk memproses pesanan dan meneruskan kredensial akun streaming kepada Anda, yaitu nomor WhatsApp aktif dan catatan pemesanan (opsional). Kami tidak meminta kata sandi pribadi Anda atau data kartu kredit.
+                            Kami hanya mengumpulkan informasi yang esensial untuk memproses pesanan dan meneruskan akses produk digital atau kredensial akun kepada Anda, yaitu nomor WhatsApp aktif dan catatan pemesanan (opsional). Kami tidak meminta kata sandi pribadi Anda atau data kartu kredit.
                         </p>
                     </section>
 

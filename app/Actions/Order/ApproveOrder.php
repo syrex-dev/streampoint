@@ -110,7 +110,7 @@ class ApproveOrder
                 'from_status' => $from,
                 'to_status' => OrderStatus::PAID,
                 'actor' => $actor,
-                'note' => 'Pembayaran diverifikasi dan akun streaming dikirimkan ke pembeli.',
+                'note' => 'Pembayaran diverifikasi dan produk digital dikirimkan ke pembeli.',
             ]);
 
             return $order->fresh(['product', 'variant', 'account']);

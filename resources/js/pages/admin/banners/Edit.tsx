@@ -216,7 +216,7 @@ export default function BannerEdit({ banner }: EditProps) {
                             maxLength={160}
                             value={data.subtitle}
                             onChange={(e) => setData('subtitle', e.target.value)}
-                            placeholder="Contoh: Nikmati streaming tanpa langganan sebulan penuh. Slot terbatas per hari."
+                            placeholder="Contoh: Akses aplikasi premium dan tools digital tanpa langganan mahal. Proses instan & bergaransi."
                             className="w-full h-9 px-3 text-xs bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
                         />
                         {errors.subtitle && <p className="text-[11px] text-danger">{errors.subtitle}</p>}

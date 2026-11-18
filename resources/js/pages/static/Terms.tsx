@@ -33,16 +33,17 @@ export default function Terms({ storeName = 'NamaToko' }: { storeName?: string }
                     <section className="space-y-2">
                         <h2 className="text-sm font-semibold text-text">1. Ketentuan Umum</h2>
                         <p>
-                            Dengan melakukan pemesanan di {storeName}, Anda menyetujui seluruh syarat dan ketentuan yang berlaku. Layanan kami menyediakan sewa harian akun bersama dan pembelian akun streaming personal.
+                            Dengan melakukan pemesanan di {storeName}, Anda menyetujui seluruh syarat dan ketentuan yang berlaku. Layanan kami menyediakan akses sewa harian dan pembelian berbagai produk digital premium, aplikasi berlangganan, voucher, lisensi, serta akun personal maupun bersama.
                         </p>
                     </section>
 
                     <section className="space-y-2">
-                        <h2 className="text-sm font-semibold text-text">2. Aturan Penggunaan Akun Sewa</h2>
+                        <h2 className="text-sm font-semibold text-text">2. Aturan Penggunaan Akun & Akses Digital</h2>
                         <ul className="list-disc pl-4 space-y-1">
-                            <li>Akun hanya boleh digunakan pada profil dan PIN yang telah dialokasikan untuk Anda.</li>
-                            <li>Dilarang keras mengubah email, kata sandi, profil, atau pengaturan pembayaran akun.</li>
-                            <li>Pelanggaran terhadap aturan ini akan mengakibatkan pemutusan akses tanpa pengembalian dana.</li>
+                            <li>Untuk paket profil/akun bersama, akun hanya boleh digunakan pada profil dan ketentuan yang dialokasikan.</li>
+                            <li>Dilarang keras mengubah email, kata sandi, profil, atau setelan penagihan pada akun bersama.</li>
+                            <li>Untuk produk berupa link invite, voucher, atau lisensi mandiri, gunakan tautan atau kode sesuai instruksi pengiriman.</li>
+                            <li>Pelanggaran terhadap aturan penggunaan bersama akan mengakibatkan pemutusan akses tanpa pengembalian dana.</li>
                         </ul>
                     </section>
 
@@ -54,16 +55,16 @@ export default function Terms({ storeName = 'NamaToko' }: { storeName?: string }
                     </section>
 
                     <section className="space-y-2">
-                        <h2 className="text-sm font-semibold text-text">4. Garansi dan Penggantian Akun</h2>
+                        <h2 className="text-sm font-semibold text-text">4. Garansi dan Dukungan Layanan</h2>
                         <p>
-                            Garansi berlaku selama masa aktif sewa atau masa garansi beli yang disepakati. Jika akun mengalami gangguan sebelum masa berlaku habis, kami akan melakukan perbaikan atau memberikan akun pengganti.
+                            Garansi berlaku selama masa aktif paket atau durasi garansi yang tertera di rincian produk. Jika akses mengalami kendala sebelum masa berlaku habis, kami akan melakukan perbaikan, aktivasi ulang, atau memberikan unit pengganti.
                         </p>
                     </section>
 
                     <section className="space-y-2">
                         <h2 className="text-sm font-semibold text-text">5. Pernyataan Non-Afiliasi</h2>
                         <p className="text-text-muted">
-                            {storeName} adalah penyedia layanan independen dan tidak terafiliasi secara resmi dengan Netflix, YouTube, Spotify, Disney+, atau penyedia platform streaming mana pun. Seluruh merek dagang dan hak cipta merupakan milik dari pemegang lisensi masing-masing.
+                            {storeName} adalah penyedia layanan independen dan tidak terafiliasi secara langsung dengan merek atau penyedia platform pihak ketiga manapun yang tercantum di katalog. Seluruh merek dagang dan hak cipta merupakan milik dari pemegang lisensi masing-masing.
                         </p>
                     </section>
                 </div>

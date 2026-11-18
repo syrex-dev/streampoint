@@ -13,6 +13,7 @@ class SettingSeeder extends Seeder
             ['id' => 1],
             [
                 'max_daily_rent_quota' => 3,
+                'store_tagline' => 'Produk Digital Premium & Subscription Apps',
                 'admin_whatsapp' => '6281234567890',
                 'business_hours' => 'Setiap hari, 09.00 - 21.00 WIB',
             ]

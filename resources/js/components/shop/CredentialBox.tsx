@@ -60,7 +60,7 @@ export function CredentialBox({
                     <span>Masa Sewa Berakhir</span>
                 </div>
                 <p className="text-xs text-text-2 leading-relaxed">
-                    Masa sewa akun streaming ini telah selesai pada{' '}
+                    Masa sewa atau akses produk digital ini telah selesai pada{' '}
                     <span className="font-mono text-text">
                         {accessExpiresAt ? formatDateTimeWIB(accessExpiresAt) : '-'}
                     </span>

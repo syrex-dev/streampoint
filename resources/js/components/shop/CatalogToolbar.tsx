@@ -74,7 +74,7 @@ export function CatalogToolbar({
                     type="text"
                     value={localQuery}
                     onChange={(e) => setLocalQuery(e.target.value)}
-                    placeholder="Cari layanan..."
+                    placeholder="Cari produk digital atau aplikasi..."
                     className="w-full h-9 pl-9 pr-8 text-xs bg-surface border border-border rounded-lg text-text placeholder:text-text-2 focus:outline-none focus:ring-2 focus:ring-accent focus:border-border-strong transition-colors"
                 />
                 {localQuery && (

@@ -103,7 +103,7 @@ export default function InvoiceShow({
                 const existing = JSON.parse(localStorage.getItem(historyKey) || '[]');
                 const item = {
                     invoice_code: order.invoice_code,
-                    product_name: order.product?.name || 'Layanan Streaming',
+                    product_name: order.product?.name || 'Produk Digital',
                     variant_name: order.variant?.name || 'Paket',
                     total_amount: order.total_amount,
                     status: order.status,
@@ -285,10 +285,10 @@ export default function InvoiceShow({
                             <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
                             <div className="space-y-1">
                                 <h3 className="text-sm font-bold text-text">
-                                    Pembayaran Berhasil — Akun Aktif
+                                    Pembayaran Berhasil — Akses Layanan Aktif
                                 </h3>
                                 <p className="text-xs text-text-2 leading-relaxed">
-                                    Pesanan kamu telah lunas. Kredensial akun streaming dapat dilihat di bawah ini.
+                                    Pesanan kamu telah lunas. Kredensial akun atau data akses produk digital dapat dilihat di bawah ini.
                                 </p>
                             </div>
                         </div>
@@ -494,7 +494,7 @@ export default function InvoiceShow({
                                     <Badge variant="info">Status: Menunggu Verifikasi</Badge>
                                 </div>
                                 <p className="text-xs text-text-2 leading-relaxed">
-                                    Konfirmasi pembayaran kamu sudah kami terima dan sedang diperiksa oleh admin. Begitu pesanan disetujui, kredensial akun streaming (Email, Password, Profil, PIN) akan <strong>langsung muncul secara otomatis di halaman ini</strong>.
+                                    Konfirmasi pembayaran kamu sudah kami terima dan sedang diperiksa oleh admin. Begitu pesanan disetujui, kredensial akun atau data akses produk digital kamu akan <strong>langsung muncul secara otomatis di halaman ini</strong>.
                                 </p>
                             </div>
                         </div>

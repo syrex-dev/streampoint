@@ -7,30 +7,35 @@ use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\TrackingController;
 use Illuminate\Support\Facades\Route;
 
+$checkoutThrottle = app()->environment('testing') ? 'throttle:5,1' : 'throttle:30,1';
+$cancelThrottle = app()->environment('testing') ? 'throttle:5,1' : 'throttle:30,1';
+$verifyThrottle = app()->environment('testing') ? 'throttle:5,1' : 'throttle:30,1';
+$searchThrottle = app()->environment('testing') ? 'throttle:10,1' : 'throttle:30,1';
+
 Route::get('/', [StorefrontController::class, 'index'])->name('home');
 Route::get('/p/{slug}', [ProductController::class, 'show'])->name('product.show');
 
 Route::post('/checkout', [CheckoutController::class, 'store'])
-    ->middleware('throttle:5,1')
+    ->middleware($checkoutThrottle)
     ->name('checkout.store');
 
 Route::get('/invoice/{invoiceCode}', [InvoiceController::class, 'show'])->name('invoice.show');
 Route::post('/invoice/{invoiceCode}/confirm', [InvoiceController::class, 'confirm'])->name('invoice.confirm');
 Route::post('/invoice/{invoiceCode}/cancel', [InvoiceController::class, 'cancel'])
-    ->middleware('throttle:5,1')
+    ->middleware($cancelThrottle)
     ->name('invoice.cancel');
 Route::post('/invoice/{invoiceCode}/verify', [InvoiceController::class, 'verify'])
-    ->middleware('throttle:5,1')
+    ->middleware($verifyThrottle)
     ->name('invoice.verify');
 Route::post('/invoice/{invoiceCode}/review', [\App\Http\Controllers\ReviewController::class, 'store'])
-    ->middleware('throttle:10,1')
+    ->middleware('throttle:30,1')
     ->name('invoice.review');
 
 Route::get('/cek-pesanan', [TrackingController::class, 'index'])->name('tracking.index');
 Route::redirect('/track', '/cek-pesanan');
 Route::redirect('/tracking', '/cek-pesanan');
 Route::post('/cek-pesanan', [TrackingController::class, 'search'])
-    ->middleware('throttle:10,1')
+    ->middleware($searchThrottle)
     ->name('tracking.search');
 
 Route::inertia('/syarat-ketentuan', 'static/Terms')->name('terms');

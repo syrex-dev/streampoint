@@ -36,6 +36,9 @@ export interface SharedSettings {
     business_hours: string | null;
     store_name?: string | null;
     store_logo_path?: string | null;
+    store_logo_dark_path?: string | null;
+    store_favicon_path?: string | null;
+    navbar_brand_format?: 'logo_only' | 'logo_and_text' | 'text_only' | null;
     store_tagline?: string | null;
     delivery_eta?: string | null;
     accent_preset?: 'emerald' | 'teal' | 'blue' | 'mono';

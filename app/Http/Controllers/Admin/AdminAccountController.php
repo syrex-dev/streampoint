@@ -14,11 +14,38 @@ use App\Models\ProductVariant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class AdminAccountController extends Controller
 {
+    protected static ?bool $hasVariantColumnCached = null;
+
+    /**
+     * Self-healing: Ensure variant_id column exists on product_accounts table even if migration was not run yet.
+     */
+    protected function hasVariantColumn(): bool
+    {
+        if (static::$hasVariantColumnCached !== null) {
+            return static::$hasVariantColumnCached;
+        }
+
+        try {
+            if (! Schema::hasColumn('product_accounts', 'variant_id')) {
+                Schema::table('product_accounts', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    $table->unsignedBigInteger('variant_id')->nullable()->after('product_id')->index();
+                });
+            }
+            static::$hasVariantColumnCached = true;
+        } catch (\Throwable $e) {
+            Log::warning('Self-healing schema for product_accounts.variant_id skipped: ' . $e->getMessage());
+            static::$hasVariantColumnCached = Schema::hasColumn('product_accounts', 'variant_id');
+        }
+
+        return (bool) static::$hasVariantColumnCached;
+    }
+
     public function index(Request $request): Response
     {
         try {
@@ -27,12 +54,18 @@ class AdminAccountController extends Controller
             $kind = $request->query('kind');
             $status = $request->query('status');
 
-            $query = ProductAccount::with(['product', 'variant'])->latest('id');
+            $hasVariantCol = $this->hasVariantColumn();
+            $withRelations = ['product'];
+            if ($hasVariantCol) {
+                $withRelations[] = 'variant';
+            }
+
+            $query = ProductAccount::with($withRelations)->latest('id');
 
             if ($productId) {
                 $query->where('product_id', $productId);
             }
-            if ($variantId) {
+            if ($hasVariantCol && $variantId) {
                 $query->where('variant_id', $variantId);
             }
             if ($kind) {
@@ -42,7 +75,7 @@ class AdminAccountController extends Controller
                 $query->where('status', $status);
             }
 
-            $accounts = $query->paginate(25)->withQueryString()->through(function (ProductAccount $acc) {
+            $accounts = $query->paginate(25)->withQueryString()->through(function (ProductAccount $acc) use ($hasVariantCol) {
                 $raw = (string) ($acc->credential ?? '');
                 $isLink = str_starts_with($raw, 'http://') || str_starts_with($raw, 'https://');
                 $parts = explode('|', $raw);
@@ -62,8 +95,8 @@ class AdminAccountController extends Controller
                     'id' => $acc->id,
                     'product_id' => $acc->product_id,
                     'product_name' => $acc->product?->name ?? '-',
-                    'variant_id' => $acc->variant_id,
-                    'variant_name' => $acc->variant ? ($acc->variant->name ?? 'Semua Varian') : 'Semua Varian',
+                    'variant_id' => $hasVariantCol ? $acc->variant_id : null,
+                    'variant_name' => ($hasVariantCol && $acc->variant) ? ($acc->variant->name ?? 'Semua Varian') : 'Semua Varian',
                     'kind' => $acc->kind instanceof OrderType ? $acc->kind->value : (string) ($acc->kind ?? 'RENT'),
                     'credential' => $raw,
                     'credential_type' => $credentialType,
@@ -195,12 +228,15 @@ class AdminAccountController extends Controller
 
             $data = [
                 'product_id' => (int) $request->validated('product_id'),
-                'variant_id' => $request->filled('variant_id') ? (int) $request->validated('variant_id') : null,
                 'kind' => OrderType::from($request->validated('kind')),
                 'credential' => $credential,
                 'status' => AccountStatus::AVAILABLE,
                 'note' => $request->validated('note'),
             ];
+
+            if ($this->hasVariantColumn()) {
+                $data['variant_id'] = $request->filled('variant_id') ? (int) $request->validated('variant_id') : null;
+            }
 
             ProductAccount::create($data);
 
@@ -220,6 +256,7 @@ class AdminAccountController extends Controller
     {
         try {
             $productId = (int) $request->validated('product_id');
+            $hasVariantCol = $this->hasVariantColumn();
             $variantId = $request->filled('variant_id') ? (int) $request->validated('variant_id') : null;
             $kind = OrderType::from($request->validated('kind'));
             $formatType = $request->validated('format_type') ?: 'AUTO';
@@ -252,11 +289,13 @@ class AdminAccountController extends Controller
                 if ($isInviteLink) {
                     $data = [
                         'product_id' => $productId,
-                        'variant_id' => $variantId,
                         'kind' => $kind,
                         'credential' => $trimmed,
                         'status' => AccountStatus::AVAILABLE,
                     ];
+                    if ($hasVariantCol) {
+                        $data['variant_id'] = $variantId;
+                    }
                     ProductAccount::create($data);
                     $successCount++;
                     continue;
@@ -265,11 +304,13 @@ class AdminAccountController extends Controller
                 if ($isVoucher) {
                     $data = [
                         'product_id' => $productId,
-                        'variant_id' => $variantId,
                         'kind' => $kind,
                         'credential' => $trimmed,
                         'status' => AccountStatus::AVAILABLE,
                     ];
+                    if ($hasVariantCol) {
+                        $data['variant_id'] = $variantId;
+                    }
                     ProductAccount::create($data);
                     $successCount++;
                     continue;
@@ -328,11 +369,14 @@ class AdminAccountController extends Controller
 
                 $data = [
                     'product_id' => $productId,
-                    'variant_id' => $variantId,
                     'kind' => $kind,
                     'credential' => $credential,
                     'status' => AccountStatus::AVAILABLE,
                 ];
+
+                if ($hasVariantCol) {
+                    $data['variant_id'] = $variantId;
+                }
 
                 ProductAccount::create($data);
                 $successCount++;

@@ -31,19 +31,65 @@ export function BrandMark({
 
     const storeName = settings?.store_name || name || 'StreamPoint';
     const storeLogo = settings?.store_logo_path;
+    const storeLogoDark = settings?.store_logo_dark_path;
+    const brandFormat = settings?.navbar_brand_format ?? 'logo_only';
     const storeTagline = propTagline ?? settings?.store_tagline;
 
-    // Custom uploaded logo takes precedence if uploaded by admin
-    if (storeLogo && showLogo) {
+    // 1. Text only format chosen by admin
+    if (brandFormat === 'text_only') {
         return (
-            <span className={`inline-flex items-center gap-2.5 ${className}`}>
+            <span className={`inline-flex items-center ${className}`}>
+                <span className="flex flex-col min-w-0">
+                    <span className={textClassName}>{storeName}</span>
+                    {showTagline && storeTagline && (
+                        <span className={`${alwaysShowTagline ? 'block' : 'hidden sm:block'} ${taglineClassName}`}>
+                            {storeTagline}
+                        </span>
+                    )}
+                </span>
+            </span>
+        );
+    }
+
+    // 2. Custom uploaded logo takes precedence if uploaded by admin
+    if (storeLogo && showLogo) {
+        const renderLogoImg = () => {
+            if (storeLogoDark) {
+                return (
+                    <>
+                        <img
+                            src={storeLogo}
+                            alt={storeName}
+                            className={`dark:hidden ${logoClassName}`}
+                        />
+                        <img
+                            src={storeLogoDark}
+                            alt={storeName}
+                            className={`hidden dark:block ${logoClassName}`}
+                        />
+                    </>
+                );
+            }
+            return (
                 <img
                     src={storeLogo}
                     alt={storeName}
                     className={logoClassName}
-                    width={28}
-                    height={28}
                 />
+            );
+        };
+
+        if (brandFormat === 'logo_only') {
+            return (
+                <span className={`inline-flex items-center ${className}`}>
+                    {renderLogoImg()}
+                </span>
+            );
+        }
+
+        return (
+            <span className={`inline-flex items-center gap-2.5 ${className}`}>
+                {renderLogoImg()}
                 <span className="flex flex-col min-w-0">
                     <span className={textClassName}>{storeName}</span>
                     {showTagline && storeTagline && (

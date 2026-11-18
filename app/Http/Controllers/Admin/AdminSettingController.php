@@ -44,6 +44,9 @@ class AdminSettingController extends Controller
                 'business_hours' => $setting->business_hours,
                 'store_name' => $setting->store_name,
                 'store_logo_path' => $setting->store_logo_path,
+                'store_logo_dark_path' => $setting->store_logo_dark_path,
+                'store_favicon_path' => $setting->store_favicon_path,
+                'navbar_brand_format' => $setting->navbar_brand_format ?? 'logo_only',
                 'accent_preset' => $setting->accent_preset ?? 'emerald',
                 'announcement_text' => $setting->announcement_text,
                 'announcement_url' => $setting->announcement_url,
@@ -76,9 +79,14 @@ class AdminSettingController extends Controller
             'admin_whatsapp' => ['nullable', 'string', 'max:20'],
             'business_hours' => ['nullable', 'string', 'max:100'],
             'store_name' => ['nullable', 'string', 'max:100'],
+            'navbar_brand_format' => ['nullable', 'string', \Illuminate\Validation\Rule::in(['logo_only', 'logo_and_text', 'text_only'])],
             'accent_preset' => ['required', 'string', \Illuminate\Validation\Rule::in(['emerald', 'teal', 'blue', 'mono'])],
-            'store_logo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:1024'],
+            'store_logo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'remove_logo' => ['nullable', 'boolean'],
+            'store_logo_dark' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'remove_logo_dark' => ['nullable', 'boolean'],
+            'store_favicon' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,ico', 'max:2048'],
+            'remove_favicon' => ['nullable', 'boolean'],
             'announcement_text' => ['nullable', 'string', 'max:160'],
             'announcement_url' => [
                 'nullable',
@@ -111,7 +119,11 @@ class AdminSettingController extends Controller
             'accent_preset.required' => 'Preset warna aksen wajib dipilih.',
             'accent_preset.in' => 'Preset aksen tidak valid. Pilihan: emerald, teal, blue, mono.',
             'store_logo.mimes' => 'Format logo toko yang didukung: JPG, PNG, WEBP (SVG tidak diizinkan).',
-            'store_logo.max' => 'Ukuran file logo toko maksimal 1MB.',
+            'store_logo.max' => 'Ukuran file logo toko maksimal 5MB.',
+            'store_logo_dark.mimes' => 'Format logo dark mode yang didukung: JPG, PNG, WEBP (SVG tidak diizinkan).',
+            'store_logo_dark.max' => 'Ukuran file logo dark mode maksimal 5MB.',
+            'store_favicon.mimes' => 'Format favicon yang didukung: JPG, PNG, WEBP, ICO (SVG tidak diizinkan).',
+            'store_favicon.max' => 'Ukuran file favicon maksimal 2MB.',
         ]);
 
         $setting = Setting::current();
@@ -128,6 +140,7 @@ class AdminSettingController extends Controller
             'admin_whatsapp' => $validated['admin_whatsapp'] ?? null,
             'business_hours' => $validated['business_hours'] ?? null,
             'store_name' => $validated['store_name'] ?? null,
+            'navbar_brand_format' => $validated['navbar_brand_format'] ?? 'logo_only',
             'accent_preset' => $validated['accent_preset'],
             'announcement_text' => $validated['announcement_text'] ?? null,
             'announcement_url' => $validated['announcement_url'] ?? null,
@@ -146,6 +159,7 @@ class AdminSettingController extends Controller
             $updateData['telegram_bot_token'] = trim($validated['telegram_bot_token']);
         }
 
+        // Store Logo (Default / Light)
         if ($request->boolean('remove_logo')) {
             if ($setting->store_logo_path && \Illuminate\Support\Str::startsWith($setting->store_logo_path, '/storage/')) {
                 $oldPath = \Illuminate\Support\Str::after($setting->store_logo_path, '/storage/');
@@ -159,6 +173,44 @@ class AdminSettingController extends Controller
             }
             $path = $optimizer->optimizeLogo($request->file('store_logo'), 'store_logo');
             $updateData['store_logo_path'] = '/storage/' . $path;
+        }
+
+        // Store Logo Dark Mode
+        if ($request->boolean('remove_logo_dark')) {
+            if ($setting->store_logo_dark_path && \Illuminate\Support\Str::startsWith($setting->store_logo_dark_path, '/storage/')) {
+                $oldPath = \Illuminate\Support\Str::after($setting->store_logo_dark_path, '/storage/');
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+            }
+            $updateData['store_logo_dark_path'] = null;
+        } elseif ($request->hasFile('store_logo_dark')) {
+            if ($setting->store_logo_dark_path && \Illuminate\Support\Str::startsWith($setting->store_logo_dark_path, '/storage/')) {
+                $oldPath = \Illuminate\Support\Str::after($setting->store_logo_dark_path, '/storage/');
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+            }
+            $path = $optimizer->optimizeLogo($request->file('store_logo_dark'), 'store_logo_dark');
+            $updateData['store_logo_dark_path'] = '/storage/' . $path;
+        }
+
+        // Store Favicon
+        if ($request->boolean('remove_favicon')) {
+            if ($setting->store_favicon_path && \Illuminate\Support\Str::startsWith($setting->store_favicon_path, '/storage/')) {
+                $oldPath = \Illuminate\Support\Str::after($setting->store_favicon_path, '/storage/');
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+            }
+            $updateData['store_favicon_path'] = null;
+        } elseif ($request->hasFile('store_favicon')) {
+            if ($setting->store_favicon_path && \Illuminate\Support\Str::startsWith($setting->store_favicon_path, '/storage/')) {
+                $oldPath = \Illuminate\Support\Str::after($setting->store_favicon_path, '/storage/');
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+            }
+            $faviconFile = $request->file('store_favicon');
+            if (strtolower($faviconFile->getClientOriginalExtension()) === 'ico') {
+                $randomName = \Illuminate\Support\Str::random(40) . '.ico';
+                $storagePath = $faviconFile->storeAs('favicons', $randomName, 'public');
+            } else {
+                $storagePath = $optimizer->optimizeFavicon($faviconFile, 'store_favicon');
+            }
+            $updateData['store_favicon_path'] = '/storage/' . $storagePath;
         }
 
         $setting->update($updateData);

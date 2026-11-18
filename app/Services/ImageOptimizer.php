@@ -14,6 +14,7 @@ class ImageOptimizer
     public const TYPE_BANNER = 'banner';
     public const TYPE_LOGO = 'logo';
     public const TYPE_PAYMENT = 'payment_logo';
+    public const TYPE_FAVICON = 'favicon';
 
     protected array $config = [
         self::TYPE_COVER => [
@@ -31,10 +32,10 @@ class ImageOptimizer
             'label' => 'Gambar banner',
         ],
         self::TYPE_LOGO => [
-            'max_width' => 256,
+            'max_width' => 600,
             'max_kb' => 5120,
             'directory' => 'logos',
-            'quality' => 85,
+            'quality' => 90,
             'label' => 'Logo',
         ],
         self::TYPE_PAYMENT => [
@@ -43,6 +44,13 @@ class ImageOptimizer
             'directory' => 'payments',
             'quality' => 85,
             'label' => 'Logo metode pembayaran',
+        ],
+        self::TYPE_FAVICON => [
+            'max_width' => 128,
+            'max_kb' => 1024,
+            'directory' => 'favicons',
+            'quality' => 95,
+            'label' => 'Favicon',
         ],
     ];
 
@@ -200,5 +208,10 @@ class ImageOptimizer
     public function optimizePaymentLogo(UploadedFile $file, string $inputName = 'logo'): string
     {
         return $this->optimize($file, self::TYPE_PAYMENT, $inputName);
+    }
+
+    public function optimizeFavicon(UploadedFile $file, string $inputName = 'favicon'): string
+    {
+        return $this->optimize($file, self::TYPE_FAVICON, $inputName);
     }
 }

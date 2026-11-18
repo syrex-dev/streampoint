@@ -71,6 +71,9 @@ class HandleInertiaRequests extends Middleware
                 'business_hours' => $setting->business_hours,
                 'store_name' => $storeName,
                 'store_logo_path' => $setting->store_logo_path,
+                'store_logo_dark_path' => $setting->store_logo_dark_path,
+                'store_favicon_path' => $setting->store_favicon_path,
+                'navbar_brand_format' => $setting->navbar_brand_format ?? 'logo_only',
                 'accent_preset' => $setting->accent_preset ?? 'emerald',
             ],
             'announcement' => ($setting->announcement_active && ! empty($setting->announcement_text)) ? [

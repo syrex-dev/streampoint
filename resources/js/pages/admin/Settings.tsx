@@ -44,6 +44,9 @@ interface SettingsProps {
         business_hours?: string | null;
         store_name?: string | null;
         store_logo_path?: string | null;
+        store_logo_dark_path?: string | null;
+        store_favicon_path?: string | null;
+        navbar_brand_format?: 'logo_only' | 'logo_and_text' | 'text_only' | null;
         accent_preset?: 'emerald' | 'teal' | 'blue' | 'mono';
         announcement_text?: string | null;
         announcement_url?: string | null;
@@ -120,8 +123,13 @@ export default function AdminSettings({ settings, overrides, telegramConfigured 
             tiktok: string;
         };
         accent_preset: 'emerald' | 'teal' | 'blue' | 'mono';
+        navbar_brand_format: 'logo_only' | 'logo_and_text' | 'text_only';
         store_logo: File | null;
         remove_logo: boolean;
+        store_logo_dark: File | null;
+        remove_logo_dark: boolean;
+        store_favicon: File | null;
+        remove_favicon: boolean;
         telegram_active: boolean;
         telegram_bot_token: string;
         telegram_chat_id: string;
@@ -145,14 +153,21 @@ export default function AdminSettings({ settings, overrides, telegramConfigured 
             tiktok: settings.social_links?.tiktok || '',
         },
         accent_preset: settings.accent_preset || 'emerald',
+        navbar_brand_format: settings.navbar_brand_format || 'logo_only',
         store_logo: null,
         remove_logo: false,
+        store_logo_dark: null,
+        remove_logo_dark: false,
+        store_favicon: null,
+        remove_favicon: false,
         telegram_active: Boolean(settings.telegram_active),
         telegram_bot_token: settings.telegram_token_masked || '',
         telegram_chat_id: settings.telegram_chat_id || '',
     });
 
     const [logoPreview, setLogoPreview] = useState<string | null>(settings.store_logo_path || null);
+    const [logoDarkPreview, setLogoDarkPreview] = useState<string | null>(settings.store_logo_dark_path || null);
+    const [faviconPreview, setFaviconPreview] = useState<string | null>(settings.store_favicon_path || null);
     const [isSavingGeneral, setIsSavingGeneral] = useState(false);
 
     // Override Form state
@@ -184,6 +199,32 @@ export default function AdminSettings({ settings, overrides, telegramConfigured 
         setLogoPreview(null);
     };
 
+    const handleLogoDarkFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setGeneralData({ ...generalData, store_logo_dark: file, remove_logo_dark: false });
+            setLogoDarkPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleRemoveLogoDark = () => {
+        setGeneralData({ ...generalData, store_logo_dark: null, remove_logo_dark: true });
+        setLogoDarkPreview(null);
+    };
+
+    const handleFaviconFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setGeneralData({ ...generalData, store_favicon: file, remove_favicon: false });
+            setFaviconPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleRemoveFavicon = () => {
+        setGeneralData({ ...generalData, store_favicon: null, remove_favicon: true });
+        setFaviconPreview(null);
+    };
+
     const handleSaveGeneral = (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         setIsSavingGeneral(true);
@@ -203,7 +244,10 @@ export default function AdminSettings({ settings, overrides, telegramConfigured 
             announcement_active: generalData.announcement_active ? 1 : 0,
             social_links: generalData.social_links,
             accent_preset: generalData.accent_preset,
+            navbar_brand_format: generalData.navbar_brand_format,
             remove_logo: generalData.remove_logo ? 1 : 0,
+            remove_logo_dark: generalData.remove_logo_dark ? 1 : 0,
+            remove_favicon: generalData.remove_favicon ? 1 : 0,
             telegram_active: generalData.telegram_active ? 1 : 0,
             telegram_chat_id: generalData.telegram_chat_id,
         };
@@ -214,6 +258,14 @@ export default function AdminSettings({ settings, overrides, telegramConfigured 
 
         if (generalData.store_logo) {
             payload.store_logo = generalData.store_logo;
+        }
+
+        if (generalData.store_logo_dark) {
+            payload.store_logo_dark = generalData.store_logo_dark;
+        }
+
+        if (generalData.store_favicon) {
+            payload.store_favicon = generalData.store_favicon;
         }
 
         router.post('/admin/settings', payload, {
@@ -488,22 +540,75 @@ export default function AdminSettings({ settings, overrides, telegramConfigured 
                             </div>
                         </div>
 
-                        {/* 3. Logo Toko */}
+                        {/* 3. Format Tampilan Brand di Navbar */}
+                        <div className="bg-surface border border-border rounded-xl p-5 sm:p-6 space-y-4 shadow-sm">
+                            <div className="border-b border-border pb-3">
+                                <h2 className="text-sm font-bold text-text flex items-center gap-2">
+                                    <Store className="w-4 h-4 text-accent-text" />
+                                    <span>Format Tampilan Brand di Navbar</span>
+                                </h2>
+                                <p className="text-xs text-text-3 mt-0.5">
+                                    Pilih bagaimana identitas toko ditampilkan di header navigasi publik.
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                {[
+                                    {
+                                        id: 'logo_only',
+                                        title: 'Hanya Logo',
+                                        desc: 'Sangat cocok jika logo toko Anda sudah memuat teks nama / berbentuk banner horizontal.',
+                                    },
+                                    {
+                                        id: 'logo_and_text',
+                                        title: 'Logo & Teks Nama',
+                                        desc: 'Ikon logo ditampilkan berdampingan dengan teks nama toko.',
+                                    },
+                                    {
+                                        id: 'text_only',
+                                        title: 'Hanya Teks',
+                                        desc: 'Tampilkan teks nama toko tanpa elemen logo visual.',
+                                    },
+                                ].map((fmt) => {
+                                    const isSelected = generalData.navbar_brand_format === fmt.id;
+                                    return (
+                                        <button
+                                            key={fmt.id}
+                                            type="button"
+                                            onClick={() => setGeneralData({ ...generalData, navbar_brand_format: fmt.id as any })}
+                                            className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                                                isSelected
+                                                    ? 'border-accent bg-accent/10 shadow-xs'
+                                                    : 'border-border bg-surface-2 hover:bg-surface-hover'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between mb-1.5">
+                                                <span className="text-xs font-bold text-text">{fmt.title}</span>
+                                                {isSelected && <Check className="w-4 h-4 text-accent-text" />}
+                                            </div>
+                                            <p className="text-[11px] text-text-3 leading-relaxed">{fmt.desc}</p>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* 4. Logo Toko (Mode Terang & Default) */}
                         <div className="bg-surface border border-border rounded-xl p-5 sm:p-6 space-y-5 shadow-sm">
                             <div className="border-b border-border pb-3">
                                 <h2 className="text-sm font-bold text-text flex items-center gap-2">
                                     <Upload className="w-4 h-4 text-accent-text" />
-                                    <span>Logo Toko</span>
+                                    <span>Logo Toko (Default / Mode Terang)</span>
                                 </h2>
                                 <p className="text-xs text-text-3 mt-0.5">
-                                    Format JPG, PNG, atau WebP. Maksimal 5MB (dikonversi ke WebP otomatis).
+                                    Logo utama yang digunakan di etalase dan header (JPG, PNG, atau WebP, maks 5MB).
                                 </p>
                             </div>
 
                             <div className="flex items-start gap-4">
-                                <div className="w-16 h-16 rounded-xl border border-border bg-surface-2 overflow-hidden flex items-center justify-center shrink-0">
+                                <div className="w-20 h-16 rounded-xl border border-border bg-surface-2 overflow-hidden flex items-center justify-center shrink-0">
                                     {logoPreview ? (
-                                        <img src={logoPreview} alt="Logo Toko" className="w-full h-full object-contain p-1" />
+                                        <img src={logoPreview} alt="Logo Toko" className="max-w-full max-h-full object-contain p-1" />
                                     ) : (
                                         <Store className="w-6 h-6 text-text-3" />
                                     )}
@@ -524,6 +629,90 @@ export default function AdminSettings({ settings, overrides, telegramConfigured 
                                         >
                                             <Trash2 className="w-3.5 h-3.5" />
                                             <span>Hapus Logo</span>
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 5. Logo Toko (Mode Gelap / Dark Mode) */}
+                        <div className="bg-surface border border-border rounded-xl p-5 sm:p-6 space-y-5 shadow-sm">
+                            <div className="border-b border-border pb-3">
+                                <h2 className="text-sm font-bold text-text flex items-center gap-2">
+                                    <Upload className="w-4 h-4 text-accent-text" />
+                                    <span>Logo Toko (Mode Gelap / Dark Mode)</span>
+                                </h2>
+                                <p className="text-xs text-text-3 mt-0.5">
+                                    Opsional. Jika logo utama Anda berwarna gelap, unggah versi terang/putih di sini agar kontras saat tema gelap aktif.
+                                </p>
+                            </div>
+
+                            <div className="flex items-start gap-4">
+                                <div className="w-20 h-16 rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden flex items-center justify-center shrink-0">
+                                    {logoDarkPreview ? (
+                                        <img src={logoDarkPreview} alt="Logo Toko Dark" className="max-w-full max-h-full object-contain p-1" />
+                                    ) : (
+                                        <Store className="w-6 h-6 text-zinc-500" />
+                                    )}
+                                </div>
+
+                                <div className="space-y-2 flex-1">
+                                    <input
+                                        type="file"
+                                        accept="image/png,image/jpeg,image/webp"
+                                        onChange={handleLogoDarkFileChange}
+                                        className="block w-full text-xs text-text-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-border file:text-xs file:font-semibold file:bg-surface-2 file:text-text hover:file:bg-surface-hover cursor-pointer"
+                                    />
+                                    {logoDarkPreview && (
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveLogoDark}
+                                            className="text-xs text-danger hover:underline inline-flex items-center gap-1 cursor-pointer"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                            <span>Hapus Logo Dark</span>
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 6. Favicon Toko */}
+                        <div className="bg-surface border border-border rounded-xl p-5 sm:p-6 space-y-5 shadow-sm">
+                            <div className="border-b border-border pb-3">
+                                <h2 className="text-sm font-bold text-text flex items-center gap-2">
+                                    <Upload className="w-4 h-4 text-accent-text" />
+                                    <span>Favicon Toko</span>
+                                </h2>
+                                <p className="text-xs text-text-3 mt-0.5">
+                                    Ikon kecil di tab browser (.ico, .png, atau .webp, disarankan rasio 1:1, maks 2MB).
+                                </p>
+                            </div>
+
+                            <div className="flex items-start gap-4">
+                                <div className="w-14 h-14 rounded-xl border border-border bg-surface-2 overflow-hidden flex items-center justify-center shrink-0">
+                                    {faviconPreview ? (
+                                        <img src={faviconPreview} alt="Favicon Toko" className="w-8 h-8 object-contain" />
+                                    ) : (
+                                        <Store className="w-5 h-5 text-text-3" />
+                                    )}
+                                </div>
+
+                                <div className="space-y-2 flex-1">
+                                    <input
+                                        type="file"
+                                        accept="image/x-icon,image/vnd.microsoft.icon,image/png,image/jpeg,image/webp"
+                                        onChange={handleFaviconFileChange}
+                                        className="block w-full text-xs text-text-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-border file:text-xs file:font-semibold file:bg-surface-2 file:text-text hover:file:bg-surface-hover cursor-pointer"
+                                    />
+                                    {faviconPreview && (
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveFavicon}
+                                            className="text-xs text-danger hover:underline inline-flex items-center gap-1 cursor-pointer"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                            <span>Hapus Favicon</span>
                                         </button>
                                     )}
                                 </div>

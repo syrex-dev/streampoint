@@ -1127,31 +1127,58 @@ export default function ProductEdit({ product, variants }: EditProps) {
                             {/* Stock Fields (Schema Kolom Stok Akun) - tampil jika STOCK */}
                             {variantForm.delivery_type === 'STOCK' ? (
                                 <div className="space-y-2 p-3 bg-surface-2/60 border border-border rounded-md">
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                                         <label className="font-semibold text-text text-[11px] block">
                                             Format Kolom Stok (Pemisah tanda '|')
                                         </label>
-                                        <div className="flex gap-1">
+                                        <div className="flex flex-wrap gap-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => setVariantForm({ ...variantForm, stock_fields: ['email', 'password', 'profil', 'pin'] })}
+                                                className={`px-1.5 py-0.5 text-[10px] rounded border transition-colors ${
+                                                    variantForm.stock_fields.join(',') === 'email,password,profil,pin'
+                                                        ? 'bg-accent/20 border-accent text-accent-text font-bold'
+                                                        : 'bg-surface border-border hover:bg-surface-hover text-text'
+                                                }`}
+                                                title="Untuk Netflix, Disney+, Prime Video, Vidio (dengan profil & PIN)"
+                                            >
+                                                🎬 Netflix/Profil
+                                            </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setVariantForm({ ...variantForm, stock_fields: ['email', 'password'] })}
-                                                className="px-1.5 py-0.5 text-[9px] rounded bg-surface border border-border hover:bg-surface-hover text-text"
+                                                className={`px-1.5 py-0.5 text-[10px] rounded border transition-colors ${
+                                                    variantForm.stock_fields.join(',') === 'email,password'
+                                                        ? 'bg-accent/20 border-accent text-accent-text font-bold'
+                                                        : 'bg-surface border-border hover:bg-surface-hover text-text'
+                                                }`}
+                                                title="Untuk Spotify, ChatGPT, Akun Private, YouTube Akun Jadi"
                                             >
-                                                Akun
+                                                👤 Akun Private
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => setVariantForm({ ...variantForm, stock_fields: ['code'] })}
-                                                className="px-1.5 py-0.5 text-[9px] rounded bg-surface border border-border hover:bg-surface-hover text-text"
+                                                onClick={() => setVariantForm({ ...variantForm, stock_fields: ['link'] })}
+                                                className={`px-1.5 py-0.5 text-[10px] rounded border transition-colors ${
+                                                    variantForm.stock_fields.join(',') === 'link'
+                                                        ? 'bg-accent/20 border-accent text-accent-text font-bold'
+                                                        : 'bg-surface border-border hover:bg-surface-hover text-text'
+                                                }`}
+                                                title="Untuk YouTube Family Invite, Canva Team Invite, Spotify Family Link"
                                             >
-                                                Voucher
+                                                🔗 Link Invite
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => setVariantForm({ ...variantForm, stock_fields: ['url'] })}
-                                                className="px-1.5 py-0.5 text-[9px] rounded bg-surface border border-border hover:bg-surface-hover text-text"
+                                                onClick={() => setVariantForm({ ...variantForm, stock_fields: ['kode_voucher'] })}
+                                                className={`px-1.5 py-0.5 text-[10px] rounded border transition-colors ${
+                                                    variantForm.stock_fields.join(',') === 'kode_voucher'
+                                                        ? 'bg-accent/20 border-accent text-accent-text font-bold'
+                                                        : 'bg-surface border-border hover:bg-surface-hover text-text'
+                                                }`}
+                                                title="Untuk Kode Voucher, Game Key, Lisensi Digital"
                                             >
-                                                Link
+                                                🎟️ Voucher
                                             </button>
                                         </div>
                                     </div>
@@ -1162,11 +1189,11 @@ export default function ProductEdit({ product, variants }: EditProps) {
                                             ...variantForm,
                                             stock_fields: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
                                         })}
-                                        placeholder="Contoh: email, password, pin"
+                                        placeholder="Contoh: email, password, profil, pin"
                                         className="w-full h-8 px-2.5 font-mono text-[11px] bg-surface border border-border rounded text-text focus:outline-none focus:border-accent"
                                     />
                                     <p className="text-[10px] text-text-3">
-                                        Format saat import akun: <span className="font-mono">{variantForm.stock_fields.join(' | ')}</span>
+                                        Format saat import akun: <span className="font-mono text-text font-semibold">{variantForm.stock_fields.join(' | ') || '(kosong)'}</span>
                                     </p>
                                 </div>
                             ) : (

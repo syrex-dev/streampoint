@@ -19,13 +19,18 @@ import {
     Copy,
     CheckCheck,
     ToggleLeft,
-    ToggleRight
+    ToggleRight,
+    ExternalLink
 } from 'lucide-react';
+
+export type CredentialFormatType = 'STREAMING_PROFILE' | 'STANDARD_ACCOUNT' | 'INVITE_LINK' | 'VOUCHER' | 'CUSTOM';
 
 interface VariantSummary {
     id: number;
     name: string;
     type: 'RENT' | 'BUY';
+    delivery_type?: 'STOCK' | 'INVITE' | 'MANUAL';
+    stock_fields?: string[] | null;
 }
 
 interface ProductItem {
@@ -42,6 +47,8 @@ interface AccountItem {
     variant_name: string;
     kind: 'RENT' | 'BUY';
     credential: string;
+    credential_type?: string;
+    is_link?: boolean;
     status: string;
     status_label: string;
     order_id: number | null;
@@ -101,23 +108,73 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
     const [deleteModalAccount, setDeleteModalAccount] = useState<AccountItem | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
+    const detectFormat = (product?: ProductItem, variant?: VariantSummary): CredentialFormatType => {
+        if (variant?.stock_fields && variant.stock_fields.length > 0) {
+            const fields = variant.stock_fields.map((f) => String(f).toLowerCase());
+            if (fields.includes('link') || fields.includes('url') || fields.includes('invite') || fields.includes('tautan')) {
+                return 'INVITE_LINK';
+            }
+            if (fields.includes('code') || fields.includes('voucher') || fields.includes('kode') || fields.includes('kode_voucher') || fields.includes('key')) {
+                return 'VOUCHER';
+            }
+            if (fields.includes('profil') || fields.includes('profile') || fields.includes('pin')) {
+                return 'STREAMING_PROFILE';
+            }
+            if (fields.includes('email') && fields.includes('password')) {
+                return 'STANDARD_ACCOUNT';
+            }
+            return 'CUSTOM';
+        }
+
+        if (variant?.delivery_type === 'INVITE') {
+            return 'INVITE_LINK';
+        }
+
+        const pName = (product?.name || '').toLowerCase();
+        const vName = (variant?.name || '').toLowerCase();
+
+        if (pName.includes('netflix') || pName.includes('disney') || pName.includes('vidio') || pName.includes('prime')) {
+            return 'STREAMING_PROFILE';
+        }
+        if (pName.includes('family') || pName.includes('invite') || vName.includes('family') || vName.includes('link')) {
+            return 'INVITE_LINK';
+        }
+        if (pName.includes('voucher') || pName.includes('redeem') || vName.includes('voucher')) {
+            return 'VOUCHER';
+        }
+
+        return 'STANDARD_ACCOUNT';
+    };
+
+    const initialProduct = products[0];
+    const initialVariant = initialProduct?.variants[0];
+    const initialFormat = detectFormat(initialProduct, initialVariant);
+
+    const [singleFormatType, setSingleFormatType] = useState<CredentialFormatType>(initialFormat);
+    const [bulkFormatType, setBulkFormatType] = useState<CredentialFormatType | 'AUTO'>('AUTO');
+
     // Single account form
     const singleForm = useForm({
-        product_id: products[0]?.id || '',
+        product_id: initialProduct?.id || '',
         variant_id: '' as number | '',
         kind: 'RENT',
+        credential_type: initialFormat as CredentialFormatType,
         email: '',
         password: '',
         profile: '',
         pin: '',
+        link: '',
+        code: '',
+        custom_credential: '',
         note: '',
     });
 
     // Bulk account form
     const bulkForm = useForm({
-        product_id: products[0]?.id || '',
+        product_id: initialProduct?.id || '',
         variant_id: '' as number | '',
         kind: 'RENT',
+        format_type: 'AUTO' as CredentialFormatType | 'AUTO',
         items_text: '',
     });
 
@@ -154,23 +211,34 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
     };
 
     const handleSingleProductChange = (productId: number) => {
+        const p = products.find((prod) => prod.id === productId);
+        const firstVariant = p?.variants[0];
+        const newFormat = detectFormat(p, firstVariant);
+        setSingleFormatType(newFormat);
+
         singleForm.setData((data) => ({
             ...data,
             product_id: productId,
             variant_id: '',
+            credential_type: newFormat,
         }));
     };
 
     const handleSingleVariantChange = (variantId: number | '') => {
         const variant = activeSingleProduct?.variants.find((v) => v.id === variantId);
+        const newFormat = detectFormat(activeSingleProduct, variant);
+        setSingleFormatType(newFormat);
+
         singleForm.setData((data) => ({
             ...data,
             variant_id: variantId,
             kind: variant ? variant.type : data.kind,
+            credential_type: newFormat,
         }));
     };
 
     const handleBulkProductChange = (productId: number) => {
+        const p = products.find((prod) => prod.id === productId);
         bulkForm.setData((data) => ({
             ...data,
             product_id: productId,
@@ -223,22 +291,141 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
 
     const handleSingleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        singleForm.transform((data) => ({
+            ...data,
+            credential_type: singleFormatType,
+        }));
         singleForm.post('/admin/accounts', {
             onSuccess: () => {
                 setIsSingleModalOpen(false);
-                singleForm.reset('email', 'password', 'profile', 'pin', 'note');
+                singleForm.reset('email', 'password', 'profile', 'pin', 'link', 'code', 'custom_credential', 'note');
             },
         });
     };
 
     const handleBulkSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        bulkForm.transform((data) => ({
+            ...data,
+            format_type: bulkFormatType,
+        }));
         bulkForm.post('/admin/accounts/bulk', {
             onSuccess: () => {
                 setIsBulkModalOpen(false);
                 bulkForm.reset('items_text');
             },
         });
+    };
+
+    const renderCredentialContent = (acc: AccountItem, isVisible: boolean) => {
+        const raw = acc.credential;
+        const isLink = acc.is_link || raw.startsWith('http://') || raw.startsWith('https://');
+        const parts = raw.split('|');
+
+        if (isLink) {
+            return (
+                <div className="space-y-1">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-info/10 text-info border border-info/20">
+                        <ExternalLink className="w-2.5 h-2.5" />
+                        <span>Link Invite</span>
+                    </span>
+                    <div className="flex items-center gap-1.5 font-mono text-xs">
+                        {isVisible ? (
+                            <a
+                                href={raw}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-accent-text hover:underline truncate max-w-[200px] sm:max-w-xs block font-medium"
+                                title={raw}
+                            >
+                                {raw}
+                            </a>
+                        ) : (
+                            <span className="text-text-3 tracking-widest select-none">
+                                ••••••••••••••••••••
+                            </span>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        if (parts.length >= 3) {
+            return (
+                <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-1">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-2 text-text-2 border border-border">
+                            <span>🎬 Profil</span>
+                        </span>
+                        {parts[2] && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-accent/10 text-accent-text border border-accent/20">
+                                {parts[2]}
+                            </span>
+                        )}
+                        {parts[3] && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-surface-2 text-text-3 border border-border">
+                                PIN: {parts[3]}
+                            </span>
+                        )}
+                    </div>
+                    <div className="font-mono text-xs">
+                        {isVisible ? (
+                            <div className="text-text font-medium select-all break-all">
+                                <span>{parts[0]}</span>
+                                <span className="text-text-3 mx-1">|</span>
+                                <span>{parts[1]}</span>
+                            </div>
+                        ) : (
+                            <span className="text-text-3 tracking-widest select-none">
+                                ••••••••••••••••••••
+                            </span>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        if (parts.length === 2) {
+            return (
+                <div className="space-y-1">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-2 text-text-2 border border-border">
+                        <span>👤 Akun Private</span>
+                    </span>
+                    <div className="font-mono text-xs">
+                        {isVisible ? (
+                            <div className="text-text font-medium select-all break-all">
+                                <span>{parts[0]}</span>
+                                <span className="text-text-3 mx-1">|</span>
+                                <span>{parts[1]}</span>
+                            </div>
+                        ) : (
+                            <span className="text-text-3 tracking-widest select-none">
+                                ••••••••••••••••••••
+                            </span>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div className="space-y-1">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-2 text-text-2 border border-border">
+                    <span>🎟️ Voucher / Kode</span>
+                </span>
+                <div className="font-mono text-xs">
+                    {isVisible ? (
+                        <div className="text-text font-medium select-all break-all">
+                            {raw}
+                        </div>
+                    ) : (
+                        <span className="text-text-3 tracking-widest select-none">
+                            ••••••••••••••••••••
+                        </span>
+                    )}
+                </div>
+            </div>
+        );
     };
 
     const renderStatusBadge = (status: string, label: string) => {
@@ -488,34 +675,30 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                                                         </span>
                                                     </td>
                                                     <td className="px-4 py-3">
-                                                        <div className="flex items-center gap-2 font-mono">
-                                                            {isVisible ? (
-                                                                <span className="text-text font-medium select-all break-all">
-                                                                    {acc.credential}
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-text-3 tracking-widest select-none">
-                                                                    ••••••••••••••••••••
-                                                                </span>
-                                                            )}
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => toggleVisibility(acc.id)}
-                                                                className="p-1 rounded text-text-2 hover:text-text hover:bg-surface-2 cursor-pointer shrink-0"
-                                                                title={isVisible ? 'Sembunyikan' : 'Tampilkan'}
-                                                            >
-                                                                {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                                            </button>
-                                                            {isVisible && (
+                                                        <div className="flex items-start justify-between gap-2">
+                                                            <div className="min-w-0 flex-1">
+                                                                {renderCredentialContent(acc, isVisible)}
+                                                            </div>
+                                                            <div className="flex items-center gap-1 shrink-0 pt-0.5">
                                                                 <button
                                                                     type="button"
-                                                                    onClick={() => copyToClipboard(acc.id, acc.credential)}
-                                                                    className="p-1 rounded text-text-2 hover:text-text hover:bg-surface-2 cursor-pointer shrink-0"
-                                                                    title="Salin Kredensial"
+                                                                    onClick={() => toggleVisibility(acc.id)}
+                                                                    className="p-1 rounded text-text-2 hover:text-text hover:bg-surface-2 cursor-pointer"
+                                                                    title={isVisible ? 'Sembunyikan' : 'Tampilkan'}
                                                                 >
-                                                                    {copiedId === acc.id ? <CheckCheck className="w-3.5 h-3.5 text-accent-text" /> : <Copy className="w-3.5 h-3.5" />}
+                                                                    {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                                                                 </button>
-                                                            )}
+                                                                {isVisible && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => copyToClipboard(acc.id, acc.credential)}
+                                                                        className="p-1 rounded text-text-2 hover:text-text hover:bg-surface-2 cursor-pointer"
+                                                                        title="Salin Kredensial"
+                                                                    >
+                                                                        {copiedId === acc.id ? <CheckCheck className="w-3.5 h-3.5 text-accent-text" /> : <Copy className="w-3.5 h-3.5" />}
+                                                                    </button>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3 text-center">
@@ -636,32 +819,29 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                                             <div className="p-2.5 bg-surface-2 rounded border border-border space-y-1.5">
                                                 <div className="flex items-center justify-between text-[11px] text-text-3">
                                                     <span>Kredensial Akun:</span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => toggleVisibility(acc.id)}
-                                                        className="text-accent-text font-medium flex items-center gap-1"
-                                                    >
-                                                        {isVisible ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                                                        <span>{isVisible ? 'Sembunyikan' : 'Tampilkan'}</span>
-                                                    </button>
-                                                </div>
-                                                <div className="font-mono text-xs break-all">
-                                                    {isVisible ? (
-                                                        <div className="flex items-center justify-between gap-2 text-text font-medium select-all">
-                                                            <span>{acc.credential}</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => toggleVisibility(acc.id)}
+                                                            className="text-accent-text font-medium flex items-center gap-1 cursor-pointer"
+                                                        >
+                                                            {isVisible ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                                            <span>{isVisible ? 'Sembunyikan' : 'Tampilkan'}</span>
+                                                        </button>
+                                                        {isVisible && (
                                                             <button
                                                                 type="button"
                                                                 onClick={() => copyToClipboard(acc.id, acc.credential)}
-                                                                className="p-1 rounded text-text-2 hover:text-text shrink-0"
+                                                                className="text-text-2 hover:text-text cursor-pointer"
+                                                                title="Salin Kredensial"
                                                             >
                                                                 {copiedId === acc.id ? <CheckCheck className="w-3 h-3 text-accent-text" /> : <Copy className="w-3 h-3" />}
                                                             </button>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-text-3 tracking-widest select-none">
-                                                            ••••••••••••••••••••
-                                                        </span>
-                                                    )}
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="pt-0.5">
+                                                    {renderCredentialContent(acc, isVisible)}
                                                 </div>
                                             </div>
 
@@ -826,7 +1006,7 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                             </button>
                         </div>
 
-                        <form onSubmit={handleSingleSubmit} className="space-y-3 text-xs">
+                        <form onSubmit={handleSingleSubmit} className="space-y-3.5 text-xs">
                             {(singleForm.errors as Record<string, string | undefined>).general && (
                                 <div className="p-2.5 rounded bg-danger/10 border border-danger/30 text-danger text-xs flex items-center gap-2">
                                     <AlertCircle className="w-4 h-4 shrink-0" />
@@ -881,55 +1061,231 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                                 {singleForm.errors.kind && <p className="text-[11px] text-danger">{singleForm.errors.kind}</p>}
                             </div>
 
-                            <div className="space-y-1">
-                                <label className="font-semibold text-text block">Email Akun <span className="text-danger">*</span></label>
-                                <input
-                                    type="email"
-                                    value={singleForm.data.email}
-                                    onChange={(e) => singleForm.setData('email', e.target.value)}
-                                    placeholder="user@example.com"
-                                    required
-                                    className="w-full h-8 px-2.5 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
-                                />
-                                {singleForm.errors.email && <p className="text-[11px] text-danger">{singleForm.errors.email}</p>}
+                            {/* Format Kredensial Platform Pills */}
+                            <div className="space-y-1.5 p-2.5 bg-surface-2/60 border border-border rounded-md">
+                                <label className="font-semibold text-text text-[11px] block">
+                                    Format Kredensial Platform <span className="text-danger">*</span>
+                                </label>
+                                <div className="grid grid-cols-2 gap-1.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSingleFormatType('STREAMING_PROFILE');
+                                            singleForm.setData('credential_type', 'STREAMING_PROFILE');
+                                        }}
+                                        className={`p-2 rounded border text-left cursor-pointer transition-colors ${
+                                            singleFormatType === 'STREAMING_PROFILE'
+                                                ? 'bg-accent/15 border-accent text-accent-text font-bold'
+                                                : 'bg-surface border-border hover:bg-surface-hover text-text'
+                                        }`}
+                                    >
+                                        <div className="text-xs font-semibold flex items-center gap-1">
+                                            <span>🎬</span>
+                                            <span>Akun Profil / Sharing</span>
+                                        </div>
+                                        <p className="text-[10px] text-text-3 font-normal mt-0.5">Netflix, Disney+, Prime, Vidio</p>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSingleFormatType('STANDARD_ACCOUNT');
+                                            singleForm.setData('credential_type', 'STANDARD_ACCOUNT');
+                                        }}
+                                        className={`p-2 rounded border text-left cursor-pointer transition-colors ${
+                                            singleFormatType === 'STANDARD_ACCOUNT'
+                                                ? 'bg-accent/15 border-accent text-accent-text font-bold'
+                                                : 'bg-surface border-border hover:bg-surface-hover text-text'
+                                        }`}
+                                    >
+                                        <div className="text-xs font-semibold flex items-center gap-1">
+                                            <span>👤</span>
+                                            <span>Akun Private / Standar</span>
+                                        </div>
+                                        <p className="text-[10px] text-text-3 font-normal mt-0.5">Spotify, ChatGPT, Canva</p>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSingleFormatType('INVITE_LINK');
+                                            singleForm.setData('credential_type', 'INVITE_LINK');
+                                        }}
+                                        className={`p-2 rounded border text-left cursor-pointer transition-colors ${
+                                            singleFormatType === 'INVITE_LINK'
+                                                ? 'bg-accent/15 border-accent text-accent-text font-bold'
+                                                : 'bg-surface border-border hover:bg-surface-hover text-text'
+                                        }`}
+                                    >
+                                        <div className="text-xs font-semibold flex items-center gap-1">
+                                            <span>🔗</span>
+                                            <span>Link Invite / Undangan</span>
+                                        </div>
+                                        <p className="text-[10px] text-text-3 font-normal mt-0.5">YouTube Family, Canva Team</p>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSingleFormatType('VOUCHER');
+                                            singleForm.setData('credential_type', 'VOUCHER');
+                                        }}
+                                        className={`p-2 rounded border text-left cursor-pointer transition-colors ${
+                                            singleFormatType === 'VOUCHER'
+                                                ? 'bg-accent/15 border-accent text-accent-text font-bold'
+                                                : 'bg-surface border-border hover:bg-surface-hover text-text'
+                                        }`}
+                                    >
+                                        <div className="text-xs font-semibold flex items-center gap-1">
+                                            <span>🎟️</span>
+                                            <span>Kode Voucher / Lisensi</span>
+                                        </div>
+                                        <p className="text-[10px] text-text-3 font-normal mt-0.5">Kode Redeem, Lisensi Game/App</p>
+                                    </button>
+                                </div>
                             </div>
 
-                            <div className="space-y-1">
-                                <label className="font-semibold text-text block">Password Akun <span className="text-danger">*</span></label>
-                                <input
-                                    type="text"
-                                    value={singleForm.data.password}
-                                    onChange={(e) => singleForm.setData('password', e.target.value)}
-                                    placeholder="Password123"
-                                    required
-                                    className="w-full h-8 px-2.5 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent font-mono"
-                                />
-                                {singleForm.errors.password && <p className="text-[11px] text-danger">{singleForm.errors.password}</p>}
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
+                            {/* Dynamic Inputs Based on Format */}
+                            {singleFormatType === 'INVITE_LINK' && (
                                 <div className="space-y-1">
-                                    <label className="font-semibold text-text block">Profil / Screen <span className="text-text-3 font-normal">(opsional)</span></label>
+                                    <label className="font-semibold text-text block">
+                                        Tautan Undangan (Link Invite) <span className="text-danger">*</span>
+                                    </label>
+                                    <input
+                                        type="url"
+                                        value={singleForm.data.link}
+                                        onChange={(e) => singleForm.setData('link', e.target.value)}
+                                        placeholder="https://families.google.com/join/... atau https://canva.com/brand/join?..."
+                                        required
+                                        className="w-full h-8 px-2.5 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent font-mono text-[11px]"
+                                    />
+                                    <p className="text-[10px] text-text-3">
+                                        Link ini akan langsung ditampilkan kepada pembeli di invoice untuk bergabung ke grup/keluarga.
+                                    </p>
+                                    {singleForm.errors.link && <p className="text-[11px] text-danger">{singleForm.errors.link}</p>}
+                                </div>
+                            )}
+
+                            {singleFormatType === 'VOUCHER' && (
+                                <div className="space-y-1">
+                                    <label className="font-semibold text-text block">
+                                        Kode Voucher / Lisensi <span className="text-danger">*</span>
+                                    </label>
                                     <input
                                         type="text"
-                                        value={singleForm.data.profile}
-                                        onChange={(e) => singleForm.setData('profile', e.target.value)}
-                                        placeholder="Profil 1"
-                                        className="w-full h-8 px-2.5 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
+                                        value={singleForm.data.code}
+                                        onChange={(e) => singleForm.setData('code', e.target.value)}
+                                        placeholder="Contoh: SPOTIFY-3M-A1B2C3D4 atau KEY-XXXX-YYYY"
+                                        required
+                                        className="w-full h-8 px-2.5 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent font-mono text-xs uppercase"
                                     />
+                                    <p className="text-[10px] text-text-3">
+                                        Kode ini akan ditampilkan di invoice dengan tombol salin otomatis bagi pembeli.
+                                    </p>
+                                    {singleForm.errors.code && <p className="text-[11px] text-danger">{singleForm.errors.code}</p>}
                                 </div>
+                            )}
 
-                                <div className="space-y-1">
-                                    <label className="font-semibold text-text block">PIN Profil <span className="text-text-3 font-normal">(opsional)</span></label>
-                                    <input
-                                        type="text"
-                                        value={singleForm.data.pin}
-                                        onChange={(e) => singleForm.setData('pin', e.target.value)}
-                                        placeholder="1234"
-                                        className="w-full h-8 px-2.5 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent font-mono"
-                                    />
+                            {singleFormatType === 'STANDARD_ACCOUNT' && (
+                                <div className="space-y-3">
+                                    <div className="space-y-1">
+                                        <label className="font-semibold text-text block">Email / Username Akun <span className="text-danger">*</span></label>
+                                        <input
+                                            type="text"
+                                            value={singleForm.data.email}
+                                            onChange={(e) => singleForm.setData('email', e.target.value)}
+                                            placeholder="user@example.com atau username"
+                                            required
+                                            className="w-full h-8 px-2.5 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
+                                        />
+                                        {singleForm.errors.email && <p className="text-[11px] text-danger">{singleForm.errors.email}</p>}
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <label className="font-semibold text-text block">Password Akun <span className="text-danger">*</span></label>
+                                        <input
+                                            type="text"
+                                            value={singleForm.data.password}
+                                            onChange={(e) => singleForm.setData('password', e.target.value)}
+                                            placeholder="Password123"
+                                            required
+                                            className="w-full h-8 px-2.5 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent font-mono"
+                                        />
+                                        {singleForm.errors.password && <p className="text-[11px] text-danger">{singleForm.errors.password}</p>}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
+
+                            {singleFormatType === 'STREAMING_PROFILE' && (
+                                <div className="space-y-3">
+                                    <div className="space-y-1">
+                                        <label className="font-semibold text-text block">Email Akun <span className="text-danger">*</span></label>
+                                        <input
+                                            type="text"
+                                            value={singleForm.data.email}
+                                            onChange={(e) => singleForm.setData('email', e.target.value)}
+                                            placeholder="user@netflix.com"
+                                            required
+                                            className="w-full h-8 px-2.5 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
+                                        />
+                                        {singleForm.errors.email && <p className="text-[11px] text-danger">{singleForm.errors.email}</p>}
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <label className="font-semibold text-text block">Password Akun <span className="text-danger">*</span></label>
+                                        <input
+                                            type="text"
+                                            value={singleForm.data.password}
+                                            onChange={(e) => singleForm.setData('password', e.target.value)}
+                                            placeholder="Password123"
+                                            required
+                                            className="w-full h-8 px-2.5 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent font-mono"
+                                        />
+                                        {singleForm.errors.password && <p className="text-[11px] text-danger">{singleForm.errors.password}</p>}
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-1">
+                                            <label className="font-semibold text-text block">Profil / Screen <span className="text-text-3 font-normal">(opsional)</span></label>
+                                            <input
+                                                type="text"
+                                                value={singleForm.data.profile}
+                                                onChange={(e) => singleForm.setData('profile', e.target.value)}
+                                                placeholder="Profil 1"
+                                                className="w-full h-8 px-2.5 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <label className="font-semibold text-text block">PIN Profil <span className="text-text-3 font-normal">(opsional)</span></label>
+                                            <input
+                                                type="text"
+                                                value={singleForm.data.pin}
+                                                onChange={(e) => singleForm.setData('pin', e.target.value)}
+                                                placeholder="1234"
+                                                className="w-full h-8 px-2.5 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent font-mono"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {singleFormatType === 'CUSTOM' && (
+                                <div className="space-y-1">
+                                    <label className="font-semibold text-text block">
+                                        Kredensial Kustom <span className="text-danger">*</span>
+                                    </label>
+                                    <textarea
+                                        rows={2}
+                                        value={singleForm.data.custom_credential}
+                                        onChange={(e) => singleForm.setData('custom_credential', e.target.value)}
+                                        placeholder="Contoh: token_api|secret_key atau data akun lainnya..."
+                                        required
+                                        className="w-full p-2 bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent font-mono text-xs"
+                                    />
+                                    {singleForm.errors.custom_credential && <p className="text-[11px] text-danger">{singleForm.errors.custom_credential}</p>}
+                                </div>
+                            )}
 
                             <div className="space-y-1">
                                 <label className="font-semibold text-text block">Catatan Internal <span className="text-text-3 font-normal">(opsional)</span></label>
@@ -988,10 +1344,45 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                             </button>
                         </div>
 
-                        <p className="text-xs text-text-2">
-                            Masukkan data akun satu baris per unit dengan format: <br />
-                            <code className="text-accent-text font-mono bg-surface-2 px-1 py-0.5 rounded">email|password|profil|pin</code> (profil & pin opsional).
-                        </p>
+                        <div className="space-y-2">
+                            <label className="font-semibold text-text text-[11px] block">
+                                Pilihan Format Impor
+                            </label>
+                            <div className="flex flex-wrap gap-1">
+                                {[
+                                    { id: 'AUTO', label: '🔄 Sesuai Varian' },
+                                    { id: 'STREAMING_PROFILE', label: '🎬 Netflix/Profil' },
+                                    { id: 'STANDARD_ACCOUNT', label: '👤 Akun Private' },
+                                    { id: 'INVITE_LINK', label: '🔗 Link Invite' },
+                                    { id: 'VOUCHER', label: '🎟️ Voucher' },
+                                ].map((tab) => (
+                                    <button
+                                        key={tab.id}
+                                        type="button"
+                                        onClick={() => setBulkFormatType(tab.id as any)}
+                                        className={`px-2 py-1 text-[11px] rounded border cursor-pointer transition-colors ${
+                                            bulkFormatType === tab.id
+                                                ? 'bg-accent/20 border-accent text-accent-text font-bold'
+                                                : 'bg-surface-2 border-border hover:bg-surface-hover text-text-2'
+                                        }`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="p-2.5 bg-surface-2 rounded border border-border text-xs text-text-2">
+                            {bulkFormatType === 'INVITE_LINK' ? (
+                                <span>Masukkan <strong>1 tautan undangan per baris</strong>. Contoh: <code className="text-accent-text font-mono bg-surface px-1 py-0.5 rounded">https://families.google.com/join/...</code></span>
+                            ) : bulkFormatType === 'VOUCHER' ? (
+                                <span>Masukkan <strong>1 kode voucher per baris</strong>. Contoh: <code className="text-accent-text font-mono bg-surface px-1 py-0.5 rounded">VOUCHER-XXXX-YYYY</code></span>
+                            ) : bulkFormatType === 'STANDARD_ACCOUNT' ? (
+                                <span>Format per baris: <code className="text-accent-text font-mono bg-surface px-1 py-0.5 rounded">email|password</code></span>
+                            ) : (
+                                <span>Format per baris: <code className="text-accent-text font-mono bg-surface px-1 py-0.5 rounded">email|password|profil|pin</code> (profil & pin opsional).</span>
+                            )}
+                        </div>
 
                         <form onSubmit={handleBulkSubmit} className="space-y-3 text-xs">
                             {(bulkForm.errors as Record<string, string | undefined>).general && (
@@ -1056,7 +1447,15 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                                     value={bulkForm.data.items_text}
                                     onChange={(e) => bulkForm.setData('items_text', e.target.value)}
                                     rows={8}
-                                    placeholder="user1@mail.com|pass123|Profil 1|1234&#10;user2@mail.com|pass456&#10;user3@mail.com|pass789|Profil 2"
+                                    placeholder={
+                                        bulkFormatType === 'INVITE_LINK'
+                                            ? 'https://families.google.com/join/ABC123\nhttps://families.google.com/join/DEF456'
+                                            : bulkFormatType === 'VOUCHER'
+                                            ? 'SPOTIFY-3M-A1B2C3D4\nSPOTIFY-3M-E5F6G7H8'
+                                            : bulkFormatType === 'STANDARD_ACCOUNT'
+                                            ? 'user1@spotify.com|Pass123\nuser2@spotify.com|Pass456'
+                                            : 'user1@netflix.com|Pass123|Profil 1|1234\nuser2@netflix.com|Pass456|Profil 2|5678'
+                                    }
                                     required
                                     className="w-full p-2.5 font-mono text-[11px] bg-surface-2 border border-border rounded text-text placeholder:text-text-3 focus:outline-none focus:border-accent"
                                 />
@@ -1066,7 +1465,7 @@ export default function AccountsIndex({ accounts, summary, products, filters, st
                             </div>
 
                             <div className="p-2.5 bg-surface-2/60 rounded border border-border text-[11px] text-text-3">
-                                <strong>Catatan:</strong> Baris tidak valid (format salah atau email kosong) akan dilewati dan dilaporkan nomor barisnya tanpa membatalkan baris yang valid. Semua kredensial disimpan terenkripsi di database.
+                                <strong>Catatan:</strong> Baris tidak valid akan dilewati dan dilaporkan nomor barisnya tanpa membatalkan baris yang valid. Semua data kredensial disimpan terenkripsi secara aman.
                             </div>
 
                             <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">

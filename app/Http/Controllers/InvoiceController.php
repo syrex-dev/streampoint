@@ -32,23 +32,63 @@ class InvoiceController extends Controller
         if ($isAuthorized && $order->status === OrderStatus::PAID && $order->account?->credential) {
             $raw = $order->account->credential;
             $parts = array_map('trim', explode('|', $raw));
-            $stockFields = $order->variant?->stock_fields ?: ['email', 'password'];
+            $stockFields = $order->variant?->stock_fields;
+            if (is_array($stockFields) && ! empty($stockFields) && is_array($stockFields[0] ?? null) && isset($stockFields[0]['key'])) {
+                $stockFields = array_column($stockFields, 'key');
+            }
+
+            $isLink = str_starts_with($raw, 'http://') || str_starts_with($raw, 'https://');
             $items = [];
-            foreach ($stockFields as $idx => $fieldName) {
-                if (isset($parts[$idx]) && $parts[$idx] !== '') {
-                    $items[] = [
-                        'key' => $fieldName,
-                        'label' => ucfirst(str_replace('_', ' ', (string) $fieldName)),
-                        'value' => $parts[$idx],
-                        'is_secret' => in_array(strtolower((string) $fieldName), ['password', 'pin', 'secret', 'key', 'kode', 'token'], true),
-                    ];
+
+            if ($isLink) {
+                $items[] = [
+                    'key' => 'link',
+                    'label' => 'Tautan Undangan (Link Invite)',
+                    'value' => $raw,
+                    'is_secret' => false,
+                ];
+            } elseif (! empty($stockFields)) {
+                foreach ($stockFields as $idx => $fieldName) {
+                    if (isset($parts[$idx]) && $parts[$idx] !== '') {
+                        $label = match (strtolower((string) $fieldName)) {
+                            'email' => 'Email Akun',
+                            'password' => 'Password Akun',
+                            'profile', 'profil' => 'Nomor / Nama Profil',
+                            'pin' => 'PIN Profil',
+                            'link', 'url' => 'Tautan Undangan',
+                            'code', 'voucher', 'kode', 'kode_voucher' => 'Kode Voucher',
+                            default => ucfirst(str_replace('_', ' ', (string) $fieldName)),
+                        };
+
+                        $items[] = [
+                            'key' => (string) $fieldName,
+                            'label' => $label,
+                            'value' => $parts[$idx],
+                            'is_secret' => in_array(strtolower((string) $fieldName), ['password', 'pin', 'secret', 'key'], true),
+                        ];
+                    }
+                }
+            } else {
+                if (count($parts) >= 2) {
+                    $items[] = ['key' => 'email', 'label' => 'Email Akun', 'value' => $parts[0], 'is_secret' => false];
+                    $items[] = ['key' => 'password', 'label' => 'Password Akun', 'value' => $parts[1], 'is_secret' => true];
+                    if (isset($parts[2]) && $parts[2] !== '') {
+                        $items[] = ['key' => 'profile', 'label' => 'Nomor / Nama Profil', 'value' => $parts[2], 'is_secret' => false];
+                    }
+                    if (isset($parts[3]) && $parts[3] !== '') {
+                        $items[] = ['key' => 'pin', 'label' => 'PIN Profil', 'value' => $parts[3], 'is_secret' => true];
+                    }
+                } elseif (! empty($raw)) {
+                    $items[] = ['key' => 'credential', 'label' => 'Kode / Kredensial', 'value' => $raw, 'is_secret' => false];
                 }
             }
+
             $credentials = [
-                'email' => $parts[0] ?? $raw,
+                'email' => $isLink ? '' : ($parts[0] ?? $raw),
                 'password' => $parts[1] ?? '',
                 'profile' => $parts[2] ?? '',
                 'pin' => $parts[3] ?? '',
+                'link' => $isLink ? $raw : '',
                 'raw' => $raw,
                 'items' => $items,
             ];

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Eye, EyeOff, ShieldCheck, Clock, AlertCircle, KeyRound } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck, Clock, AlertCircle, KeyRound, ExternalLink } from 'lucide-react';
 import { CopyButton } from '@/components/shop/CopyButton';
 import { formatDateTimeWIB } from '@/lib/format';
 import { OrderCredentials } from '@/types/shop';
@@ -87,6 +87,7 @@ export function CredentialBox({
                 {credentials.items && credentials.items.length > 0 ? (
                     credentials.items.map((item, idx) => {
                         const isRevealed = revealedKeys[item.key] || false;
+                        const isUrl = item.value.startsWith('http://') || item.value.startsWith('https://');
                         return (
                             <div key={`${item.key}-${idx}`} className="bg-surface-2 p-3 rounded-md border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                 <div className="min-w-0">
@@ -96,6 +97,17 @@ export function CredentialBox({
                                     </div>
                                 </div>
                                 <div className="shrink-0 flex items-center gap-1.5 justify-end">
+                                    {isUrl && (
+                                        <a
+                                            href={item.value}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="h-8 px-2.5 rounded-md border border-accent/40 bg-accent/10 hover:bg-accent/20 text-accent-text text-xs inline-flex items-center gap-1.5 font-medium transition-colors focus-visible:ring-2 focus-visible:ring-accent"
+                                        >
+                                            <ExternalLink className="w-3.5 h-3.5" />
+                                            <span>Buka Link</span>
+                                        </a>
+                                    )}
                                     {item.is_secret && (
                                         <button
                                             type="button"

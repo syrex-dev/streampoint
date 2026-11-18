@@ -351,6 +351,75 @@ class AdminManagementAndWarrantyTest extends TestCase
         $this->assertCount(3, $bulkAccounts);
     }
 
+    public function test_admin_can_store_different_platform_formats_including_invite_link_and_voucher(): void
+    {
+        // 1. Single Invite Link (e.g. YouTube Family / Canva Team)
+        $resLink = $this->actingAs($this->adminUser)->post('/admin/accounts', [
+            'product_id' => $this->product->id,
+            'kind' => 'BUY',
+            'credential_type' => 'INVITE_LINK',
+            'link' => 'https://families.google.com/join/TESTINVITE123',
+            'note' => 'Invite YouTube',
+        ]);
+        $resLink->assertSessionHas('success');
+        $linkAccount = ProductAccount::where('note', 'Invite YouTube')->first();
+        $this->assertNotNull($linkAccount);
+        $this->assertEquals('https://families.google.com/join/TESTINVITE123', $linkAccount->credential);
+
+        // 2. Single Voucher Code
+        $resVoucher = $this->actingAs($this->adminUser)->post('/admin/accounts', [
+            'product_id' => $this->product->id,
+            'kind' => 'BUY',
+            'credential_type' => 'VOUCHER',
+            'code' => 'SPOTIFY-3M-A1B2C3D4',
+            'note' => 'Voucher Spotify',
+        ]);
+        $resVoucher->assertSessionHas('success');
+        $voucherAccount = ProductAccount::where('note', 'Voucher Spotify')->first();
+        $this->assertNotNull($voucherAccount);
+        $this->assertEquals('SPOTIFY-3M-A1B2C3D4', $voucherAccount->credential);
+
+        // 3. Single Standard Account (without profile & pin)
+        $resStandard = $this->actingAs($this->adminUser)->post('/admin/accounts', [
+            'product_id' => $this->product->id,
+            'kind' => 'BUY',
+            'credential_type' => 'STANDARD_ACCOUNT',
+            'email' => 'spotify_private@test.com',
+            'password' => 'Pass12345',
+            'note' => 'Spotify Private',
+        ]);
+        $resStandard->assertSessionHas('success');
+        $standardAccount = ProductAccount::where('note', 'Spotify Private')->first();
+        $this->assertNotNull($standardAccount);
+        $this->assertEquals('spotify_private@test.com|Pass12345', $standardAccount->credential);
+
+        // 4. Bulk import Invite Links (1 link per line)
+        $resBulkLinks = $this->actingAs($this->adminUser)->post('/admin/accounts/bulk', [
+            'product_id' => $this->product->id,
+            'kind' => 'BUY',
+            'format_type' => 'INVITE_LINK',
+            'items_text' => "https://families.google.com/join/LINK1\nhttps://families.google.com/join/LINK2",
+        ]);
+        $resBulkLinks->assertSessionHas('success');
+        $bulkLinks = ProductAccount::where('kind', OrderType::BUY)->latest('id')->take(2)->get();
+        $credentials = $bulkLinks->pluck('credential')->all();
+        $this->assertContains('https://families.google.com/join/LINK1', $credentials);
+        $this->assertContains('https://families.google.com/join/LINK2', $credentials);
+
+        // 5. Bulk import Vouchers (1 code per line)
+        $resBulkVouchers = $this->actingAs($this->adminUser)->post('/admin/accounts/bulk', [
+            'product_id' => $this->product->id,
+            'kind' => 'BUY',
+            'format_type' => 'VOUCHER',
+            'items_text' => "KEY-1111-2222\nKEY-3333-4444",
+        ]);
+        $resBulkVouchers->assertSessionHas('success');
+        $bulkVouchers = ProductAccount::where('kind', OrderType::BUY)->latest('id')->take(2)->get();
+        $vCredentials = $bulkVouchers->pluck('credential')->all();
+        $this->assertContains('KEY-1111-2222', $vCredentials);
+        $this->assertContains('KEY-3333-4444', $vCredentials);
+    }
+
     /**
      * 5. status unit RESERVED/SOLD/RENTED tidak bisa diubah manual
      */

@@ -22,6 +22,7 @@ class AccountBulkStoreRequest extends FormRequest
             'product_id' => ['required', 'integer', 'exists:products,id'],
             'variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
             'kind' => ['required', Rule::enum(OrderType::class)],
+            'format_type' => ['nullable', 'string', Rule::in(['AUTO', 'STREAMING_PROFILE', 'STANDARD_ACCOUNT', 'INVITE_LINK', 'VOUCHER', 'CUSTOM'])],
             'items_text' => [
                 'required',
                 'string',

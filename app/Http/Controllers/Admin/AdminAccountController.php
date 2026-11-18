@@ -42,23 +42,42 @@ class AdminAccountController extends Controller
                 $query->where('status', $status);
             }
 
-            $accounts = $query->paginate(25)->withQueryString()->through(fn (ProductAccount $acc) => [
-                'id' => $acc->id,
-                'product_id' => $acc->product_id,
-                'product_name' => $acc->product?->name ?? '-',
-                'variant_id' => $acc->variant_id,
-                'variant_name' => $acc->variant ? ($acc->variant->name ?? 'Semua Varian') : 'Semua Varian',
-                'kind' => $acc->kind instanceof OrderType ? $acc->kind->value : (string) ($acc->kind ?? 'RENT'),
-                'credential' => (string) ($acc->credential ?? ''),
-                'status' => $acc->status instanceof AccountStatus ? $acc->status->value : (string) ($acc->status ?? 'AVAILABLE'),
-                'status_label' => $acc->status instanceof AccountStatus ? $acc->status->label() : (string) ($acc->status ?? 'AVAILABLE'),
-                'order_id' => $acc->order_id,
-                'rented_until' => $acc->rented_until?->toIso8601String(),
-                'note' => $acc->note,
-                'created_at' => $acc->created_at?->toIso8601String(),
-                'can_edit_status' => in_array($acc->status, [AccountStatus::AVAILABLE, AccountStatus::DISABLED], true),
-                'can_delete' => in_array($acc->status, [AccountStatus::AVAILABLE, AccountStatus::DISABLED], true) && empty($acc->order_id),
-            ]);
+            $accounts = $query->paginate(25)->withQueryString()->through(function (ProductAccount $acc) {
+                $raw = (string) ($acc->credential ?? '');
+                $isLink = str_starts_with($raw, 'http://') || str_starts_with($raw, 'https://');
+                $parts = explode('|', $raw);
+
+                $credentialType = 'CUSTOM';
+                if ($isLink) {
+                    $credentialType = 'INVITE_LINK';
+                } elseif (count($parts) >= 3) {
+                    $credentialType = 'STREAMING_PROFILE';
+                } elseif (count($parts) === 2) {
+                    $credentialType = 'STANDARD_ACCOUNT';
+                } elseif (! str_contains($raw, '|') && ! str_contains($raw, '@') && strlen($raw) > 3) {
+                    $credentialType = 'VOUCHER';
+                }
+
+                return [
+                    'id' => $acc->id,
+                    'product_id' => $acc->product_id,
+                    'product_name' => $acc->product?->name ?? '-',
+                    'variant_id' => $acc->variant_id,
+                    'variant_name' => $acc->variant ? ($acc->variant->name ?? 'Semua Varian') : 'Semua Varian',
+                    'kind' => $acc->kind instanceof OrderType ? $acc->kind->value : (string) ($acc->kind ?? 'RENT'),
+                    'credential' => $raw,
+                    'credential_type' => $credentialType,
+                    'is_link' => $isLink,
+                    'status' => $acc->status instanceof AccountStatus ? $acc->status->value : (string) ($acc->status ?? 'AVAILABLE'),
+                    'status_label' => $acc->status instanceof AccountStatus ? $acc->status->label() : (string) ($acc->status ?? 'AVAILABLE'),
+                    'order_id' => $acc->order_id,
+                    'rented_until' => $acc->rented_until?->toIso8601String(),
+                    'note' => $acc->note,
+                    'created_at' => $acc->created_at?->toIso8601String(),
+                    'can_edit_status' => in_array($acc->status, [AccountStatus::AVAILABLE, AccountStatus::DISABLED], true),
+                    'can_delete' => in_array($acc->status, [AccountStatus::AVAILABLE, AccountStatus::DISABLED], true) && empty($acc->order_id),
+                ];
+            });
 
             // Stock summary per product (AVAILABLE per kind)
             $summary = Product::orderBy('sort_order')
@@ -84,11 +103,20 @@ class AdminAccountController extends Controller
                 ->map(fn ($p) => [
                     'id' => $p->id,
                     'name' => $p->name,
-                    'variants' => $p->variants->map(fn ($v) => [
-                        'id' => $v->id,
-                        'name' => $v->name,
-                        'type' => $v->type instanceof OrderType ? $v->type->value : (string) ($v->type ?? 'RENT'),
-                    ]),
+                    'variants' => $p->variants->map(function ($v) {
+                        $stockFields = $v->stock_fields;
+                        if (is_array($stockFields) && ! empty($stockFields) && is_array($stockFields[0] ?? null) && isset($stockFields[0]['key'])) {
+                            $stockFields = array_column($stockFields, 'key');
+                        }
+
+                        return [
+                            'id' => $v->id,
+                            'name' => $v->name,
+                            'type' => $v->type instanceof OrderType ? $v->type->value : (string) ($v->type ?? 'RENT'),
+                            'delivery_type' => $v->delivery_type instanceof \App\Enums\DeliveryType ? $v->delivery_type->value : (string) ($v->delivery_type ?? 'STOCK'),
+                            'stock_fields' => is_array($stockFields) ? array_values($stockFields) : null,
+                        ];
+                    }),
                 ]);
 
             return Inertia::render('admin/accounts/Index', [
@@ -139,20 +167,31 @@ class AdminAccountController extends Controller
     public function store(AccountStoreRequest $request): RedirectResponse
     {
         try {
-            $email = trim($request->validated('email'));
-            $password = trim($request->validated('password'));
-            $profile = $request->filled('profile') ? trim($request->validated('profile')) : '';
-            $pin = $request->filled('pin') ? trim($request->validated('pin')) : '';
+            $credentialType = $request->input('credential_type');
+            $credential = '';
 
-            $credentialParts = [$email, $password];
-            if (! empty($profile) || ! empty($pin)) {
-                $credentialParts[] = $profile;
-            }
-            if (! empty($pin)) {
-                $credentialParts[] = $pin;
-            }
+            if ($credentialType === 'INVITE_LINK' || (! empty($request->input('link')) && empty($request->input('email')))) {
+                $credential = trim((string) $request->input('link'));
+            } elseif ($credentialType === 'VOUCHER' || (! empty($request->input('code')) && empty($request->input('email')))) {
+                $credential = trim((string) $request->input('code'));
+            } elseif ($credentialType === 'CUSTOM' || (! empty($request->input('custom_credential')) && empty($request->input('email')))) {
+                $credential = trim((string) $request->input('custom_credential'));
+            } else {
+                $email = trim((string) $request->input('email'));
+                $password = trim((string) $request->input('password'));
+                $profile = $request->filled('profile') ? trim((string) $request->input('profile')) : '';
+                $pin = $request->filled('pin') ? trim((string) $request->input('pin')) : '';
 
-            $credential = implode('|', $credentialParts);
+                $credentialParts = [$email, $password];
+                if (! empty($profile) || ! empty($pin)) {
+                    $credentialParts[] = $profile;
+                }
+                if (! empty($pin)) {
+                    $credentialParts[] = $pin;
+                }
+
+                $credential = implode('|', $credentialParts);
+            }
 
             $data = [
                 'product_id' => (int) $request->validated('product_id'),
@@ -165,7 +204,7 @@ class AdminAccountController extends Controller
 
             ProductAccount::create($data);
 
-            return back()->with('success', 'Unit akun berhasil ditambahkan ke stok.');
+            return back()->with('success', 'Unit akun / tautan berhasil ditambahkan ke stok.');
         } catch (\Throwable $e) {
             Log::error('AdminAccountController@store failed: ' . $e->getMessage(), [
                 'exception' => $e,
@@ -183,11 +222,20 @@ class AdminAccountController extends Controller
             $productId = (int) $request->validated('product_id');
             $variantId = $request->filled('variant_id') ? (int) $request->validated('variant_id') : null;
             $kind = OrderType::from($request->validated('kind'));
+            $formatType = $request->validated('format_type') ?: 'AUTO';
             $lines = preg_split('/\r\n|\r|\n/', trim($request->validated('items_text')));
 
             $variant = $variantId ? ProductVariant::find($variantId) : null;
             $stockFields = $variant?->stock_fields;
-            $expectedParts = is_array($stockFields) && ! empty($stockFields) ? count($stockFields) : null;
+            if (is_array($stockFields) && ! empty($stockFields) && is_array($stockFields[0] ?? null) && isset($stockFields[0]['key'])) {
+                $stockFields = array_column($stockFields, 'key');
+            }
+
+            $isInviteLink = $formatType === 'INVITE_LINK' ||
+                ($formatType === 'AUTO' && is_array($stockFields) && count($stockFields) === 1 && in_array(strtolower($stockFields[0]), ['link', 'url', 'invite', 'tautan'], true));
+
+            $isVoucher = $formatType === 'VOUCHER' ||
+                ($formatType === 'AUTO' && is_array($stockFields) && count($stockFields) === 1 && in_array(strtolower($stockFields[0]), ['code', 'voucher', 'kode', 'kode_voucher', 'key'], true));
 
             $successCount = 0;
             $invalidLines = [];
@@ -201,9 +249,36 @@ class AdminAccountController extends Controller
                     continue;
                 }
 
-                $parts = explode('|', $trimmed);
+                if ($isInviteLink) {
+                    $data = [
+                        'product_id' => $productId,
+                        'variant_id' => $variantId,
+                        'kind' => $kind,
+                        'credential' => $trimmed,
+                        'status' => AccountStatus::AVAILABLE,
+                    ];
+                    ProductAccount::create($data);
+                    $successCount++;
+                    continue;
+                }
 
-                if ($expectedParts !== null) {
+                if ($isVoucher) {
+                    $data = [
+                        'product_id' => $productId,
+                        'variant_id' => $variantId,
+                        'kind' => $kind,
+                        'credential' => $trimmed,
+                        'status' => AccountStatus::AVAILABLE,
+                    ];
+                    ProductAccount::create($data);
+                    $successCount++;
+                    continue;
+                }
+
+                $parts = explode('|', $trimmed);
+                $expectedParts = is_array($stockFields) && ! empty($stockFields) ? count($stockFields) : null;
+
+                if ($expectedParts !== null && $expectedParts > 1) {
                     if (count($parts) !== $expectedParts) {
                         $invalidLines[] = $lineNumber;
                         continue;
@@ -229,10 +304,11 @@ class AdminAccountController extends Controller
                         continue;
                     }
 
-                    $email = trim($parts[0]);
-                    $password = trim($parts[1]);
+                    $userPart = trim($parts[0]);
+                    $passPart = trim($parts[1]);
 
-                    if (empty($email) || ! filter_var($email, FILTER_VALIDATE_EMAIL) || empty($password)) {
+                    $requireEmail = $formatType !== 'STANDARD_ACCOUNT';
+                    if (empty($userPart) || ($requireEmail && ! filter_var($userPart, FILTER_VALIDATE_EMAIL)) || empty($passPart)) {
                         $invalidLines[] = $lineNumber;
                         continue;
                     }
@@ -240,7 +316,7 @@ class AdminAccountController extends Controller
                     $profile = isset($parts[2]) ? trim($parts[2]) : '';
                     $pin = isset($parts[3]) ? trim($parts[3]) : '';
 
-                    $credentialParts = [$email, $password];
+                    $credentialParts = [$userPart, $passPart];
                     if (! empty($profile) || ! empty($pin)) {
                         $credentialParts[] = $profile;
                     }
@@ -259,7 +335,6 @@ class AdminAccountController extends Controller
                 ];
 
                 ProductAccount::create($data);
-
                 $successCount++;
             }
 

@@ -24,10 +24,16 @@ class AdminProductVariantController extends Controller
             'name' => $request->validated('name'),
             'type' => $type,
             'rent_duration' => $rentDuration,
-            'duration_hours' => (int) $request->validated('duration_hours'),
+            'duration_hours' => $request->filled('duration_hours') ? (int) $request->validated('duration_hours') : null,
             'price' => (int) $request->validated('price'),
             'is_active' => (bool) $request->validated('is_active'),
             'sort_order' => (int) ($request->validated('sort_order') ?? 0),
+            'delivery_type' => $request->validated('delivery_type') ?: 'STOCK',
+            'buyer_fields' => $request->validated('buyer_fields'),
+            'stock_fields' => $request->validated('stock_fields'),
+            'delivery_instructions' => $request->validated('delivery_instructions'),
+            'eta_text' => $request->validated('eta_text'),
+            'stock_limit' => $request->filled('stock_limit') ? (int) $request->validated('stock_limit') : null,
         ]);
 
         return back()->with('success', 'Varian paket berhasil ditambahkan.');
@@ -44,10 +50,16 @@ class AdminProductVariantController extends Controller
             'name' => $request->validated('name'),
             'type' => $type,
             'rent_duration' => $rentDuration,
-            'duration_hours' => (int) $request->validated('duration_hours'),
+            'duration_hours' => $request->filled('duration_hours') ? (int) $request->validated('duration_hours') : null,
             'price' => (int) $request->validated('price'),
             'is_active' => (bool) $request->validated('is_active'),
             'sort_order' => (int) ($request->validated('sort_order') ?? 0),
+            'delivery_type' => $request->validated('delivery_type') ?: 'STOCK',
+            'buyer_fields' => $request->validated('buyer_fields'),
+            'stock_fields' => $request->validated('stock_fields'),
+            'delivery_instructions' => $request->validated('delivery_instructions'),
+            'eta_text' => $request->validated('eta_text'),
+            'stock_limit' => $request->filled('stock_limit') ? (int) $request->validated('stock_limit') : null,
         ]);
 
         return back()->with('success', 'Varian paket berhasil diperbarui.');

@@ -1,6 +1,6 @@
 # Product Requirements Document (PRD)
 
-**Nama Proyek:** Platform Sewa & Beli Akun Streaming (Gaya Top-Up)
+**Nama Proyek:** Platform Produk Digital Gaya Top-Up (akun, undangan, kode, dan layanan)
 **Versi:** 2.0
 **Arsitektur:** Single-Page Checkout, Guest Checkout (pembeli tanpa login)
 **Stack:** Laravel + React + Inertia.js (detail di `TECH_SPEC.md`)
@@ -9,6 +9,8 @@
 ---
 
 ## 1. Tujuan Produk
+
+> **Cakupan diperluas:** toko ini tidak hanya menjual akun streaming. Produk digital apa pun dapat dijual, dan **cara pengiriman menyesuaikan produknya**: kredensial akun atau kode (stok), undangan ke email pembeli (mis. paket keluarga YouTube Premium), atau layanan yang diproses admin. Aturan lengkap ada di Bagian 4.9. Bagian lain yang menyebut "akun" berlaku penuh untuk jenis Stok dan dibaca "produk" untuk jenis lain.
 
 Website untuk menjual dan menyewakan akun streaming premium (Netflix, YouTube Premium, Spotify, Prime Video, dll.) dengan antarmuka bergaya web top-up game: cepat, padat informasi, dan langsung checkout dalam satu halaman.
 
@@ -21,7 +23,6 @@ Tiga hal yang harus berhasil:
 ## 2. Ruang Lingkup MVP
 
 **Termasuk:**
-
 - Storefront, halaman detail layanan dengan checkout 4 langkah, halaman invoice, halaman Cek Transaksi.
 - Pembayaran manual (QRIS statis / transfer bank / e-wallet) dengan verifikasi oleh admin.
 - Panel admin ringkas: order, stok akun, produk, metode pembayaran, pengaturan kuota.
@@ -154,6 +155,28 @@ Teks berikut ditampilkan di kolom kiri halaman detail dan **dapat diedit admin p
 - Jika akun bermasalah selama masa sewa/garansi, hubungi admin via WhatsApp dengan menyebut kode invoice. Solusi: penggantian akun atau kompensasi sisa masa aktif.
 - Pembayaran yang sudah diverifikasi dan akun yang sudah dikirim tidak dapat dibatalkan, kecuali akun bermasalah.
 
+### 4.9 Jenis Pengiriman Produk
+
+Setiap **varian** punya satu **jenis pengiriman** yang menentukan arti stok, data yang diminta dari pembeli, tindakan admin, dan tampilan setelah bayar. Satu layanan boleh punya varian berbeda jenis (mis. YouTube Premium: "Akun Sharing 1 Hari" berjenis Stok, dan "Family Invite 1 Bulan" berjenis Undangan).
+
+| Jenis | Kode | Contoh | Stok berarti | Data dari pembeli | Setelah `PAID` | Tampilan pembeli |
+| :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| **Stok** | `STOCK` | Akun streaming, voucher, license key, link unduhan | Unit stok (satu baris berisi kolom berlabel, terenkripsi) | WhatsApp (+ kolom kustom bila ada) | Terkirim otomatis (unit di-assign) | Kotak kredensial/kode dengan tombol Salin |
+| **Undangan** | `INVITE` | YouTube Premium Family, Google One, Canva Team, paket keluarga lain | Slot kosong pada **host** (akun paket milik admin) | **Email penerima undangan** + WhatsApp | Admin mengirim undangan lalu menandai terkirim | Status: menunggu undangan, undangan terkirim, aktif |
+| **Manual** | `MANUAL` | Top up, jasa, aktivasi lewat admin, produk custom | Tak terbatas (opsional batas antrean) | Kolom kustom (maks 5) + WhatsApp | Admin memproses lalu mengisi pesan hasil | Status + pesan dari admin |
+
+**Aturan:**
+1. **Kolom data pembeli** (`buyer_fields`, per varian, maks 5): tipe `email` (opsional batasi domain, mis. `gmail.com`), `text`, `url` (hanya `https`), `textarea`, dan `select`. Dilarang meminta kata sandi akun pembeli. Validasi di server, dan nilai selalu ditampilkan dengan escape.
+2. **Email undangan:** pembeli boleh mengubahnya selama undangan **belum dikirim**. Satu email tidak boleh punya dua pesanan aktif untuk varian yang sama.
+3. **Slot undangan:** kapasitas host (mis. 5) dikurangi pesanan aktif. Slot dipesan saat checkout, dilepas saat `EXPIRED` atau `CANCELLED`, dan **tetap terpakai sampai admin menandai anggota sudah dikeluarkan** dari paket (karena kursi aslinya masih terisi).
+4. **Status pemenuhan** (`fulfillment_status`) terpisah dari status bayar. `STOCK`: `DELIVERED`. `INVITE`: `AWAITING_ACTION`, `INVITE_SENT`, `ACTIVE`, `ENDED`. `MANUAL`: `AWAITING_ACTION`, `DONE`.
+5. **Masa aktif:** dihitung dari saat admin menandai undangan terkirim (`INVITE`) atau saat `PAID` (`STOCK`). Varian beli tanpa durasi berarti tanpa masa berakhir (mis. kode sekali pakai).
+6. **Pengingat ke admin (Telegram):** pesanan `AWAITING_ACTION` lebih dari 30 menit, masa akses `INVITE` berakhir tetapi slot belum dibebaskan, dan (opsional) host mendekati tanggal perpanjangan.
+7. **Garansi:** `STOCK` mengganti unit, `INVITE` memindahkan pembeli ke host lain lalu mengirim ulang undangan, `MANUAL` diproses ulang.
+8. **Kuota sewa harian** hanya berlaku untuk varian bertipe sewa (`RENT`), apa pun jenis pengirimannya.
+9. **Risiko:** berbagi atau menjual slot paket keluarga dapat melanggar ketentuan penyedia (mis. syarat satu rumah tangga dan satu negara), sehingga anggota bisa dikeluarkan sewaktu-waktu. Aturan dan garansi harus ditulis jelas di halaman layanan dan FAQ.
+10. **Privasi:** email dan data kustom pembeli disimpan. Setelah 90 hari sejak pesanan berakhir, data itu dianonimkan oleh perintah terjadwal (angka hari dapat diatur pemilik).
+
 ---
 
 ## 5. Alur Pengguna & Halaman
@@ -209,6 +232,8 @@ Tampilan menyesuaikan status:
 | `EXPIRED` | Info waktu habis, tombol **Buat Pesanan Baru**, petunjuk jika sudah terlanjur transfer (hubungi admin dengan kode invoice). |
 | `CANCELLED` | Alasan pembatalan dari admin dan kontak admin. |
 
+**Area pengiriman pada invoice `PAID` mengikuti jenis pengiriman (4.9):** kotak kredensial/kode (`STOCK`), kartu status undangan dengan email tujuan dan tombol ubah email sebelum terkirim (`INVITE`), atau kartu status dengan pesan dari admin (`MANUAL`).
+
 **Penyempurnaan invoice (v2):** indikator langkah (Dibuat, Dibayar, Diverifikasi, Selesai) di semua status, progress bar waktu pembayaran, toast "Tersalin", tiga langkah singkat cara bayar, dan tautan Hubungi Admin via WhatsApp yang membawa kode invoice. Stepper yang sama dipakai pada hasil Cek Transaksi.
 
 ### 5.4 Cek Transaksi (`/cek-pesanan`)
@@ -224,6 +249,7 @@ Dua mode: **Kode Invoice + Nomor WA** (membuka invoice lengkap), atau **Nomor WA
 - **Stok Akun:** tambah satu per satu atau impor massal (satu baris per unit: `email|password|profil|pin`), lihat status tiap unit.
 - **Metode Pembayaran:** kelola rekening, e-wallet, dan gambar QRIS.
 - **Tampilan katalog:** per layanan: gambar sampul, logo, warna merek, dan penanda `Garansi`. Pengaturan: bar pengumuman, tagline, estimasi pengiriman (teks bebas, mis. "setelah verifikasi admin"), ambang tampil jumlah terjual, ajakan pesanan custom, dan tautan sosial (Telegram, Instagram, Threads, TikTok). Per metode pembayaran: logo opsional.
+- **Jenis pengiriman per varian:** pilihan Stok, Undangan, atau Manual dengan panel pengaturan sesuai jenis (skema kolom stok, kolom data pembeli, instruksi untuk pembeli, estimasi). **Host & Slot** untuk produk Undangan (label, kapasitas, tanggal perpanjangan, anggota aktif). Detail order `PAID` memiliki **panel pemenuhan**: Undangan Terkirim, Kirim Ulang, Tandai Aktif, Pindah Host, Bebaskan Slot (Undangan), dan Selesaikan dengan pesan untuk pembeli (Manual).
 - **Banner:** CRUD banner (judul, subjudul, label dan tautan tombol, gambar, nada warna, urutan, jadwal tayang, aktif/nonaktif). Maksimal 5 banner aktif.
 - **Pengaturan:** kuota default, override kuota per tanggal, identitas toko (nama, logo, preset warna aksen), tombol uji notifikasi Telegram.
 
@@ -275,6 +301,15 @@ Tulis ulang dengan kata-kata sendiri dan sesuaikan dengan kebijakan toko. Jangan
 | FR-19 | Batalkan oleh pembeli | Pemilik invoice `PENDING` bisa membatalkan. Kuota dan unit akun dilepas, dan status `CANCELLED` tercatat dengan aktor `buyer`. Order `VERIFYING`/`PAID` tidak bisa dibatalkan pembeli. |
 | FR-20 | Konkurensi | Dua permintaan checkout bersamaan dengan nomor yang sama: tepat satu berhasil. |
 | FR-21 | Idempotensi tidak terblokir | Pengiriman ulang request yang sama (`idempotency_key` sama) mengembalikan invoice yang sama, bukan error pesanan aktif. |
+| FR-22 | Jenis pengiriman per varian | Varian berjenis `STOCK`, `INVITE`, atau `MANUAL`. Perilaku checkout, stok, dan invoice mengikuti jenisnya. Varian `STOCK` yang sudah ada berjalan persis seperti sebelumnya. |
+| FR-23 | Kolom data pembeli dinamis | Kolom sesuai `buyer_fields` varian tampil di Langkah 2 dan divalidasi server (tipe, wajib, batas panjang, domain email). Nilai tersimpan dan tampil dengan escape. |
+| FR-24 | Slot undangan atomik | Dua checkout bersamaan pada slot terakhir sebuah host: tepat satu berhasil. Slot dilepas saat `EXPIRED`/`CANCELLED` dan tetap terpakai sampai admin membebaskannya. |
+| FR-25 | Email unik per varian | Email yang sama tidak bisa punya dua pesanan aktif untuk varian undangan yang sama. |
+| FR-26 | Edit email sebelum terkirim | Pemilik invoice dapat mengubah email selama `fulfillment_status` belum `INVITE_SENT`, dan perubahan tercatat di `order_events`. Setelah itu terkunci. |
+| FR-27 | Siklus pemenuhan | Transisi `fulfillment_status` hanya yang diizinkan per jenis (4.9 butir 4). Transisi lain ditolak dan semuanya tercatat di `order_events`. |
+| FR-28 | Pengingat pemenuhan | `AWAITING_ACTION` > 30 menit dan akses `INVITE` yang berakhir tetapi slot belum dibebaskan memicu pengingat Telegram sekali per pesanan. |
+| FR-29 | Garansi per jenis | `STOCK`: ganti unit. `INVITE`: pindah host dan kirim ulang. Masa akses tidak berubah. |
+| FR-30 | Anonimisasi data pembeli | Perintah terjadwal menganonimkan `buyer_inputs` pada pesanan yang berakhir lebih dari 90 hari lalu (atau angka yang diatur pemilik). |
 
 ## 7. Kasus Tepi (Edge Cases)
 
@@ -292,6 +327,11 @@ Tulis ulang dengan kata-kata sendiri dan sesuaikan dengan kebijakan toko. Jangan
 | Pembeli mengganti nomor WA untuk memesan lagi di browser yang sama | Tetap ditolak karena sesi masih memegang pesanan aktif. |
 | Pesanan `PENDING` sudah lewat 15 menit tetapi scheduler belum berjalan | Tidak memblokir. Status dihitung dari `payment_expires_at`, bukan menunggu cron. |
 | Admin mengaktifkan kembali order expired padahal nomor itu punya pesanan aktif lain | Ditolak dengan pesan jelas. |
+| Pembeli salah mengetik email undangan | Bisa diubah sendiri dari invoice sampai admin menandai undangan terkirim. Setelah itu hubungi admin (admin dapat memindahkan atau mengirim ulang). |
+| Undangan sudah kedaluwarsa di sisi penyedia atau tidak masuk | Admin menekan **Kirim Ulang** atau **Pindah Host**. Tercatat di `order_events`. |
+| Masa akses undangan berakhir | Admin diingatkan lewat Telegram untuk mengeluarkan anggota dan menekan **Bebaskan Slot**. Sebelum itu slot tetap terhitung terpakai. |
+| Semua host penuh | Varian undangan tampil `Habis` dengan alasan tertulis dan masuk bagian "Sedang Kosong". |
+| Pembeli memakai email yang sudah aktif di varian yang sama | Ditolak dengan pesan jelas tanpa membocorkan data pesanan orang lain. |
 
 ## 8. Kebutuhan Non-Fungsional
 

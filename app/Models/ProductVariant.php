@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DeliveryType;
 use App\Enums\OrderType;
 use App\Enums\RentDuration;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,6 +18,12 @@ class ProductVariant extends Model
         'product_id',
         'name',
         'type',
+        'delivery_type',
+        'buyer_fields',
+        'stock_fields',
+        'delivery_instructions',
+        'eta_text',
+        'stock_limit',
         'rent_duration',
         'duration_hours',
         'price',
@@ -28,6 +35,10 @@ class ProductVariant extends Model
     {
         return [
             'type' => OrderType::class,
+            'delivery_type' => DeliveryType::class,
+            'buyer_fields' => 'array',
+            'stock_fields' => 'array',
+            'stock_limit' => 'integer',
             'rent_duration' => RentDuration::class,
             'duration_hours' => 'integer',
             'price' => 'integer',

@@ -116,7 +116,6 @@ resources/js/
 Gunakan migration Laravel. Semua uang dalam **integer Rupiah**. Kolom enum disimpan sebagai `string` dan di-cast ke PHP backed enum.
 
 ### `products`
-
 | Kolom | Tipe | Catatan |
 | :-- | :-- | :-- |
 | id | bigint PK | |
@@ -134,7 +133,6 @@ Gunakan migration Laravel. Semua uang dalam **integer Rupiah**. Kolom enum disim
 | timestamps | | |
 
 ### `product_variants`
-
 | Kolom | Tipe | Catatan |
 | :-- | :-- | :-- |
 | id | bigint PK | |
@@ -150,7 +148,6 @@ Gunakan migration Laravel. Semua uang dalam **integer Rupiah**. Kolom enum disim
 > Stok **tidak** disimpan sebagai angka di varian. Stok = jumlah `product_accounts` berstatus `AVAILABLE` untuk produk dan kategori tersebut (lihat tabel berikut).
 
 ### `product_accounts` (unit akun)
-
 | Kolom | Tipe | Catatan |
 | :-- | :-- | :-- |
 | id | bigint PK | |
@@ -166,7 +163,6 @@ Gunakan migration Laravel. Semua uang dalam **integer Rupiah**. Kolom enum disim
 Index: `(product_id, kind, status)`, `order_id`.
 
 ### `orders`
-
 | Kolom | Tipe | Catatan |
 | :-- | :-- | :-- |
 | id | bigint PK | |
@@ -193,15 +189,12 @@ Index: `(product_id, kind, status)`, `order_id`.
 Index: `(quota_date, order_type, status)`, `(status, payment_expires_at)`, `customer_phone`, `total_amount`.
 
 ### `order_events` (audit)
-
 `id, order_id FK, from_status nullable, to_status, actor` (`system` | `buyer` | `admin:{id}`), `note nullable, created_at`.
 
 ### `payment_methods`
-
 `id, type (QRIS|BANK|EWALLET), label` (mis. "BCA", "DANA", "QRIS"), `account_number nullable, account_holder nullable, qris_image_path nullable, logo_path nullable (logo opsional, jpg/png/webp, bukan SVG, ≤ 256px), instructions text nullable, is_active, sort_order`.
 
 ### `settings` (satu baris)
-
 `id, max_daily_rent_quota unsigned tinyint default 3, admin_whatsapp string nullable` (nomor kontak yang ditampilkan di invoice, footer, dan tombol bantuan), `business_hours string nullable` (mis. "Setiap hari, 09.00-21.00 WIB", tampil di footer). Keduanya dibagikan ke semua halaman publik lewat shared props Inertia (`HandleInertiaRequests`). Tambahan identitas toko: `store_name string nullable` (default dari `APP_NAME`), `store_logo_path string nullable` (jpg/png/webp maks 1 MB, **bukan SVG**), `accent_preset string default 'emerald'` (daftar putih: `emerald`, `teal`, `blue`, `mono`). `accent_preset` diterapkan sebagai atribut `data-accent` pada `<html>` di `app.blade.php` (server-side, tanpa kedipan).
 
 Kolom tambahan `settings` untuk katalog: `announcement_text string(160) nullable, announcement_url string(255) nullable` (path internal `/…` atau `https://`), `announcement_active boolean default false, store_tagline string(60) nullable, delivery_eta string(60) nullable` (teks bebas, mis. "setelah verifikasi admin"; tampil di halaman layanan dan langkah 5 "Cara Pesan"), `min_sold_display unsigned smallint default 5` (ambang tampil `N terjual`), `custom_request_enabled boolean default false, social_links json nullable` dengan kunci `telegram`, `instagram`, `threads`, `tiktok`. Setiap URL sosial wajib `https://` dan host-nya masuk daftar putih per platform (`t.me`/`telegram.me`; `instagram.com`; `threads.net`/`threads.com`; `tiktok.com`), selain itu ditolak.
@@ -213,15 +206,12 @@ Kolom tambahan `settings` untuk katalog: `announcement_text string(160) nullable
 > **Tema:** mode Terang/Gelap/Sistem diimplementasikan lewat CSS variables (`DESIGN_SYSTEM.md` Bagian 2) dengan class `dark` pada `<html>`. Skrip inline di `app.blade.php` menetapkan class sebelum render agar tidak berkedip.
 
 ### `banners`
-
 `id, title string(80), subtitle string(160) nullable, cta_label string(30) nullable, cta_url string(255) nullable` (hanya path internal berawalan `/` atau `https://`; tolak skema lain), `image_path string nullable` (jpg/png/webp maks 2 MB di disk public, nama acak, bukan SVG), `tone string default 'neutral'` (`neutral|accent|warning`), `is_active boolean default true, sort_order unsigned int default 0, starts_at datetime nullable, ends_at datetime nullable, timestamps`. Maksimal 5 banner aktif (validasi saat simpan). Ke publik hanya dikirim banner aktif yang sedang dalam jadwal, dengan kolom minimal.
 
 ### `daily_quota_overrides`
-
 `id, date unique, max_quota unsigned tinyint, note nullable`. Jika ada baris untuk tanggal tertentu, nilainya menggantikan default. Nilai 0 berarti sewa ditutup hari itu.
 
 ### `users`
-
 Bawaan Laravel + kolom `is_admin boolean default false`. Admin dibuat lewat seeder atau `artisan` command, **bukan** registrasi publik.
 
 ---
@@ -342,13 +332,11 @@ public function handle(CreateOrderData $data): Order
 ```
 
 Aturan:
-
 - Harga **selalu diambil dari database**, tidak pernah dari request.
 - Kuota dan stok **diperiksa ulang di server** walau UI sudah menonaktifkan tombol.
 - `QuotaFullException` dan `OutOfStockException` diterjemahkan ke error validasi yang ditampilkan inline oleh Inertia.
 - Order `BUY` melewati pengecekan kuota tetapi tetap melewati lock dan reservasi stok.
 - **Satu pesanan aktif per pembeli (PRD 4.4b).** Kunci baris `settings` berlaku untuk **semua** pembuatan order (RENT dan BUY), supaya pengecekan ini ikut berurutan. Di dalam transaksi, sebelum kuota dan stok diperiksa:
-
   ```php
   $phone = Phone::normalize($data->phone);
 
@@ -368,7 +356,6 @@ Aturan:
       );
   }
   ```
-
   Scope `countsAsActiveForBuyer` memakai kondisi yang sama dengan `countsTowardQuota` (PENDING belum expired + VERIFYING) tetapi **tidak** dibatasi `order_type` atau `quota_date`. Pengecekan `idempotency_key` dilakukan **sebelum** ini agar pengiriman ulang request yang sama mengembalikan invoice yang sama. `ActiveOrderExistsException` diterjemahkan ke error validasi (HTTP 422) dengan pesan umum tanpa kode invoice bila `ownedBySession` false. Tambahkan index `customer_phone, status, payment_expires_at`.
 
 ### 5.4 Kode unik
@@ -591,3 +578,57 @@ Karena server bisa berupa perangkat rumahan dengan upload terbatas, semua gambar
 | Logo metode pembayaran | 160px | WebP/PNG | 512 KB |
 
 Aturan: tolak SVG dan file yang bukan gambar (validasi `getimagesize`, bukan hanya ekstensi), buang metadata (EXIF), beri nama acak, jaga proporsi, jangan membesarkan gambar yang lebih kecil dari batas. Jika GD tidak tersedia, simpan file asli yang sudah lolos validasi dan catat peringatan di log. Sajikan lewat disk `public` dengan header cache panjang (nama file acak sehingga aman di-cache oleh Cloudflare).
+
+---
+
+## 16. Jenis Pengiriman (Delivery Types)
+
+Mendukung produk digital apa pun, dengan pengiriman menyesuaikan jenis varian. Perilaku akun streaming yang ada (`STOCK`) **tidak boleh berubah**.
+
+### 16.1 Enum
+- `DeliveryType`: `STOCK`, `INVITE`, `MANUAL`.
+- `FulfillmentStatus`: `AWAITING_ACTION`, `INVITE_SENT`, `ACTIVE`, `DELIVERED`, `DONE`, `ENDED`. Memiliki `canTransitionTo(self $to, DeliveryType $type)`:
+  - `STOCK`: (saat approve) → `DELIVERED`.
+  - `INVITE`: `AWAITING_ACTION → INVITE_SENT → ACTIVE`; `INVITE_SENT → INVITE_SENT` (kirim ulang, hanya event); `AWAITING_ACTION | INVITE_SENT | ACTIVE → ENDED` (bebaskan slot).
+  - `MANUAL`: `AWAITING_ACTION → DONE` (wajib `delivery_message`).
+
+### 16.2 Skema (migration baru, bukan `ALTER` saat runtime)
+**`product_variants`:** `delivery_type string default 'STOCK'`; `buyer_fields json nullable` (daftar `{key, label, type, required, help, placeholder, max_length, options[], allowed_domains[]}`, maks 5); `stock_fields json nullable` (daftar `{key, label, secret}`; default preset Akun: Email, Password (secret), Profil, PIN (secret)); `delivery_instructions text nullable` (teks untuk pembeli); `eta_text string(60) nullable`; `stock_limit unsigned int nullable` (khusus `MANUAL`: maks pesanan aktif, null = tak terbatas); `duration_hours` menjadi **nullable** (varian beli boleh tanpa masa berakhir; varian `RENT` tetap wajib).
+
+**`orders`:** `buyer_inputs json nullable`; `fulfillment_status string nullable`; `delivery_message text nullable`; `fulfilled_at datetime nullable`; `slot_host_id` FK nullable → `slot_hosts` (null untuk selain `INVITE`); `slot_released_at datetime nullable`. Index `(slot_host_id, slot_released_at)`.
+
+**`slot_hosts` (baru):** `id, product_id FK, variant_id FK nullable` (kosong = melayani semua varian undangan produk itu), `label string(80)`, `capacity unsigned smallint`, `notes text nullable` (catatan internal; **jangan simpan kata sandi host**), `renews_at date nullable`, `status` (`ACTIVE`/`DISABLED`), timestamps.
+
+Unit stok `product_accounts.credential` tetap berupa teks terenkripsi dengan kolom dipisah `|` secara **posisional** mengikuti `stock_fields` varian (kompatibel dengan format impor lama `email|password|profil|pin`). Nilai tidak boleh memuat `|`.
+
+### 16.3 AvailabilityService
+`forVariant(ProductVariant): { available: bool, remaining: ?int, reason: ?string }` menjadi satu-satunya sumber ketersediaan untuk storefront, halaman layanan, hero, "Sedang Kosong", dan `CreateOrder`:
+- `STOCK`: jumlah unit `AVAILABLE` untuk varian (atau untuk produk + `kind` bila unit tidak terikat varian, sesuai perilaku sekarang).
+- `INVITE`: jumlah slot kosong = Σ (kapasitas host `ACTIVE` − pesanan aktif pada host tersebut), pesanan aktif = `slot_released_at IS NULL` dan (`PENDING` belum expired, `VERIFYING`, atau `PAID`).
+- `MANUAL`: tak terbatas bila `stock_limit` null, selain itu `stock_limit` − pesanan aktif.
+
+### 16.4 CreateOrder per jenis (dalam transaksi dan kunci `settings` yang sama)
+Urutan: idempotensi → aturan satu pesanan aktif → validasi `buyer_inputs` terhadap `buyer_fields` varian (`BuyerFieldsSchema`) → kuota sewa (hanya `RENT`) → reservasi menurut jenis:
+- `STOCK`: reservasi unit (perilaku sekarang).
+- `INVITE`: cek email belum punya pesanan aktif untuk varian yang sama (case-insensitive); pilih host `ACTIVE` dengan slot kosong (`lockForUpdate`, urut slot kosong terbanyak lalu `id`), isi `slot_host_id`. Bila tidak ada, `OutOfStockException`.
+- `MANUAL`: cek `stock_limit` bila ada.
+
+`ApproveOrder`: `STOCK` → `fulfillment_status = DELIVERED`; `INVITE` dan `MANUAL` → `AWAITING_ACTION`. `RejectOrder`, `CancelOrderByBuyer`, `ExpireOrders` melepas unit (STOCK) atau mengisi `slot_released_at` (INVITE). `ReactivateOrder` memesan ulang sesuai jenis.
+
+### 16.5 Aksi pemenuhan
+`MarkInviteSent` (set `access_starts_at = now()`, `access_expires_at = now() + duration` bila ada durasi, `fulfilled_at`), `ResendInvite` (hanya event), `MarkInviteActive` (admin atau pembeli lewat invoice), `ReleaseSlot` (isi `slot_released_at`, `fulfillment_status = ENDED`, wajib konfirmasi), `ReassignHost` (pindah `slot_host_id` ke host dengan slot kosong, lepas slot lama, event), `UpdateBuyerEmail` (oleh pemilik invoice, hanya sebelum `INVITE_SENT`, throttle, event), `CompleteManualOrder` (wajib `delivery_message`, maks 1000 karakter, teks biasa). Semua dalam transaksi + `lockForUpdate` pada order, memakai `canTransitionTo`, dan menulis `order_events` dengan aktor `admin:{id}` atau `buyer`.
+
+### 16.6 Validasi `buyer_fields` dan keamanan
+Tipe: `email`, `text`, `url` (hanya `https`), `textarea`, `select`. Kunci `snake_case`, label ≤ 60 karakter, nilai ≤ 255 (`textarea` ≤ 1000). `allowed_domains` untuk `email` (pencocokan domain persis, tanpa regex bebas dari admin). Tolak kolom yang labelnya meminta kata sandi. Nilai pembeli **selalu di-escape** (React) dan di pesan Telegram (`e()`). `buyer_inputs` tidak ikut props publik kecuali untuk pemilik invoice yang sah, dan pada Cek Pesanan hanya versi tersamar (`a***@gmail.com`).
+
+### 16.7 Rute tambahan
+Publik: `POST /invoice/{code}/email` (ubah email, throttle 5/menit), `POST /invoice/{code}/active` (pembeli menandai undangan diterima). Admin: `POST orders/{order}/invite-sent|resend-invite|mark-active|release-slot|reassign-host|complete`, dan resource `hosts` (CRUD host + daftar anggota aktif).
+
+### 16.8 Terjadwal dan notifikasi
+- `fulfillment:remind-pending` tiap 5 menit: `AWAITING_ACTION` > 30 menit (sekali per pesanan).
+- `fulfillment:remind-removals` tiap jam: akses `INVITE` sudah lewat `access_expires_at` tetapi `slot_released_at` kosong (sekali per pesanan).
+- `buyer-data:anonymize` harian: kosongkan `buyer_inputs` (dan samarkan `delivery_message`) pada pesanan berakhir > N hari (default 90, diatur di Pengaturan `buyer_data_retention_days`; 0 = nonaktif).
+- Pesan `order.created`, `payment.confirmed`, dan pengingat memuat jenis pengiriman dan data pembeli (di-escape).
+
+### 16.9 Tes wajib
+Regresi `STOCK` (semua tes yang ada tetap lolos tanpa diubah maknanya); validasi `buyer_fields` per tipe, batas, dan domain email; `AvailabilityService` per jenis (termasuk host nonaktif dan slot yang belum dibebaskan); slot terakhir (satu menang) dan email unik per varian; siklus `FulfillmentStatus` per jenis (transisi sah dan tidak sah); edit email hanya sebelum `INVITE_SENT`; `ReleaseSlot` dan `ReassignHost`; `CompleteManualOrder` wajib pesan; pengingat sekali per pesanan; anonimisasi; props publik tidak memuat `buyer_inputs` orang lain; tamu dan non-admin tidak bisa memanggil aksi admin; `dev:race-test` Skenario F (slot undangan terakhir, 8 proses serentak, tepat satu berhasil).

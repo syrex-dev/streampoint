@@ -427,7 +427,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     <div className="relative">
                         <ShoppingBag className="w-5 h-5 shrink-0" />
                         {typeof verifyingCount === 'number' && verifyingCount > 0 && (
-                            <span className="absolute -top-1.5 -right-2 px-1 min-w-4 h-4 text-[9px] font-mono font-bold rounded-full bg-info text-white flex items-center justify-center shadow-xs">
+                            <span className="absolute -top-1.5 -right-2 px-1 min-w-4 h-4 text-[9px] font-mono font-bold rounded-full bg-info text-on-info flex items-center justify-center shadow-xs">
                                 {verifyingCount > 99 ? '99+' : verifyingCount}
                             </span>
                         )}

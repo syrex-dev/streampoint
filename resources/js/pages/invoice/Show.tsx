@@ -31,7 +31,7 @@ import {
 import { CountdownTimer } from '@/components/shop/CountdownTimer';
 import { TotalHighlight } from '@/components/shop/TotalHighlight';
 import { CopyButton } from '@/components/shop/CopyButton';
-import { CredentialBox } from '@/components/shop/CredentialBox';
+import { DeliveryPanel } from '@/components/shop/DeliveryPanel';
 import { OrderStepper } from '@/components/shop/OrderStepper';
 import { formatRupiah, formatDateTimeWIB } from '@/lib/format';
 import { OrderInvoiceData } from '@/types/shop';
@@ -295,11 +295,9 @@ export default function InvoiceShow({
 
                         {isAuthorized ? (
                             <>
-                                <CredentialBox
-                                    credentials={order.credentials}
-                                    orderType={order.order_type}
-                                    accessStartsAt={order.access_starts_at}
-                                    accessExpiresAt={order.access_expires_at}
+                                <DeliveryPanel
+                                    order={order}
+                                    isAuthorized={isAuthorized}
                                 />
 
                                 {/* Verified Buyer Review Card (Anti-Spam) */}
@@ -318,7 +316,7 @@ export default function InvoiceShow({
                                                     key={star}
                                                     className={`w-4 h-4 ${
                                                         userReview.rating >= star
-                                                            ? 'fill-amber-400 text-amber-400'
+                                                            ? 'fill-warning text-warning'
                                                             : 'text-border fill-transparent'
                                                     }`}
                                                 />
@@ -382,7 +380,7 @@ export default function InvoiceShow({
                                                         <Star
                                                             className={`w-6 h-6 ${
                                                                 (hoverRating || reviewRating) >= star
-                                                                    ? 'fill-amber-400 text-amber-400'
+                                                                    ? 'fill-warning text-warning'
                                                                     : 'text-border fill-transparent'
                                                             }`}
                                                         />

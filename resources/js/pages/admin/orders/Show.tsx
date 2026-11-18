@@ -1029,7 +1029,7 @@ export default function OrderShow({ order, availableAccounts }: ShowProps) {
                                 type="button"
                                 onClick={handleRevokeAccess}
                                 disabled={isSubmitting || revokeReason.trim().length < 3}
-                                className="px-4 py-1.5 bg-danger text-white text-xs font-semibold rounded hover:bg-danger/90 transition-colors disabled:opacity-50 cursor-pointer shadow-xs flex items-center gap-1.5"
+                                className="px-4 py-1.5 bg-danger text-on-danger text-xs font-semibold rounded hover:bg-danger/90 transition-colors disabled:opacity-50 cursor-pointer shadow-xs flex items-center gap-1.5"
                             >
                                 <ShieldAlert className="w-3.5 h-3.5" />
                                 <span>{isSubmitting ? 'Memproses...' : 'Cabut Akses Sekarang'}</span>

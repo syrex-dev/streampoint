@@ -201,7 +201,7 @@ export default function AdminReviewsIndex({
                                                         key={s}
                                                         className={`w-3.5 h-3.5 ${
                                                             item.rating >= s
-                                                                ? 'fill-amber-400 text-amber-400'
+                                                                ? 'fill-warning text-warning'
                                                                 : 'text-border fill-transparent'
                                                         }`}
                                                     />

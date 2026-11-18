@@ -11,6 +11,7 @@ use App\Models\OrderEvent;
 use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\Setting;
+use App\Services\AvailabilityService;
 use App\Services\QuotaService;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -18,7 +19,7 @@ use Inertia\Response;
 
 class StorefrontController extends Controller
 {
-    public function index(QuotaService $quotaService): Response
+    public function index(QuotaService $quotaService, AvailabilityService $availabilityService): Response
     {
         $setting = Setting::current();
         $minSoldDisplay = (int) ($setting->min_sold_display ?? 5);
@@ -49,7 +50,7 @@ class StorefrontController extends Controller
             ->pluck('id')
             ->all();
 
-        $mappedProducts = $productsQuery->map(function (Product $product) use ($quota, $minSoldDisplay, $bestsellerIds) {
+        $mappedProducts = $productsQuery->map(function (Product $product) use ($quota, $minSoldDisplay, $bestsellerIds, $availabilityService) {
             $minPrice = $product->variants->min('price') ?? 0;
             $rentStock = (int) $product->available_rent_stock;
             $buyStock = (int) $product->available_buy_stock;
@@ -58,12 +59,12 @@ class StorefrontController extends Controller
             $hasRentVariant = $product->variants->contains(fn ($v) => $v->type === OrderType::RENT);
             $hasBuyVariant = $product->variants->contains(fn ($v) => $v->type === OrderType::BUY);
 
-            $isOutOfStock = (! $hasRentVariant || $rentStock === 0) && (! $hasBuyVariant || $buyStock === 0);
+            $anyVariantAvailable = $product->variants->isNotEmpty() && $totalStock > 0;
 
-            if ($isOutOfStock) {
+            if (! $anyVariantAvailable) {
                 $status = 'out_of_stock';
                 $statusLabel = 'Habis';
-            } elseif ($hasRentVariant && $quota['is_full']) {
+            } elseif ($hasRentVariant && ! $hasBuyVariant && $quota['is_full']) {
                 $status = 'rent_full';
                 $statusLabel = 'Sewa Penuh';
             } elseif ($totalStock <= 2) {

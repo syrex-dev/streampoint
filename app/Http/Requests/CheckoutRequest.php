@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\ProductVariant;
+use App\Support\BuyerFieldsSchema;
 use App\Support\Phone;
 use Illuminate\Foundation\Http\FormRequest;
 use InvalidArgumentException;
@@ -18,7 +20,7 @@ class CheckoutRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $baseRules = [
             'variant_id' => [
                 'required',
                 'integer',
@@ -37,9 +39,19 @@ class CheckoutRequest extends FormRequest
             ],
             'payment_method_id' => ['required', 'integer', 'exists:payment_methods,id'],
             'customer_note' => ['nullable', 'string', 'max:500'],
+            'buyer_inputs' => ['nullable', 'array'],
             'idempotency_key' => ['required', 'string', 'max:64'],
             'hp_website' => ['nullable', 'max:0'], // Honeypot field (must remain empty)
         ];
+
+        $variantId = $this->input('variant_id');
+        if ($variantId) {
+            $variant = ProductVariant::find($variantId);
+            $buyerRules = BuyerFieldsSchema::rulesForVariant($variant);
+            return array_merge($baseRules, $buyerRules);
+        }
+
+        return $baseRules;
     }
 
     /**

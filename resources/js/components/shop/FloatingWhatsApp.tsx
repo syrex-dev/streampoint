@@ -57,8 +57,8 @@ export function FloatingWhatsApp({ phone, isProductPage = false }: FloatingWhats
                 className="flex items-center gap-2 py-2 pl-3 pr-1 text-text hover:text-accent-text transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-l-full"
             >
                 <div className="relative flex items-center justify-center">
-                    <MessageCircle className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-emerald-500 fill-emerald-500/10 shrink-0" />
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <MessageCircle className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-accent fill-accent/10 shrink-0" />
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent animate-pulse" />
                 </div>
                 <span className="text-xs font-semibold tracking-tight whitespace-nowrap">
                     Chat Admin

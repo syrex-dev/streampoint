@@ -63,6 +63,18 @@ class SendAdminNotification implements ShouldQueue
                 $message .= "\nCatatan: {$note}";
             }
 
+            if (! empty($order->buyer_inputs) && is_array($order->buyer_inputs)) {
+                $inputsFormatted = [];
+                foreach ($order->buyer_inputs as $k => $v) {
+                    $keyEsc = htmlspecialchars((string) $k, ENT_QUOTES, 'UTF-8');
+                    $valEsc = htmlspecialchars(is_array($v) ? implode(', ', $v) : (string) $v, ENT_QUOTES, 'UTF-8');
+                    $inputsFormatted[] = "• {$keyEsc}: {$valEsc}";
+                }
+                if (! empty($inputsFormatted)) {
+                    $message .= "\nData Pembeli:\n" . implode("\n", $inputsFormatted);
+                }
+            }
+
             $notifier->send($message);
             return;
         }

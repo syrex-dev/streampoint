@@ -3,6 +3,7 @@
 namespace App\Actions\Order;
 
 use App\Enums\AccountStatus;
+use App\Enums\DeliveryType;
 use App\Enums\OrderStatus;
 use App\Enums\OrderType;
 use App\Exceptions\ActiveOrderExistsException;
@@ -14,19 +15,21 @@ use App\Models\PaymentMethod;
 use App\Models\ProductAccount;
 use App\Models\ProductVariant;
 use App\Models\Setting;
+use App\Services\AvailabilityService;
 use App\Services\InvoiceCodeGenerator;
 use App\Services\QuotaService;
 use App\Services\UniqueAmountGenerator;
+use App\Support\BuyerFieldsSchema;
 use App\Support\Phone;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 class CreateOrder
 {
     public function __construct(
         protected QuotaService $quota,
         protected InvoiceCodeGenerator $invoice,
-        protected UniqueAmountGenerator $uniqueAmount
+        protected UniqueAmountGenerator $uniqueAmount,
+        protected AvailabilityService $availability,
     ) {}
 
     public function handle(CreateOrderData $data): Order
@@ -73,27 +76,25 @@ class CreateOrder
                 }
             }
 
-            // Reserve an account unit: Prioritize variant-specific unit, fallback to general product unit
-            $hasVariantCol = Schema::hasColumn('product_accounts', 'variant_id');
-            $account = null;
-
-            if ($hasVariantCol) {
-                $account = ProductAccount::where('variant_id', $variant->id)
-                    ->where('status', AccountStatus::AVAILABLE)
-                    ->lockForUpdate()
-                    ->first();
+            // Check availability according to delivery type
+            $deliveryType = $variant->delivery_type ?? DeliveryType::STOCK;
+            if ($deliveryType !== DeliveryType::STOCK) {
+                throw new OutOfStockException('Jenis layanan ini belum tersedia.');
             }
 
+            // Reserve an account unit: Prioritize variant-specific unit, fallback to general product unit
+            $account = ProductAccount::where('variant_id', $variant->id)
+                ->where('status', AccountStatus::AVAILABLE)
+                ->lockForUpdate()
+                ->first();
+
             if (! $account) {
-                $query = ProductAccount::where('product_id', $variant->product_id)
+                $account = ProductAccount::where('product_id', $variant->product_id)
                     ->where('kind', $variant->type)
-                    ->where('status', AccountStatus::AVAILABLE);
-
-                if ($hasVariantCol) {
-                    $query->whereNull('variant_id');
-                }
-
-                $account = $query->lockForUpdate()->first();
+                    ->where('status', AccountStatus::AVAILABLE)
+                    ->whereNull('variant_id')
+                    ->lockForUpdate()
+                    ->first();
             }
 
             if (! $account) {
@@ -102,6 +103,7 @@ class CreateOrder
 
             $unique = 0;
             $ttlMinutes = (int) env('ORDER_PAYMENT_TTL_MINUTES', 15);
+            $sanitizedBuyerInputs = BuyerFieldsSchema::sanitize((array) ($data->buyerInputs ?? []), $variant);
 
             $order = Order::create([
                 'invoice_code' => $this->invoice->generate(),
@@ -111,6 +113,8 @@ class CreateOrder
                 'order_type' => $variant->type,
                 'customer_phone' => Phone::normalize($data->phone),
                 'customer_note' => $data->note,
+                'buyer_inputs' => ! empty($sanitizedBuyerInputs) ? $sanitizedBuyerInputs : null,
+                'fulfillment_status' => null,
                 'payment_method_id' => $paymentMethod->id,
                 'payment_method_label' => $paymentMethod->label,
                 'base_price' => $variant->price,

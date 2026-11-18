@@ -10,53 +10,29 @@ use App\Http\Requests\Admin\AccountStoreRequest;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductAccount;
+use App\Models\ProductVariant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class AdminAccountController extends Controller
 {
-    /**
-     * Self-healing: Ensure variant_id column exists on product_accounts table even if migration was not run yet.
-     */
-    protected function ensureVariantColumnExists(): void
-    {
-        try {
-            if (! Schema::hasColumn('product_accounts', 'variant_id')) {
-                Schema::table('product_accounts', function (\Illuminate\Database\Schema\Blueprint $table) {
-                    $table->unsignedBigInteger('variant_id')->nullable()->after('product_id')->index();
-                });
-            }
-        } catch (\Throwable $e) {
-            Log::warning('Self-healing schema for product_accounts.variant_id skipped: ' . $e->getMessage());
-        }
-    }
-
     public function index(Request $request): Response
     {
-        $this->ensureVariantColumnExists();
-
         try {
             $productId = $request->query('product_id');
             $variantId = $request->query('variant_id');
             $kind = $request->query('kind');
             $status = $request->query('status');
 
-            $hasVariantCol = Schema::hasColumn('product_accounts', 'variant_id');
-            $withRelations = ['product'];
-            if ($hasVariantCol) {
-                $withRelations[] = 'variant';
-            }
-
-            $query = ProductAccount::with($withRelations)->latest('id');
+            $query = ProductAccount::with(['product', 'variant'])->latest('id');
 
             if ($productId) {
                 $query->where('product_id', $productId);
             }
-            if ($hasVariantCol && $variantId) {
+            if ($variantId) {
                 $query->where('variant_id', $variantId);
             }
             if ($kind) {
@@ -70,8 +46,8 @@ class AdminAccountController extends Controller
                 'id' => $acc->id,
                 'product_id' => $acc->product_id,
                 'product_name' => $acc->product?->name ?? '-',
-                'variant_id' => $hasVariantCol ? $acc->variant_id : null,
-                'variant_name' => ($hasVariantCol && $acc->variant) ? ($acc->variant->name ?? 'Semua Varian') : 'Semua Varian',
+                'variant_id' => $acc->variant_id,
+                'variant_name' => $acc->variant ? ($acc->variant->name ?? 'Semua Varian') : 'Semua Varian',
                 'kind' => $acc->kind instanceof OrderType ? $acc->kind->value : (string) ($acc->kind ?? 'RENT'),
                 'credential' => (string) ($acc->credential ?? ''),
                 'status' => $acc->status instanceof AccountStatus ? $acc->status->value : (string) ($acc->status ?? 'AVAILABLE'),
@@ -162,7 +138,6 @@ class AdminAccountController extends Controller
 
     public function store(AccountStoreRequest $request): RedirectResponse
     {
-        $this->ensureVariantColumnExists();
         try {
             $email = trim($request->validated('email'));
             $password = trim($request->validated('password'));
@@ -181,15 +156,12 @@ class AdminAccountController extends Controller
 
             $data = [
                 'product_id' => (int) $request->validated('product_id'),
+                'variant_id' => $request->filled('variant_id') ? (int) $request->validated('variant_id') : null,
                 'kind' => OrderType::from($request->validated('kind')),
                 'credential' => $credential,
                 'status' => AccountStatus::AVAILABLE,
                 'note' => $request->validated('note'),
             ];
-
-            if (Schema::hasColumn('product_accounts', 'variant_id')) {
-                $data['variant_id'] = $request->filled('variant_id') ? (int) $request->validated('variant_id') : null;
-            }
 
             ProductAccount::create($data);
 
@@ -207,14 +179,15 @@ class AdminAccountController extends Controller
 
     public function bulkStore(AccountBulkStoreRequest $request): RedirectResponse
     {
-        $this->ensureVariantColumnExists();
-
         try {
             $productId = (int) $request->validated('product_id');
-            $hasVariantCol = Schema::hasColumn('product_accounts', 'variant_id');
             $variantId = $request->filled('variant_id') ? (int) $request->validated('variant_id') : null;
             $kind = OrderType::from($request->validated('kind'));
             $lines = preg_split('/\r\n|\r|\n/', trim($request->validated('items_text')));
+
+            $variant = $variantId ? ProductVariant::find($variantId) : null;
+            $stockFields = $variant?->stock_fields;
+            $expectedParts = is_array($stockFields) && ! empty($stockFields) ? count($stockFields) : null;
 
             $successCount = 0;
             $invalidLines = [];
@@ -229,41 +202,61 @@ class AdminAccountController extends Controller
                 }
 
                 $parts = explode('|', $trimmed);
-                if (count($parts) < 2) {
-                    $invalidLines[] = $lineNumber;
-                    continue;
-                }
 
-                $email = trim($parts[0]);
-                $password = trim($parts[1]);
+                if ($expectedParts !== null) {
+                    if (count($parts) !== $expectedParts) {
+                        $invalidLines[] = $lineNumber;
+                        continue;
+                    }
 
-                if (empty($email) || ! filter_var($email, FILTER_VALIDATE_EMAIL) || empty($password)) {
-                    $invalidLines[] = $lineNumber;
-                    continue;
-                }
+                    $hasEmptyPart = false;
+                    foreach ($parts as $part) {
+                        if (trim($part) === '') {
+                            $hasEmptyPart = true;
+                            break;
+                        }
+                    }
 
-                $profile = isset($parts[2]) ? trim($parts[2]) : '';
-                $pin = isset($parts[3]) ? trim($parts[3]) : '';
+                    if ($hasEmptyPart) {
+                        $invalidLines[] = $lineNumber;
+                        continue;
+                    }
 
-                $credentialParts = [$email, $password];
-                if (! empty($profile) || ! empty($pin)) {
-                    $credentialParts[] = $profile;
+                    $credential = implode('|', array_map('trim', $parts));
+                } else {
+                    if (count($parts) < 2) {
+                        $invalidLines[] = $lineNumber;
+                        continue;
+                    }
+
+                    $email = trim($parts[0]);
+                    $password = trim($parts[1]);
+
+                    if (empty($email) || ! filter_var($email, FILTER_VALIDATE_EMAIL) || empty($password)) {
+                        $invalidLines[] = $lineNumber;
+                        continue;
+                    }
+
+                    $profile = isset($parts[2]) ? trim($parts[2]) : '';
+                    $pin = isset($parts[3]) ? trim($parts[3]) : '';
+
+                    $credentialParts = [$email, $password];
+                    if (! empty($profile) || ! empty($pin)) {
+                        $credentialParts[] = $profile;
+                    }
+                    if (! empty($pin)) {
+                        $credentialParts[] = $pin;
+                    }
+                    $credential = implode('|', $credentialParts);
                 }
-                if (! empty($pin)) {
-                    $credentialParts[] = $pin;
-                }
-                $credential = implode('|', $credentialParts);
 
                 $data = [
                     'product_id' => $productId,
+                    'variant_id' => $variantId,
                     'kind' => $kind,
                     'credential' => $credential,
                     'status' => AccountStatus::AVAILABLE,
                 ];
-
-                if ($hasVariantCol) {
-                    $data['variant_id'] = $variantId;
-                }
 
                 ProductAccount::create($data);
 

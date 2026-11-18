@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\ProductAccount;
+use App\Services\AvailabilityService;
 use App\Services\QuotaService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,7 +17,7 @@ use Inertia\Response;
 
 class ProductController extends Controller
 {
-    public function show(string $slug, QuotaService $quotaService, Request $request): Response
+    public function show(string $slug, QuotaService $quotaService, AvailabilityService $availabilityService, Request $request): Response
     {
         $product = Product::where('slug', $slug)
             ->where('is_active', true)
@@ -36,17 +37,28 @@ class ProductController extends Controller
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->get()
-            ->map(fn ($v) => [
-                'id' => $v->id,
-                'product_id' => $v->product_id,
-                'name' => $v->name,
-                'type' => $v->type->value,
-                'rent_duration' => $v->rent_duration?->value,
-                'duration_hours' => (int) $v->duration_hours,
-                'price' => (int) $v->price,
-                'is_active' => (bool) $v->is_active,
-                'sort_order' => (int) $v->sort_order,
-            ]);
+            ->map(function ($v) use ($availabilityService) {
+                $availability = $availabilityService->forVariant($v);
+
+                return [
+                    'id' => $v->id,
+                    'product_id' => $v->product_id,
+                    'name' => $v->name,
+                    'type' => $v->type->value,
+                    'delivery_type' => $v->delivery_type?->value ?? 'STOCK',
+                    'buyer_fields' => $v->buyer_fields ?? [],
+                    'stock_fields' => $v->stock_fields ?? [],
+                    'delivery_instructions' => $v->delivery_instructions,
+                    'eta_text' => $v->eta_text,
+                    'stock_limit' => $v->stock_limit,
+                    'rent_duration' => $v->rent_duration?->value,
+                    'duration_hours' => $v->duration_hours !== null ? (int) $v->duration_hours : null,
+                    'price' => (int) $v->price,
+                    'is_active' => (bool) $v->is_active,
+                    'sort_order' => (int) $v->sort_order,
+                    'availability' => $availability,
+                ];
+            });
 
         $paymentMethods = PaymentMethod::where('is_active', true)
             ->orderBy('sort_order')

@@ -18,6 +18,7 @@ export function CredentialBox({
     accessExpiresAt,
 }: CredentialBoxProps) {
     const [showPassword, setShowPassword] = useState(false);
+    const [revealedKeys, setRevealedKeys] = useState<Record<string, boolean>>({});
 
     // Calculate whether rental period is expired
     const isExpired = useMemo(() => {
@@ -83,82 +84,123 @@ export function CredentialBox({
 
             {/* Credential rows */}
             <div className="space-y-2.5 text-xs">
-                {/* Email / Username */}
-                {credentials.email && (
-                    <div className="bg-surface-2 p-3 rounded-md border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div className="min-w-0">
-                            <div className="text-[11px] text-text-2 font-medium mb-0.5">Email / Username</div>
-                            <div className="font-mono text-text font-semibold break-all select-all">
-                                {credentials.email}
+                {credentials.items && credentials.items.length > 0 ? (
+                    credentials.items.map((item, idx) => {
+                        const isRevealed = revealedKeys[item.key] || false;
+                        return (
+                            <div key={`${item.key}-${idx}`} className="bg-surface-2 p-3 rounded-md border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div className="min-w-0">
+                                    <div className="text-[11px] text-text-2 font-medium mb-0.5">{item.label}</div>
+                                    <div className="font-mono text-text font-semibold break-all select-all">
+                                        {item.is_secret && !isRevealed ? '••••••••••••' : item.value}
+                                    </div>
+                                </div>
+                                <div className="shrink-0 flex items-center gap-1.5 justify-end">
+                                    {item.is_secret && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setRevealedKeys(prev => ({ ...prev, [item.key]: !prev[item.key] }))}
+                                            className="h-8 px-2.5 rounded-md border border-border bg-surface hover:bg-surface-hover text-text-2 hover:text-text text-xs inline-flex items-center gap-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-accent"
+                                            aria-label={isRevealed ? `Sembunyikan ${item.label}` : `Tampilkan ${item.label}`}
+                                        >
+                                            {isRevealed ? (
+                                                <>
+                                                    <EyeOff className="w-3.5 h-3.5" />
+                                                    <span>Sembunyikan</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Eye className="w-3.5 h-3.5" />
+                                                    <span>Tampilkan</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    )}
+                                    <CopyButton text={item.value} label="Salin" />
+                                </div>
                             </div>
-                        </div>
-                        <div className="shrink-0 flex items-center justify-end">
-                            <CopyButton text={credentials.email} label="Salin" />
-                        </div>
-                    </div>
-                )}
+                        );
+                    })
+                ) : (
+                    <>
+                        {/* Email / Username */}
+                        {credentials.email && (
+                            <div className="bg-surface-2 p-3 rounded-md border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div className="min-w-0">
+                                    <div className="text-[11px] text-text-2 font-medium mb-0.5">Email / Username</div>
+                                    <div className="font-mono text-text font-semibold break-all select-all">
+                                        {credentials.email}
+                                    </div>
+                                </div>
+                                <div className="shrink-0 flex items-center justify-end">
+                                    <CopyButton text={credentials.email} label="Salin" />
+                                </div>
+                            </div>
+                        )}
 
-                {/* Password */}
-                {credentials.password && (
-                    <div className="bg-surface-2 p-3 rounded-md border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div className="min-w-0">
-                            <div className="text-[11px] text-text-2 font-medium mb-0.5">Password</div>
-                            <div className="font-mono text-text font-semibold break-all select-all">
-                                {showPassword ? credentials.password : '••••••••••••'}
+                        {/* Password */}
+                        {credentials.password && (
+                            <div className="bg-surface-2 p-3 rounded-md border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div className="min-w-0">
+                                    <div className="text-[11px] text-text-2 font-medium mb-0.5">Password</div>
+                                    <div className="font-mono text-text font-semibold break-all select-all">
+                                        {showPassword ? credentials.password : '••••••••••••'}
+                                    </div>
+                                </div>
+                                <div className="shrink-0 flex items-center gap-1.5 justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="h-8 px-2.5 rounded-md border border-border bg-surface hover:bg-surface-hover text-text-2 hover:text-text text-xs inline-flex items-center gap-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-accent"
+                                        aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                                    >
+                                        {showPassword ? (
+                                            <>
+                                                <EyeOff className="w-3.5 h-3.5" />
+                                                <span>Sembunyikan</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Eye className="w-3.5 h-3.5" />
+                                                <span>Tampilkan</span>
+                                            </>
+                                        )}
+                                    </button>
+                                    <CopyButton text={credentials.password} label="Salin" />
+                                </div>
                             </div>
-                        </div>
-                        <div className="shrink-0 flex items-center gap-1.5 justify-end">
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="h-8 px-2.5 rounded-md border border-border bg-surface hover:bg-surface-hover text-text-2 hover:text-text text-xs inline-flex items-center gap-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-accent"
-                                aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
-                            >
-                                {showPassword ? (
-                                    <>
-                                        <EyeOff className="w-3.5 h-3.5" />
-                                        <span>Sembunyikan</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Eye className="w-3.5 h-3.5" />
-                                        <span>Tampilkan</span>
-                                    </>
-                                )}
-                            </button>
-                            <CopyButton text={credentials.password} label="Salin" />
-                        </div>
-                    </div>
-                )}
+                        )}
 
-                {/* Profile */}
-                {credentials.profile && (
-                    <div className="bg-surface-2 p-3 rounded-md border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div className="min-w-0">
-                            <div className="text-[11px] text-text-2 font-medium mb-0.5">Profil</div>
-                            <div className="font-mono text-text font-semibold select-all">
-                                {credentials.profile}
+                        {/* Profile */}
+                        {credentials.profile && (
+                            <div className="bg-surface-2 p-3 rounded-md border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div className="min-w-0">
+                                    <div className="text-[11px] text-text-2 font-medium mb-0.5">Profil</div>
+                                    <div className="font-mono text-text font-semibold select-all">
+                                        {credentials.profile}
+                                    </div>
+                                </div>
+                                <div className="shrink-0 flex items-center justify-end">
+                                    <CopyButton text={credentials.profile} label="Salin" />
+                                </div>
                             </div>
-                        </div>
-                        <div className="shrink-0 flex items-center justify-end">
-                            <CopyButton text={credentials.profile} label="Salin" />
-                        </div>
-                    </div>
-                )}
+                        )}
 
-                {/* PIN */}
-                {credentials.pin && (
-                    <div className="bg-surface-2 p-3 rounded-md border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div className="min-w-0">
-                            <div className="text-[11px] text-text-2 font-medium mb-0.5">PIN Profil</div>
-                            <div className="font-mono text-text font-semibold select-all">
-                                {credentials.pin}
+                        {/* PIN */}
+                        {credentials.pin && (
+                            <div className="bg-surface-2 p-3 rounded-md border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div className="min-w-0">
+                                    <div className="text-[11px] text-text-2 font-medium mb-0.5">PIN Profil</div>
+                                    <div className="font-mono text-text font-semibold select-all">
+                                        {credentials.pin}
+                                    </div>
+                                </div>
+                                <div className="shrink-0 flex items-center justify-end">
+                                    <CopyButton text={credentials.pin} label="Salin" />
+                                </div>
                             </div>
-                        </div>
-                        <div className="shrink-0 flex items-center justify-end">
-                            <CopyButton text={credentials.pin} label="Salin" />
-                        </div>
-                    </div>
+                        )}
+                    </>
                 )}
             </div>
 

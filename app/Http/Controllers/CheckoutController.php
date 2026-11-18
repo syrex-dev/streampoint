@@ -41,6 +41,7 @@ class CheckoutController extends Controller
                 paymentMethodId: (int) $request->validated('payment_method_id'),
                 note: $request->validated('customer_note'),
                 ownedInvoices: $request->session()->get('owned_invoices', []),
+                buyerInputs: (array) $request->validated('buyer_inputs', []),
             ));
         } catch (ActiveOrderExistsException $e) {
             if ($e->ownedBySession) {

@@ -9,6 +9,7 @@ class CreateOrderData
         public string $phone,
         public int $paymentMethodId,
         public ?string $note = null,
-        public ?array $ownedInvoices = null
+        public ?array $ownedInvoices = null,
+        public ?array $buyerInputs = null,
     ) {}
 }

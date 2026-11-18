@@ -145,7 +145,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                                     <Star
                                         className={`w-6 h-6 transition-colors ${
                                             (hoverRating || rating) >= star
-                                                ? 'fill-amber-400 text-amber-400'
+                                                ? 'fill-warning text-warning'
                                                 : 'text-border-strong fill-transparent'
                                         }`}
                                     />
@@ -218,9 +218,9 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                                     key={star}
                                     className={`w-4 h-4 ${
                                         average_rating >= star
-                                            ? 'fill-amber-400 text-amber-400'
+                                            ? 'fill-warning text-warning'
                                             : average_rating >= star - 0.5
-                                            ? 'fill-amber-400/50 text-amber-400'
+                                            ? 'fill-warning/50 text-warning'
                                             : 'text-border-strong fill-transparent'
                                     }`}
                                 />
@@ -238,12 +238,12 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                             <div key={item.stars} className="flex items-center gap-3 text-xs">
                                 <span className="w-6 font-semibold text-text flex items-center gap-1 shrink-0">
                                     <span>{item.stars}</span>
-                                    <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
+                                    <Star className="w-3 h-3 fill-warning text-warning shrink-0" />
                                 </span>
 
                                 <div className="flex-1 h-2 rounded-full bg-surface-2 overflow-hidden border border-border/60">
                                     <div
-                                        className="h-full bg-amber-400 rounded-full transition-all duration-300"
+                                        className="h-full bg-warning rounded-full transition-all duration-300"
                                         style={{ width: `${item.percentage}%` }}
                                     />
                                 </div>
@@ -308,7 +308,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                                         key={star}
                                         className={`w-3.5 h-3.5 ${
                                             rev.rating >= star
-                                                ? 'fill-amber-400 text-amber-400'
+                                                ? 'fill-warning text-warning'
                                                 : 'text-border fill-transparent'
                                         }`}
                                     />
@@ -330,7 +330,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
             <div className="p-3 rounded-xl bg-surface-2/60 border border-border text-[11px] text-text-2 flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-accent-text shrink-0" />
                 <span>
-                    <strong>Anti-Spam Terjamin:</strong> Seluruh ulasan 100% berasal dari pembeli nyata setelah menyelesaikan transaksi pembayaran. Satu transaksi hanya dapat memberikan satu ulasan.
+                    <strong>Anti-Spam Terjamin:</strong> Seluruh ulasan asli berasal dari pembeli nyata setelah menyelesaikan transaksi pembayaran. Satu transaksi hanya dapat memberikan satu ulasan.
                 </span>
             </div>
         </section>

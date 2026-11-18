@@ -3,6 +3,8 @@
 namespace App\Actions\Order;
 
 use App\Enums\AccountStatus;
+use App\Enums\DeliveryType;
+use App\Enums\FulfillmentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\OrderType;
 use App\Exceptions\InvalidStatusTransitionException;
@@ -83,10 +85,17 @@ class ApproveOrder
             }
 
             $from = $order->status;
+            $deliveryType = $variant->delivery_type ?? DeliveryType::STOCK;
+            $fulfillmentStatus = match ($deliveryType) {
+                DeliveryType::STOCK => FulfillmentStatus::DELIVERED,
+                DeliveryType::INVITE, DeliveryType::MANUAL => FulfillmentStatus::AWAITING_ACTION,
+            };
 
             $order->update([
                 'account_id' => $assignedAccount->id,
                 'status' => OrderStatus::PAID,
+                'fulfillment_status' => $fulfillmentStatus,
+                'fulfilled_at' => $deliveryType === DeliveryType::STOCK ? $now : null,
                 'paid_at' => $now,
                 'access_starts_at' => $now,
                 'access_expires_at' => $accessExpiresAt,

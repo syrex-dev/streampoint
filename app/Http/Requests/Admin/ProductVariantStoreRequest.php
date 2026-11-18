@@ -23,6 +23,32 @@ class ProductVariantStoreRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', Rule::enum(OrderType::class)],
+            'delivery_type' => [
+                'nullable',
+                function (string $attribute, mixed $value, Closure $fail) {
+                    if (! empty($value) && $value !== 'STOCK') {
+                        $fail('Jenis pengiriman ini belum tersedia.');
+                    }
+                },
+            ],
+            'buyer_fields' => [
+                'nullable',
+                'array',
+                'max:5',
+                function (string $attribute, mixed $value, Closure $fail) {
+                    if (! is_array($value)) {
+                        return;
+                    }
+                    $errors = \App\Support\BuyerFieldsSchema::validateDefinition($value);
+                    foreach ($errors as $err) {
+                        $fail($err);
+                    }
+                },
+            ],
+            'stock_fields' => ['nullable', 'array'],
+            'delivery_instructions' => ['nullable', 'string'],
+            'eta_text' => ['nullable', 'string', 'max:60'],
+            'stock_limit' => ['nullable', 'integer', 'min:1'],
             'rent_duration' => [
                 Rule::requiredIf($this->input('type') === OrderType::RENT->value),
                 'nullable',
@@ -34,10 +60,14 @@ class ProductVariantStoreRequest extends FormRequest
                 },
             ],
             'duration_hours' => [
-                'required',
+                Rule::requiredIf($this->input('type') === OrderType::RENT->value),
+                'nullable',
                 'integer',
                 'min:1',
                 function (string $attribute, mixed $value, Closure $fail) {
+                    if (empty($value)) {
+                        return;
+                    }
                     $type = $this->input('type');
                     $hours = (int) $value;
 

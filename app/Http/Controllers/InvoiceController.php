@@ -32,12 +32,25 @@ class InvoiceController extends Controller
         if ($isAuthorized && $order->status === OrderStatus::PAID && $order->account?->credential) {
             $raw = $order->account->credential;
             $parts = array_map('trim', explode('|', $raw));
+            $stockFields = $order->variant?->stock_fields ?: ['email', 'password'];
+            $items = [];
+            foreach ($stockFields as $idx => $fieldName) {
+                if (isset($parts[$idx]) && $parts[$idx] !== '') {
+                    $items[] = [
+                        'key' => $fieldName,
+                        'label' => ucfirst(str_replace('_', ' ', (string) $fieldName)),
+                        'value' => $parts[$idx],
+                        'is_secret' => in_array(strtolower((string) $fieldName), ['password', 'pin', 'secret', 'key', 'kode', 'token'], true),
+                    ];
+                }
+            }
             $credentials = [
                 'email' => $parts[0] ?? $raw,
                 'password' => $parts[1] ?? '',
                 'profile' => $parts[2] ?? '',
                 'pin' => $parts[3] ?? '',
                 'raw' => $raw,
+                'items' => $items,
             ];
         }
 
@@ -98,6 +111,13 @@ class InvoiceController extends Controller
                 'access_expires_at' => $order->access_expires_at?->toIso8601String(),
                 'has_payment_proof' => ! empty($order->payment_proof_path),
                 'credentials' => $credentials,
+                'delivery_type' => $order->variant?->delivery_type?->value ?? 'STOCK',
+                'fulfillment_status' => $order->fulfillment_status?->value ?? ($order->status === OrderStatus::PAID ? 'DELIVERED' : 'AWAITING_ACTION'),
+                'delivery_instructions' => $order->variant?->delivery_instructions,
+                'eta_text' => $order->variant?->eta_text,
+                'buyer_inputs' => $order->buyer_inputs,
+                'delivery_message' => $order->delivery_message,
+                'fulfilled_at' => $order->fulfilled_at?->toIso8601String(),
                 'created_at' => $order->created_at->toIso8601String(),
             ],
             'userReview' => $order->review ? [

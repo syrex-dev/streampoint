@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\FulfillmentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\OrderType;
 use Illuminate\Database\Eloquent\Builder;
@@ -23,6 +24,10 @@ class Order extends Model
         'order_type',
         'customer_phone',
         'customer_note',
+        'buyer_inputs',
+        'fulfillment_status',
+        'delivery_message',
+        'fulfilled_at',
         'payment_method_id',
         'payment_method_label',
         'base_price',
@@ -43,6 +48,8 @@ class Order extends Model
         return [
             'order_type' => OrderType::class,
             'status' => OrderStatus::class,
+            'fulfillment_status' => FulfillmentStatus::class,
+            'buyer_inputs' => 'array',
             'base_price' => 'integer',
             'unique_code' => 'integer',
             'total_amount' => 'integer',
@@ -51,6 +58,7 @@ class Order extends Model
             'payment_expires_at' => 'datetime',
             'quota_date' => 'date:Y-m-d',
             'paid_at' => 'datetime',
+            'fulfilled_at' => 'datetime',
         ];
     }
 

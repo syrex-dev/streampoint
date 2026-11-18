@@ -392,7 +392,7 @@ export default function AdminSettings({ settings, overrides, telegramConfigured 
                                 }`}
                             >
                                 <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-mono font-bold ${
-                                    isActive ? 'bg-black/20 text-on-accent' : 'bg-surface-2 text-text-2'
+                                    isActive ? 'bg-overlay/20 text-on-accent' : 'bg-surface-2 text-text-2'
                                 }`}>
                                     {tab.num}
                                 </span>
@@ -441,7 +441,7 @@ export default function AdminSettings({ settings, overrides, telegramConfigured 
                                         value={generalData.store_tagline}
                                         onChange={(e) => setGeneralData({ ...generalData, store_tagline: e.target.value })}
                                         className="w-full h-9 px-3 text-xs bg-surface-2 border border-border rounded-lg text-text focus:outline-none focus:border-accent"
-                                        placeholder="Sewa & Beli Akun Streaming Instan & Terpercaya"
+                                        placeholder="Sewa & Beli Akun Streaming Instan & Bergaransi"
                                     />
                                 </div>
                             </div>

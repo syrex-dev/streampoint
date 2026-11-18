@@ -48,7 +48,6 @@ seakun.id dipakai sebagai acuan **pola dan susunan halaman**: urutan seksi, navi
 ### Wireframe Acuan
 
 **Storefront (Mobile)**
-
 ```
 ┌──────────────────────────────┐
 │ NamaToko        [tema] [menu] │  header 56px
@@ -71,7 +70,6 @@ seakun.id dipakai sebagai acuan **pola dan susunan halaman**: urutan seksi, navi
 ```
 
 **Detail Layanan (Desktop)**
-
 ```
 ┌────────────────────┬───────────────────────────────────┐
 │ [logo] Netflix     │ 1  Pilih Paket                    │
@@ -88,7 +86,6 @@ seakun.id dipakai sebagai acuan **pola dan susunan halaman**: urutan seksi, navi
 ```
 
 **Invoice (PENDING)**
-
 ```
 ┌──────────────────────────────┐
 │ INV-20261101-K7P2QX  [MENUNGGU]│
@@ -131,7 +128,7 @@ Semua warna dipakai lewat CSS variables. **Dilarang menulis hex langsung di komp
 | `--accent-text` | `#10B981` | `#047857` | **Teks/ikon** berwarna aksen (kontras aman di kedua mode) |
 | `--on-accent` | `#09090B` | `#09090B` | Teks di atas latar `--accent` (selalu gelap) |
 | `--warning` | `#F59E0B` | `#B45309` | Teks/ikon peringatan. Latar badge memakai `--warning` pada opasitas 10–12%. |
-| `--danger` | `#EF4444` | `#B91C1C` | Kuota/stok habis, error, `CANCELLED` (5.89:1 di atas `--surface-2` terang) |
+| `--danger` | `#EF4444` | `#DC2626` | Kuota/stok habis, error, `CANCELLED` |
 | `--danger-solid` | `#DC2626` | `#DC2626` | Latar tombol destruktif berisi penuh. Hover `--danger-solid-hover` `#B91C1C`. |
 | `--on-danger` | `#FFFFFF` | `#FFFFFF` | Teks di atas `--danger-solid` (4.83:1; di atas hover 6.47:1). Jangan memakai `--danger` (`#EF4444` di mode gelap) sebagai latar teks putih: hanya 3.76:1. |
 | `--on-warning` | `#09090B` | `#FFFFFF` | Teks di atas latar `--warning` berisi penuh (9.26:1 gelap, 5.02:1 terang). |
@@ -140,7 +137,6 @@ Semua warna dipakai lewat CSS variables. **Dilarang menulis hex langsung di komp
 | `--overlay` | `rgba(0,0,0,0.6)` | `rgba(0,0,0,0.4)` | Latar modal |
 
 **Aturan warna (berlaku di kedua mode):**
-
 - Dilarang: gradasi ungu-biru neon (*AI purple-cyan glow*), gradien dekoratif, glow, glassmorphism.
 - **Satu warna aksen toko** (default emerald, dapat diganti lewat preset di 2.6). Warna aksen berarti "bisa diklik", "terpilih", atau "tersedia". Tidak untuk dekorasi. Satu-satunya tambahan warna adalah tint tipis warna merek layanan pada kotak logo (2.6 B).
 - Di mode terang, teks berwarna memakai `--accent-text` (bukan `--accent`) karena `#10B981` di atas putih kontrasnya kurang dari 4.5:1. Latar tombol tetap `--accent` dengan teks `--on-accent` (kontras ≈ 8:1 di kedua mode).
@@ -157,7 +153,7 @@ Semua warna dipakai lewat CSS variables. **Dilarang menulis hex langsung di komp
   --border: #E4E4E7; --border-strong: #D4D4D8;
   --text: #09090B; --text-2: #52525B; --text-muted: #666670;
   --accent: #10B981; --accent-hover: #059669; --accent-text: #047857; --on-accent: #09090B;
-  --warning: #B45309; --danger: #B91C1C; --info: #0369A1;
+  --warning: #B45309; --danger: #DC2626; --info: #0369A1;
   --danger-solid: #DC2626; --danger-solid-hover: #B91C1C; --on-danger: #FFFFFF;
   --on-warning: #FFFFFF; --success: #047857;
   --overlay: rgba(0,0,0,0.4);
@@ -174,7 +170,6 @@ Semua warna dipakai lewat CSS variables. **Dilarang menulis hex langsung di komp
   --overlay: rgba(0,0,0,0.6);
 }
 ```
-
 Petakan token ke tema Tailwind (`bg-bg`, `bg-surface`, `text-text-2`, `border-border`, `text-accent-text`, dst.). Class `dark` dipasang pada `<html>`.
 
 ### 2.3 Mekanisme Pengalih Tema
@@ -218,7 +213,6 @@ Petakan token ke tema Tailwind (`bg-bg`, `bg-surface`, `text-text-2`, `border-bo
 Aturan preset: kontras `--accent-text` terhadap `--bg` dan `--surface` harus ≥ 4.5:1, dan `--on-accent` terhadap `--accent` **dan** `--accent-hover` ≥ 4.5:1, di kedua mode. (Catatan: `--accent-hover` yang lebih gelap dari `--accent` dengan teks gelap bisa gagal, mis. `#2563EB` dengan `#09090B` hanya 3.85:1. Untuk preset `blue` mode terang, hover memakai warna yang lebih terang.) Hitung dengan rumus kontras WCAG dan sesuaikan nilai bila ada yang kurang. Preset `blue` mendekati warna `--info` (badge `VERIFYING`), jadi badge status selalu memakai label teks. Nilai preset divalidasi dengan daftar putih (bukan input bebas).
 
 **B. Warna merek layanan (tint).** Admin boleh mengisi `brand_color` (hex `#RRGGBB`) per layanan. Dipakai **hanya** sebagai tint kotak logo:
-
 - latar: `color-mix(in srgb, var(--brand) 14%, var(--surface))` (mode gelap 18%)
 - border: `color-mix(in srgb, var(--brand) 30%, var(--border))`
 
@@ -271,20 +265,16 @@ Tidak ada teks di atas 32px. Line-height: 1.5 untuk body, 1.25 untuk judul.
 ## 6. Spesifikasi Komponen
 
 ### 6.1 Header (sticky)
-
 Tinggi 56px (mobile) / 56px (desktop), latar `--bg`, border bawah 1px, `position: sticky; top: 0`.
-
 - **Desktop:** kiri nama toko. Tengah/kanan tautan jangkar: **Layanan**, **Cara Pesan**, **FAQ**, lalu **Cek Pesanan** (ikon `Search` + teks), dan **ThemeToggle** di paling kanan.
 - **Mobile:** kiri nama toko, kanan ThemeToggle dan tombol **menu** (ikon `Menu`). Menu membuka panel dari atas/samping berisi tautan yang sama dalam daftar vertikal (tinggi baris 48px), `Esc` dan tap di luar untuk menutup, fokus terkunci di panel.
 - **Kiri:** BrandMark (6.28), bukan teks polos bila logo toko diunggah.
 - Tautan jangkar menggulir ke seksi terkait (`scroll-margin-top` 72px). Di halaman selain beranda, tautan menuju `/#id-seksi`.
 
 ### 6.2 Hero Fungsional
-
 Menggantikan pita intro lama. **Hanya tampil bila tidak ada banner aktif** (6.26). Bila ada banner, hero disembunyikan agar tinggi atas halaman tidak bertambah. Tinggi tetap: **160px (desktop ≥ 1024px)**, **maks 140px (mobile)**. Kartu dengan border 1px, radius 8px, latar `--surface`.
 
 **Desktop, dua kolom:**
-
 - **Kiri:** judul 24px/600 (mis. "Sewa & Beli Akun Streaming", ditulis sendiri oleh pemilik toko), satu kalimat 14px `--text-2`, dua tombol: **Lihat Layanan** (Primary, menggulir ke katalog) dan **Cek Pesanan** (Secondary).
 - **Kanan, panel status (3 baris, 13px, ikon Lucide 16px, angka mono/tabular):**
   1. `Slot sewa hari ini` + `2/3 tersisa` (dari `QuotaService`, sama dengan bar kuota).
@@ -297,7 +287,6 @@ Menggantikan pita intro lama. **Hanya tampil bila tidak ada banner aktif** (6.26
 Semua angka berasal dari data nyata. Jika sebuah data null, barisnya tidak tampil. Tidak ada angka karangan.
 
 ### 6.3 Banner Pesanan Belum Selesai
-
 Muncul di bawah header pada semua halaman publik (kecuali halaman invoice yang bersangkutan) jika sesi pengunjung memiliki order `PENDING`/`VERIFYING`. Satu baris: ikon `Clock`, teks "Pesanan INV-… belum selesai" + status, dan tautan **Lanjutkan** ke invoice. Gaya: latar `--warning` 10%, border `--warning` 30%, tinggi 40px. Hilang otomatis saat order selesai atau expired.
 
 **Penguncian checkout saat ada pesanan aktif.** Jika sesi memegang pesanan `PENDING`/`VERIFYING`, di halaman layanan: tombol checkout (termasuk sticky bar mobile) dinonaktifkan dan diganti keterangan tertulis di atas tombol: "Selesaikan pesanan INV-… terlebih dahulu" dengan tautan **Lanjutkan Pembayaran** (untuk `VERIFYING`: "Pembayaran sedang diverifikasi. Kamu bisa memesan lagi setelah selesai."). Pemilihan paket tetap boleh dilihat. Pesan error dari server (jika tetap ditolak) tampil sebagai banner error inline pada Langkah 4, dengan teks yang sama. Server selalu menjadi penentu akhir.
@@ -305,7 +294,6 @@ Muncul di bawah header pada semua halaman publik (kecuali halaman invoice yang b
 **Batalkan Pesanan (invoice `PENDING`):** tombol Danger kecil (tinggi 36px) di bawah tombol "Saya Sudah Bayar", dengan modal konfirmasi: "Batalkan pesanan ini? Kuota dan akun akan dilepas." Tidak tampil untuk `VERIFYING`/`PAID`.
 
 ### 6.4 QuotaBar
-
 Satu baris penuh lebar di atas grid, tinggi 44–56px, kartu dengan border.
 
 | Keadaan | Tampilan |
@@ -317,9 +305,7 @@ Satu baris penuh lebar di atas grid, tinggi 44–56px, kartu dengan border.
 Segmen: tiga kotak 16×6px, radius 2px. Terpakai = `--border-strong` (atau `--danger` saat penuh), sisa = `--accent`.
 
 ### 6.5 Filter Katalog
-
 Di atas grid, satu baris:
-
 - **Tipe produk:** kontrol segmen **Semua / Sewa / Beli**.
 - **Kategori:** dropdown (mis. Semua, Video, Musik, Lainnya) dari kolom `products.category`. Sembunyikan jika hanya ada satu kategori.
 - Mobile: baris dapat digulir horizontal (tanpa wrap), tinggi 40px.
@@ -327,18 +313,15 @@ Di atas grid, satu baris:
 - Filter **Sewa** menyembunyikan layanan yang tidak punya varian sewa, begitu juga sebaliknya.
 
 ### 6.6 ProductCard (v3, bergambar sampul)
-
 Grid: 2 kolom pada mobile (≥ 360px; di bawahnya 1 kolom), 3 kolom ≥ 768px, 4 kolom ≥ 1024px. Seluruh kartu adalah tautan. Kartu berlatar `--surface`, border 1px, radius 8px, tanpa padding luar (sampul penuh di atas).
 
 **Susunan vertikal:**
-
 1. **Sampul** (rasio 16:10, `object-cover`, `loading="lazy"`, `width`/`height` eksplisit). Tanpa sampul: blok tint warna merek (2.6 B) dengan logo 40px di tengah (atau inisial mono 18px/600).
 2. **Badge di atas sampul** (kiri atas: `Baru`, `Terlaris`; kanan atas: status stok). Badge berlatar solid `--surface` dengan border dan teks 11px, bukan teks langsung di atas gambar.
 3. **Badan** (padding 12px): baris logo 24px + kategori (12px, `--text-2`); nama (14px/600, maks 2 baris); baris harga: `mulai` (12px) + harga (mono 14px/600).
 4. **Baris chip** (11px, border `--border`): `Sewa`, `Beli`, dan `Garansi` bila `has_warranty` aktif. Di sebelah kanan: `N terjual` (12px, `--text-2`) **hanya jika angkanya nyata dan ≥ ambang** (`min_sold_display`, default 5).
 
 **Aturan data (tidak boleh dipalsukan):**
-
 - `Baru`: layanan dibuat ≤ 14 hari lalu.
 - `Terlaris`: tiga layanan dengan jumlah pesanan `PAID` terbanyak, dan hanya jika masing-masing ≥ `min_sold_display`.
 - `N terjual`: jumlah order `PAID` untuk layanan itu (dihitung dengan `withCount`, tanpa N+1).
@@ -349,7 +332,6 @@ Hover: border `--border-strong` dan latar `--surface-hover`, tanpa transform. Fo
 Badge status stok: `Tersedia` (aksen), `Stok Menipis` (warning), `Habis` (danger), `Sewa Penuh` (warning, hanya jika layanan punya paket beli aktif). Layanan `Habis` dipindah ke bagian "Sedang Kosong" (6.31).
 
 ### 6.7 Seksi "Cara Pesan"
-
 Judul seksi + 5 langkah bernomor, masing-masing: kotak 32px berisi ikon Lucide, nomor (mono 12px), judul pendek, satu baris keterangan. Isi default:
 
 | # | Judul | Keterangan | Ikon |
@@ -363,20 +345,15 @@ Judul seksi + 5 langkah bernomor, masing-masing: kotak 32px berisi ikon Lucide, 
 Desktop: 5 kolom sejajar dengan garis penghubung 1px (`--border`). Mobile: daftar vertikal.
 
 ### 6.8 Metode Pembayaran (tanpa seksi tersendiri di beranda)
-
 Metode pembayaran **tidak** punya seksi sendiri di beranda. Informasinya tampil di tiga tempat: **Langkah 3 checkout** (pilihan lengkap, 6.13), **invoice** (instruksi bayar), dan **kolom metode pembayaran di footer** (6.10). Di footer, tiap metode ditampilkan sebagai logo 24px di atas **plat logo putih** (`.logo-plate`: latar putih, padding 4×8px, border `--border`, radius 6px) bila admin mengunggah `logo_path`, selain itu label teks dengan ikon `QrCode`/`Landmark`/`Wallet`. Jangan memakai kata "Resmi" pada judul atau label. Logo merek pihak ketiga hanya yang diunggah admin sendiri.
 
 ### 6.9 Tanya Jawab (Strip Bantuan dan Modal)
-
 Beranda **tidak** memuat daftar pertanyaan penuh. Sebagai gantinya ada **Strip Bantuan**: satu kartu ramping (tinggi ≤ 72px, border 1px) berisi ikon `CircleHelp`, teks "Punya pertanyaan seputar pemesanan?", dan tombol Secondary **Buka Tanya Jawab**.
-
 - **Modal Tanya Jawab:** lebar maks 640px, tinggi maks 80vh dengan isi dapat digulir. Isi: kotak cari (filter instan pada pertanyaan dan jawaban), daftar pertanyaan sebagai akordeon (`aria-expanded`, `aria-controls`, boleh beberapa terbuka), dan di bawahnya tautan **Tanya admin via WhatsApp** (disembunyikan bila `admin_whatsapp` kosong). Hasil pencarian kosong menampilkan "Tidak ada pertanyaan yang cocok" dan tombol Reset.
 - **Perilaku:** fokus terkunci di dalam modal, `Esc` dan klik di luar menutup, fokus kembali ke tombol pemicu saat ditutup. Tautan `/#faq` (dari footer atau halaman lain) membuka modal saat halaman dimuat; saat ditutup, hash dihapus dengan `history.replaceState` agar tombol Kembali tidak berputar. Isi pertanyaan tetap dari `resources/js/data/faq.ts` (PRD 5.6).
 
 ### 6.10 Footer
-
 Border atas 1px, latar `--bg`. Empat kolom (desktop) / bertumpuk (mobile):
-
 1. **Brand:** BrandMark (nama, logo, tagline), satu kalimat deskripsi, dan **tautan sosial** (ikon Lucide `Send` untuk Telegram, `Instagram`, dan seterusnya sesuai yang diisi di Pengaturan; hanya yang terisi yang tampil, dibuka di tab baru dengan `rel="noopener noreferrer"`).
 2. **Tautan penting:** Beranda, Katalog, Cek Pesanan, Syarat & Ketentuan, Kebijakan Privasi.
 3. **Kontak & jam kerja:** WhatsApp admin (`settings.admin_whatsapp`) dan **Jam Operasional** (`settings.business_hours`).
@@ -385,15 +362,12 @@ Border atas 1px, latar `--bg`. Empat kolom (desktop) / bertumpuk (mobile):
 Baris bawah (12px, `--text-2`): hak cipta toko dan **disclaimer non-afiliasi**: "Situs ini layanan independen dan tidak berafiliasi dengan, didukung, atau terkait dengan Netflix, YouTube, Spotify, atau penyedia layanan lain. Seluruh merek dagang adalah milik pemiliknya masing-masing."
 
 ### 6.11 Tombol Bantuan Mengambang
-
 Tombol 48px bulat-persegi (radius 8px), kanan bawah, berisi ikon `MessageCircle` + teks `Bantuan` (teks disembunyikan di layar < 480px, `aria-label` tetap). Membuka WhatsApp admin (`https://wa.me/…`) dengan teks awal. Di halaman produk (mobile) posisikan **di atas** sticky bottom bar (bottom = 64px + 16px) agar tidak menutupinya. Disembunyikan jika `admin_whatsapp` kosong. Gaya: `--surface`, border `--border-strong`, teks `--text` (bukan tombol aksen agar tidak bersaing dengan CTA).
 
 ### 6.12 Tab Tipe Paket (Langkah 1)
-
 Dua tab segmen: **Sewa Harian** dan **Beli Akun**. Aktif: latar `--surface-2`, border `--border-strong`, teks `--text`, garis bawah aksen 2px. Tab Sewa menampilkan penanda teks `2/3` atau `Penuh`.
 
 ### 6.13 PackageOption
-
 Baris selebar kolom, tinggi min. 56px: radio, nama paket, keterangan durasi, harga (mono, kanan).
 
 | Keadaan | Gaya |
@@ -404,7 +378,6 @@ Baris selebar kolom, tinggi min. 56px: radio, nama paket, keterangan durasi, har
 | Disabled | Opacity 50%, `not-allowed`, ikon `Lock`, **alasan tertulis** ("Kuota penuh, reset 00:00 WIB" / "Stok habis"). |
 
 ### 6.14 Input
-
 Tinggi 40px, latar `--surface-2`, border `--border`, radius 6px. Fokus: border `--accent` + ring 2px `--accent` 30%. Error: border `--danger`, pesan 12px di bawah field. Label di atas field, 12px/500 `--text-2`. Input WA: `inputmode="tel"`, awalan tetap `+62`.
 
 ### 6.15 Tombol
@@ -419,43 +392,33 @@ Tinggi 40px, latar `--surface-2`, border `--border`, radius 6px. Fokus: border `
 `loading`: spinner 16px di kiri label, tombol nonaktif, lebar tetap. `disabled`: opacity 50%. Tombol checkout wajib `disabled` + `loading` saat request berjalan.
 
 ### 6.16 Kartu Langkah Checkout
-
 Header bernomor: lingkaran 20px berisi angka (mono 12px) + judul. Langkah selesai: ringkasan satu baris + ikon `Check` aksen. Semua langkah tetap terlihat. Tanpa animasi transisi.
 
 ### 6.17 Sticky Bottom Bar (Mobile)
-
 Tinggi 64px + safe-area, border atas 1px, latar `--surface`. Kiri: `Total` (12px) dan nominal (mono 16px/700). Kanan: tombol Primary `Beli / Sewa Sekarang`. Belum ada paket: tombol disabled dan kiri `Pilih paket`. Konten diberi `padding-bottom` agar tidak tertutup.
 
 ### 6.18 CountdownTimer
-
 `MM:SS`, mono 32px/700, kartu tersendiri. Warna: `--text` (> 3 menit), `--warning` (≤ 3 menit), `--danger` (≤ 1 menit). Teks 12px di bawahnya: "Pesanan dibatalkan otomatis jika tidak dibayar". Saat nol, ganti ke tampilan `EXPIRED` tanpa reload. `aria-live="polite"` hanya pada ambang (3 menit, 1 menit, habis).
 
 ### 6.19 CopyButton
-
 Tombol 32px, ikon `Copy` + `Salin`. Setelah ditekan: `Check` + `Tersalin` selama 1.5 detik. Wajib pada: total transfer, nomor rekening/e-wallet, setiap kolom kredensial.
 
 ### 6.20 Total Highlight (Invoice)
-
 Kartu dengan border `--accent` 1px. `Total Transfer` (12px), nominal mono 28px/700 dengan **3 digit terakhir (kode unik) berwarna `--accent-text`**. Peringatan 12px: "Transfer sesuai nominal sampai digit terakhir".
 
 ### 6.21 Kotak QRIS
-
 Gambar QRIS di dalam kotak berlatar **putih** dengan padding 12px, border `--border`, lebar maks 260px, rata tengah, di kedua mode.
 
 ### 6.22 CredentialBox (status PAID)
-
 Baris label-nilai: Email/Username, Password, Profil, PIN. Nilai mono, masing-masing dengan CopyButton. Password tersembunyi default dengan tombol `Tampilkan` (`Eye`). Di bawahnya: Mulai, Berakhir, sisa waktu (mono). Jika sewa berakhir: "Masa sewa berakhir" dan kredensial disembunyikan.
 
 ### 6.23 Tabel Admin
-
 Baris 40px, header 12px uppercase `--text-2`, border bawah per baris, hover `--surface-hover`. Mobile: daftar kartu. Order `VERIFYING` di atas dengan garis `--info` 2px di kiri. Aksi Approve (Primary) dan Reject (Danger) selalu terlihat.
 
 ### 6.24 Modal Konfirmasi
-
 Lebar maks 420px, latar `--surface`, border `--border-strong`, overlay `--overlay`. Judul, satu paragraf, dua tombol (Batal = Ghost, Konfirmasi = Primary/Danger). Reject wajib alasan. Fokus terkunci, `Esc` menutup.
 
 ### 6.25 Empty, Loading, Error
-
 - **Loading:** skeleton `--surface-2` dengan pulse halus 1.5 detik.
 - **Empty:** satu baris teks `--text-2` dan, bila relevan, satu tautan aksi.
 - **Error inline:** banner satu baris dengan ikon `AlertCircle`, border dan teks `--danger`.
@@ -464,7 +427,6 @@ Lebar maks 420px, latar `--surface`, border `--border-strong`, overlay `--overla
 ---
 
 ### 6.26 Banner Slider (dapat diedit admin)
-
 - **Tempat:** di atas bar kuota. Jika ada ≥ 1 banner aktif, pita intro (6.2) disembunyikan.
 - **Ukuran:** tinggi 120px (mobile) / 160px (≥ 768px), lebar penuh kontainer, radius 8px, border 1px `--border`. Maksimal 5 banner aktif.
 - **Isi:** judul (16px/600, maks 2 baris), subjudul opsional (13px, `--text-2`, maks 2 baris), tombol opsional (Secondary kecil, tinggi 32px). Gambar opsional di sisi kanan (lebar ≤ 35%, `object-cover`). **Teks tidak pernah diletakkan di atas gambar** dan tidak ada gradien/scrim. Latar banner mengikuti `tone`: `neutral` (`--surface-2`), `accent` (`--accent` 10%), `warning` (`--warning` 10%).
@@ -474,7 +436,6 @@ Lebar maks 420px, latar `--surface`, border `--border-strong`, overlay `--overla
 - **Tanggung jawab konten:** form admin menampilkan pengingat "Jangan menulis klaim yang tidak bisa dibuktikan (mis. jumlah pengguna, 'resmi', 'termurah')".
 
 ### 6.27 Kartu Keunggulan ("Kenapa Beli di Sini")
-
 Seksi setelah katalog. Judul seksi 16px/600. Grid: 1 kolom (mobile), 2 kolom ≥ 480px, 3 kolom ≥ 1024px. Kartu: kotak ikon 36px (`--surface-2`, ikon Lucide 20px `--accent-text`), judul 14px/600, satu kalimat 13px `--text-2`. Maksimal 6 kartu, tinggi kartu ≤ 96px. Isi disimpan di `resources/js/data/benefits.ts`. Default (tulis dengan kata sendiri, hanya klaim yang benar untuk toko ini, dan **sesuaikan dengan kebijakan nyata pemilik**):
 
 | Judul | Keterangan | Ikon |
@@ -487,17 +448,13 @@ Seksi setelah katalog. Judul seksi 16px/600. Grid: 1 kolom (mobile), 2 kolom ≥
 | Tanpa daftar akun | Cukup nomor WhatsApp. Lacak pesanan kapan saja. | `SearchCheck` |
 
 ### 6.28 BrandMark
-
 Nama toko (15px/600) dengan logo opsional 28×28 (radius 6, `object-contain`) di kiri nama, dan **tagline opsional** (12px, `--text-2`, satu baris, maks 60 karakter, ditulis sendiri oleh pemilik toko) di bawah nama pada header desktop dan footer. Pada header mobile tagline disembunyikan. Dipakai di header, footer, dan halaman login. Nama, logo, dan tagline berasal dari Pengaturan (`store_name`, `store_logo_path`, `store_tagline`). Judul tab browser (`<title>`) memakai `store_name`.
 
 ### 6.29 Bar Pengumuman
-
 Strip tipis di paling atas halaman publik (di atas header, ikut tergulir, tidak sticky). Tinggi 32px, latar `--surface-2`, border bawah 1px, teks 12px/500 `--text` rata tengah, maksimal satu baris dengan pemotongan (ellipsis). Isi: teks (maks 160 karakter) dan tautan opsional (seluruh strip menjadi tautan, dengan ikon `ChevronRight` kecil di akhir). Diatur di Pengaturan (`announcement_text`, `announcement_url`, `announcement_active`). Tautan: path internal berawalan `/` atau `https://`. Tidak ada tombol tutup, tidak ada animasi. Contoh penggunaan: info jam operasional khusus, stok baru, atau tautan channel Telegram toko. Jangan memuat klaim yang tidak bisa dibuktikan.
 
 ### 6.30 Toolbar Katalog
-
 Satu blok di atas grid, tinggi total ≤ 96px di mobile (dua baris) dan 40px di desktop (satu baris):
-
 - **Cari layanan:** input 40px dengan ikon `Search`, placeholder "Cari layanan", tombol hapus (`X`) saat terisi. Pencarian di sisi klien, tidak peka huruf besar/kecil, cocok pada nama dan kategori, debounce 150ms, tanpa reload.
 - **Tipe:** kontrol segmen Semua / Sewa / Beli (6.5 sebelumnya).
 - **Kategori:** dropdown (disembunyikan bila hanya satu kategori).
@@ -506,19 +463,15 @@ Satu blok di atas grid, tinggi total ≤ 96px di mobile (dua baris) dan 40px di 
 - Mobile: input pencarian satu baris penuh, di bawahnya baris yang dapat digulir horizontal berisi Tipe, Kategori, dan Urutkan.
 
 ### 6.31 Bagian "Sedang Kosong"
-
 Layanan yang **seluruh** paketnya tidak bisa dipesan karena stok unit habis dipindah dari grid utama ke bagian tersendiri di bawahnya, dengan judul "Sedang Kosong" (16px/600) dan keterangan satu baris: "Stok sedang kosong. Hubungi admin untuk info restock." Kartu memakai tata letak 6.6 dengan opacity 60% dan badge `Habis`, tetap berupa tautan ke halaman layanan. Bagian ini disembunyikan bila tidak ada layanan kosong. Layanan yang hanya kuota sewanya penuh (tetapi paket beli tersedia) tetap di grid utama dengan badge `Sewa Penuh`.
 
 ### 6.32 Ajakan Pesanan Custom (opsional)
-
 Kartu satu baris sebelum footer (border 1px, padding 16px): judul 16px/600 "Belum menemukan layanan yang kamu cari?", satu kalimat 14px `--text-2` yang ditulis sendiri oleh pemilik toko, dan tombol Secondary "Tanya Admin via WhatsApp" yang membuka `https://wa.me/…` dengan teks awal. Tampil hanya jika `custom_request_enabled` aktif dan `admin_whatsapp` terisi. Jangan menjanjikan layanan atau waktu yang tidak bisa dipenuhi.
 
 ### 6.33 Layout Admin
-
 **Satu navigasi saja.** Dilarang menumpuk layout bawaan starter kit (sidebar "Platform/Repository/Documentation") dengan layout admin. Semua halaman yang hanya bisa diakses admin (dashboard, order, produk, stok, banner, metode pembayaran, pengaturan toko, dan pengaturan akun seperti profil, kata sandi, 2FA) memakai **satu** `AdminLayout`. Tidak ada tautan sisa starter kit (Repository, Documentation, logo Laravel). Nama brand di admin mengikuti `store_name`, dengan chip kecil "Admin".
 
 **Desktop (≥ 1024px): sidebar kiri tetap**
-
 - Lebar 240px, tinggi penuh, latar `--surface`, border kanan 1px. Atas: BrandMark + chip "Admin".
 - Navigasi bergrup. Judul grup 11px huruf kapital `--text-2`:
   - **Operasional:** Dashboard, Order (lencana jumlah order `VERIFYING`, latar `--info` 12%, teks `--info`)
@@ -544,35 +497,28 @@ Kartu satu baris sebelum footer (border 1px, padding 16px): judul 16px/600 "Belu
 **Pesan umpan balik:** keberhasilan dan kegagalan tampil sebagai banner di atas konten (`role="status"` atau `role="alert"`, ikon + teks, tutup otomatis tidak dipakai), bukan teks kecil di sudut. Aksi destruktif memakai modal konfirmasi (6.24).
 
 ### 6.34 Pola Judul Seksi
-
 Setiap seksi beranda memakai pola yang sama: **eyebrow** (11px, huruf kapital, `--text-2`, jarak huruf 0.04em) di atas **judul** (18px/600), dengan tautan sekunder opsional di kanan ("Lihat semua", ikon `ChevronRight`). Ritme jarak antar-seksi: 48px (desktop) dan 32px (mobile); jarak judul ke isi 16px. Tidak ada garis hias atau ikon dekoratif di samping judul.
 
 ### 6.35 Stepper Status Pesanan
-
 Dipakai di halaman invoice dan hasil Cek Pesanan. Empat langkah horizontal (vertikal di layar < 480px): **Dibuat → Dibayar → Diverifikasi → Selesai**.
-
 - Petanya: `PENDING` = langkah 1 selesai, langkah 2 aktif; `VERIFYING` = 1 dan 2 selesai, langkah 3 aktif; `PAID` = semua selesai.
 - `EXPIRED` dan `CANCELLED`: langkah yang sedang berjalan berhenti dan ditandai ikon `X` dengan label "Kedaluwarsa" atau "Dibatalkan" (warna `--text-2` dan `--danger`), langkah berikutnya redup.
 - Tiap langkah: lingkaran 24px (selesai: latar `--accent`, ikon `Check` `--on-accent`; aktif: border `--accent` dan titik aksen; menunggu: border `--border-strong`), label 12px/500. Garis penghubung 2px (`--accent` untuk yang selesai, `--border` untuk sisanya).
 - Status tidak boleh hanya berbasis warna: tiap langkah punya label teks dan ikon. `aria-label` pada daftar ("Langkah pesanan"), langkah aktif memakai `aria-current="step"`.
 
 ### 6.36 Halaman Layanan v2
-
 - **Header band** di kolom kiri (atas di mobile): sampul layanan lebar (tinggi 120px mobile / 160px desktop, `object-cover`, atau blok tint merek bila tanpa sampul), logo 64px menumpang di tepi bawah sampul (tepi kiri, border 2px `--surface`), lalu nama layanan (20px/600), kategori, dan baris chip: `Garansi` (bila aktif), ketersediaan (`Tersedia`/`Stok Menipis`), dan `delivery_eta` bila diisi.
 - **PackageOption v2:** grid 2 kolom di desktop (1 kolom mobile). Tiap kartu: ikon durasi (`Clock` untuk sewa, `CalendarDays` untuk beli), nama paket, **harga** (mono 16px/600), dan untuk paket sewa baris kecil `≈ Rp X/hari` (hasil `harga ÷ (durasi_jam ÷ 24)`, dibulatkan ke rupiah terdekat, nyata). Badge `Paling hemat per hari` (11px, aksen) hanya pada paket sewa dengan harga per hari terendah, dan hanya bila ada ≥ 2 paket sewa. Aturan keadaan disabled tetap sama (6.13), dengan alasan tertulis.
 - **Ringkasan sticky (desktop):** di kolom kanan, kartu Ringkasan (paket, durasi, metode, total, tombol checkout) menempel di bawah header (`position: sticky; top: 72px`). Di mobile tetap memakai sticky bottom bar (6.17).
 - **Indikator langkah:** di atas form, empat penanda kecil 1–4 yang berubah menjadi `Check` saat langkah terisi (tidak mengubah fungsi, hanya umpan balik).
 
 ### 6.37 Invoice v2
-
 Urutan dari atas: (1) kode invoice + badge status, (2) Stepper (6.35), (3) kartu **Total Transfer** (6.20) paling menonjol, (4) **Countdown** (6.18) dengan **progress bar waktu** tipis (4px, `--accent`, berubah `--warning` ≤ 3 menit dan `--danger` ≤ 1 menit), (5) instruksi pembayaran dalam kartu: gambar QRIS di kotak putih lebih besar (maks 280px) atau nomor rekening dengan tombol Salin, (6) tiga langkah singkat berangka ("Transfer sesuai nominal", "Unggah bukti (opsional)", "Tekan Saya Sudah Bayar"), (7) tombol aksi, lalu Batalkan Pesanan (6.3), (8) tautan **Hubungi Admin via WhatsApp** (Ghost) dengan teks awal berisi kode invoice. Salin berhasil memunculkan toast kecil "Tersalin" (2 detik) di bawah layar, tidak menutup informasi pembayaran. Status `PAID`: kartu kredensial (6.22) naik ke posisi (3).
 
 ### 6.38 Statistik Nyata (opsional)
-
 Baris 2 sampai 3 kartu kecil di awal seksi "Kenapa Beli di Sini": `N pesanan selesai`, `N layanan aktif`, `± N menit verifikasi`. **Syarat tampil:** `completed_orders ≥ stats_min_orders` (default 20, 0 = selalu sembunyikan), jumlah layanan aktif ≥ 3, dan median verifikasi hanya bila ≥ 10 sampel. Kartu yang datanya tidak memenuhi syarat tidak ditampilkan, dan jika semuanya tidak memenuhi, baris statistik hilang. Angka tidak pernah dibulatkan naik secara menyesatkan (jumlah selesai ditampilkan apa adanya).
 
 ### 6.39 Gerak dan Skeleton
-
 - Token gerak: `--dur-fast: 120ms`, `--dur: 180ms`, easing `ease-out`. Hanya `background-color`, `border-color`, `opacity`, dan `box-shadow` fokus yang bertransisi.
 - **Indikator navigasi Inertia:** bilah progres 2px berwarna `--accent` di tepi atas layar saat berpindah halaman.
 - **Skeleton** untuk grid katalog dan kartu admin saat data dimuat ulang (pulse halus 1.5 detik). Tidak ada spinner layar penuh.
@@ -580,8 +526,26 @@ Baris 2 sampai 3 kartu kecil di awal seksi "Kenapa Beli di Sini": `N pesanan sel
 - Semua gerak dimatikan oleh `prefers-reduced-motion`.
 
 ### 6.40 Switch (Toggle)
-
 Ukuran 44×24px, radius penuh, area sentuh ≥ 44px. **Mati:** latar `--surface-2`, border 1px `--text-muted` (agar batas komponen terlihat, ≥ 3:1), kenop `--text-2`. **Hidup:** latar `--accent`, kenop `--on-accent`. Fokus: ring aksen 2px. Selalu disertai **label teks keadaan** ("Aktif" atau "Nonaktif") di sampingnya, karena keadaan tidak boleh bergantung pada warna atau posisi kenop saja. Gunakan `role="switch"` dan `aria-checked`.
+
+### 6.41 Penanda Jenis Pengiriman
+Chip 11px (border `--border`, ikon Lucide 12px) pada kartu produk dan varian: `Dikirim di invoice` (`STOCK`, ikon `KeyRound`), `Undangan email` (`INVITE`, `MailPlus`), `Diproses admin` (`MANUAL`, `UserCog`). Di PackageOption ditambah baris **Cara terima** 12px `--text-2` dengan ikon dan teks yang sama. Ketersediaan: `INVITE` menampilkan `Sisa N slot` bila N ≤ 5 (angka nyata), `MANUAL` menampilkan `Antrean tersedia`. Varian yang tidak tersedia memakai alasan tertulis seperti 6.13 ("Slot penuh", "Stok habis").
+
+### 6.42 Kolom Dinamis Checkout (Langkah 2)
+Setelah nomor WhatsApp, tampil kolom khusus varian terpilih (maks 5) memakai Input (6.14): label 12px/500, bantuan 12px `--text-2`, pesan error di bawah. Tipe: `email` (`inputmode="email"`, `autocomplete="email"`, huruf kecil otomatis, petunjuk domain bila dibatasi), `text`, `url` (https), `textarea` (3 baris + penghitung karakter), `select`. Untuk `INVITE` ada catatan kecil beralas info (ikon `Info`): "Pastikan email benar. Undangan dikirim ke email ini." Pindah varian mengosongkan kolom yang tidak relevan. Langkah 4 menampilkan semua data yang akan dikirim, dengan email dicetak jelas.
+
+### 6.43 Panel Pengiriman di Invoice (`PAID`)
+Komponen `DeliveryPanel` memilih tampilan sesuai jenis. Stepper utama (6.35) tetap mewakili pembayaran, panel di bawahnya mewakili pemenuhan.
+- **`STOCK`:** CredentialBox generik. Baris label-nilai berasal dari `stock_fields` varian, kolom `secret` tersamar dengan tombol Tampilkan, tombol Salin per baris, dan tanggal mulai/berakhir bila ada masa aktif.
+- **`INVITE`:** InviteStatusCard dengan judul status ("Menunggu undangan dikirim", "Undangan terkirim, cek email", "Aktif", "Selesai"), email tujuan, tombol **Ubah Email** (modal, hanya sebelum `INVITE_SENT`), instruksi dari admin (`delivery_instructions`), perkiraan waktu (`eta_text`), tombol **Sudah saya terima** saat `INVITE_SENT`, dan tautan Hubungi Admin. Stepper kecil tiga langkah: Pembayaran terverifikasi, Undangan, Aktif (pola 6.35).
+- **`MANUAL`:** ManualStatusCard dengan ringkasan data yang dikirim pembeli, status (Diproses atau Selesai), dan **pesan dari admin** sebagai teks biasa (tautan `https` dapat diklik dan disalin; tanpa HTML).
+- Pada Cek Pesanan, email dan data kustom hanya tampil tersamar sampai pembeli terverifikasi.
+
+### 6.44 Panel Pemenuhan Admin
+Pada detail order `PAID`: kartu "Pemenuhan" berisi chip jenis, badge status pemenuhan, data pembeli (email dengan tombol Salin dan kolom kustom), host terpilih (`INVITE`) dengan tombol **Pindah Host**, serta tombol sesuai status. `INVITE`: **Undangan Terkirim** (Primary), Kirim Ulang, Tandai Aktif, **Bebaskan Slot** (Danger, modal konfirmasi dengan peringatan "pastikan anggota sudah dikeluarkan dari paket"). `MANUAL`: **Selesaikan** (modal berisi pesan untuk pembeli, wajib). Dashboard: kartu **Perlu Tindakan** (jumlah `AWAITING_ACTION`) sejajar Perlu Verifikasi, dan lencana menu Order = `VERIFYING` + `AWAITING_ACTION`. Halaman **Host & Slot**: daftar host (label, layanan, kapasitas dengan progress terpakai/total, tanggal perpanjangan, status), form tambah/ubah, dan tabel anggota aktif per host (email tersamar sebagian, pesanan, tanggal berakhir, tombol Bebaskan). Teks peringatan tetap: "Jangan menyimpan kata sandi akun host di catatan."
+
+### 6.45 Form Varian Admin
+Pilihan **Jenis pengiriman** (Stok, Undangan, Manual) dengan panel yang berubah sesuai pilihan: `STOCK` menampilkan editor skema kolom stok (label, secret) dengan preset (Akun streaming, Kode/voucher, Link); `INVITE` menampilkan kolom email penerima (otomatis), batas domain opsional, dan petunjuk "kelola host di Host & Slot"; `MANUAL` menampilkan batas antrean opsional. Semua jenis menampilkan: editor kolom data pembeli (maks 5, dengan peringatan "jangan meminta kata sandi"), instruksi untuk pembeli, estimasi, dan durasi (opsional untuk varian beli).
 
 ---
 
@@ -703,3 +667,8 @@ Aturan tambahan: tanpa emoji, tanpa tanda seru berlebihan, tanpa superlatif ("te
 - [ ] Strip Bantuan membuka modal Tanya Jawab yang mengunci fokus, menutup dengan `Esc`, mengembalikan fokus ke pemicu, dan terbuka otomatis lewat `/#faq`.
 - [ ] Tidak ada kata klaim terlarang di string UI: "resmi", "legal", "terpercaya", "terbaik", "termurah", "100%". `npm run check:copy` bersih.
 - [ ] `npm run check:contrast` mencakup matriks penuh (teks pada empat permukaan, accent-text pada bg dan surface, on-accent pada accent dan hover untuk keempat preset, warna status pada surface dan surface-2), dengan jumlah pasangan dilaporkan.
+- [ ] Setiap varian menampilkan penanda jenis pengiriman dan baris "Cara terima". Ketersediaan `INVITE` memakai angka slot nyata.
+- [ ] Langkah 2 menampilkan kolom dinamis sesuai varian, dengan validasi dan pesan error di bawah kolom.
+- [ ] Invoice `PAID` menampilkan panel yang benar untuk `STOCK`, `INVITE`, dan `MANUAL`. Email undangan hanya bisa diubah sebelum terkirim.
+- [ ] Panel pemenuhan admin memiliki aksi yang sesuai status, dan aksi destruktif memakai modal konfirmasi.
+- [ ] Halaman Host & Slot tampil rapi di 375px (tabel menjadi kartu) dan 1366px, di kedua mode.

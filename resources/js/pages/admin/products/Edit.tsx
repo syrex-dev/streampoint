@@ -24,12 +24,24 @@ interface VariantItem {
     name: string;
     type: 'RENT' | 'BUY';
     rent_duration?: string | null;
-    duration_hours: number;
+    duration_hours: number | null;
     price: number;
     is_active: boolean;
     sort_order: number;
     orders_count: number;
     has_orders: boolean;
+    delivery_type?: 'STOCK' | 'INVITE' | 'MANUAL';
+    stock_fields?: string[] | null;
+    buyer_fields?: Array<{
+        key: string;
+        label: string;
+        type: 'text' | 'email' | 'tel' | 'url';
+        required: boolean;
+        placeholder?: string;
+    }> | null;
+    delivery_instructions?: string | null;
+    eta_text?: string | null;
+    stock_limit?: number | null;
 }
 
 interface ProductDetail {
@@ -106,10 +118,22 @@ export default function ProductEdit({ product, variants }: EditProps) {
         name: string;
         type: 'RENT' | 'BUY';
         rent_duration: string;
-        duration_hours: number;
+        duration_hours: number | null;
         price: number;
         is_active: boolean;
         sort_order: number;
+        delivery_type: 'STOCK' | 'INVITE' | 'MANUAL';
+        stock_fields: string[];
+        buyer_fields: Array<{
+            key: string;
+            label: string;
+            type: 'text' | 'email' | 'tel' | 'url';
+            required: boolean;
+            placeholder?: string;
+        }>;
+        delivery_instructions: string;
+        eta_text: string;
+        stock_limit: number | null;
     }>({
         name: '',
         type: 'RENT',
@@ -118,6 +142,12 @@ export default function ProductEdit({ product, variants }: EditProps) {
         price: 15000,
         is_active: true,
         sort_order: 0,
+        delivery_type: 'STOCK',
+        stock_fields: ['email', 'password'],
+        buyer_fields: [],
+        delivery_instructions: '',
+        eta_text: '',
+        stock_limit: null,
     });
     const [variantError, setVariantError] = useState<string | null>(null);
     const [isVariantSubmitting, setIsVariantSubmitting] = useState(false);
@@ -159,6 +189,12 @@ export default function ProductEdit({ product, variants }: EditProps) {
             price: 15000,
             is_active: true,
             sort_order: variants.length,
+            delivery_type: 'STOCK',
+            stock_fields: ['email', 'password'],
+            buyer_fields: [],
+            delivery_instructions: '',
+            eta_text: '',
+            stock_limit: null,
         });
         setVariantError(null);
         setIsVariantModalOpen(true);
@@ -174,6 +210,12 @@ export default function ProductEdit({ product, variants }: EditProps) {
             price: v.price,
             is_active: v.is_active,
             sort_order: v.sort_order,
+            delivery_type: v.delivery_type || 'STOCK',
+            stock_fields: v.stock_fields && v.stock_fields.length > 0 ? v.stock_fields : ['email', 'password'],
+            buyer_fields: v.buyer_fields || [],
+            delivery_instructions: v.delivery_instructions || '',
+            eta_text: v.eta_text || '',
+            stock_limit: v.stock_limit ?? null,
         });
         setVariantError(null);
         setIsVariantModalOpen(true);
@@ -228,8 +270,8 @@ export default function ProductEdit({ product, variants }: EditProps) {
             setVariantError('Durasi sewa wajib dipilih.');
             return;
         }
-        if (variantForm.type === 'BUY' && variantForm.duration_hours % 720 !== 0) {
-            setVariantError('Durasi tipe Beli harus kelipatan 720 jam (30 hari).');
+        if (variantForm.type === 'BUY' && variantForm.duration_hours !== null && variantForm.duration_hours % 720 !== 0) {
+            setVariantError('Durasi tipe Beli harus kelipatan 720 jam (30 hari) atau kosongkan untuk tanpa durasi.');
             return;
         }
 
@@ -243,6 +285,12 @@ export default function ProductEdit({ product, variants }: EditProps) {
             price: variantForm.price,
             is_active: variantForm.is_active,
             sort_order: variantForm.sort_order,
+            delivery_type: variantForm.delivery_type || 'STOCK',
+            stock_fields: variantForm.stock_fields,
+            buyer_fields: variantForm.buyer_fields.length > 0 ? variantForm.buyer_fields : null,
+            delivery_instructions: variantForm.delivery_instructions.trim() || null,
+            eta_text: variantForm.eta_text.trim() || null,
+            stock_limit: variantForm.stock_limit,
         };
 
         if (editingVariant) {
@@ -799,8 +847,10 @@ export default function ProductEdit({ product, variants }: EditProps) {
                                             <td className="px-3 py-2.5 text-text-2">
                                                 {v.type === 'RENT' ? (
                                                     <span>{v.rent_duration} ({v.duration_hours} Jam)</span>
-                                                ) : (
+                                                ) : v.duration_hours ? (
                                                     <span>{v.duration_hours} Jam ({v.duration_hours / 720} Bulan)</span>
+                                                ) : (
+                                                    <span className="text-text-muted italic">Permanen</span>
                                                 )}
                                             </td>
                                             <td className="px-3 py-2.5 font-mono font-semibold text-text">
@@ -871,7 +921,7 @@ export default function ProductEdit({ product, variants }: EditProps) {
                     onClick={() => setIsVariantModalOpen(false)}
                 >
                     <div 
-                        className="w-full max-w-md bg-surface border border-border-strong rounded-md p-5 shadow-xl space-y-4"
+                        className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-surface border border-border-strong rounded-md p-5 shadow-xl space-y-4"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between pb-2 border-b border-border">
@@ -964,41 +1014,247 @@ export default function ProductEdit({ product, variants }: EditProps) {
                                 </div>
                             ) : (
                                 <div className="space-y-1.5">
-                                    <label className="font-semibold text-text block">
-                                        Durasi Jam (Kelipatan 720 Jam / 30 Hari) <span className="text-danger">*</span>
-                                    </label>
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="number"
-                                            step={720}
-                                            min={720}
-                                            value={variantForm.duration_hours}
-                                            onChange={(e) => setVariantForm({ ...variantForm, duration_hours: Number(e.target.value) })}
-                                            required
-                                            className="w-full h-9 px-3 font-mono bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
-                                        />
-                                        <span className="text-text-2 shrink-0 font-mono">
-                                            = {variantForm.duration_hours / 720} Bulan
-                                        </span>
+                                    <div className="flex items-center justify-between">
+                                        <label className="font-semibold text-text block">
+                                            Durasi Jam (Kelipatan 720 Jam / 30 Hari)
+                                        </label>
+                                        <label className="flex items-center gap-1.5 text-[11px] text-text-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={variantForm.duration_hours === null}
+                                                onChange={(e) => setVariantForm({ ...variantForm, duration_hours: e.target.checked ? null : 720 })}
+                                                className="rounded border-border text-accent focus:ring-accent"
+                                            />
+                                            <span>Tanpa Durasi / Permanen</span>
+                                        </label>
                                     </div>
-                                    <div className="flex gap-1.5 pt-1">
-                                        {[1, 2, 3, 6, 12].map((months) => (
-                                            <button
-                                                key={months}
-                                                type="button"
-                                                onClick={() => setVariantForm({ ...variantForm, duration_hours: months * 720 })}
-                                                className={`px-2 py-0.5 rounded text-[10px] font-mono border ${
-                                                    variantForm.duration_hours === months * 720
-                                                        ? 'bg-accent text-on-accent border-accent'
-                                                        : 'bg-surface-2 text-text-2 border-border hover:bg-surface-hover'
-                                                }`}
-                                            >
-                                                {months} Bln
-                                            </button>
-                                        ))}
-                                    </div>
+                                    {variantForm.duration_hours !== null && (
+                                        <>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="number"
+                                                    step={720}
+                                                    min={720}
+                                                    value={variantForm.duration_hours}
+                                                    onChange={(e) => setVariantForm({ ...variantForm, duration_hours: Number(e.target.value) })}
+                                                    required
+                                                    className="w-full h-9 px-3 font-mono bg-surface-2 border border-border rounded text-text focus:outline-none focus:border-accent"
+                                                />
+                                                <span className="text-text-2 shrink-0 font-mono">
+                                                    = {variantForm.duration_hours / 720} Bulan
+                                                </span>
+                                            </div>
+                                            <div className="flex gap-1.5 pt-1">
+                                                {[1, 2, 3, 6, 12].map((months) => (
+                                                    <button
+                                                        key={months}
+                                                        type="button"
+                                                        onClick={() => setVariantForm({ ...variantForm, duration_hours: months * 720 })}
+                                                        className={`px-2 py-0.5 rounded text-[10px] font-mono border ${
+                                                            variantForm.duration_hours === months * 720
+                                                                ? 'bg-accent text-on-accent border-accent'
+                                                                : 'bg-surface-2 text-text-2 border-border hover:bg-surface-hover'
+                                                        }`}
+                                                    >
+                                                        {months} Bln
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             )}
+
+                            {/* Jenis Pengiriman (Fase 9A) */}
+                            <div className="space-y-2 pt-2 border-t border-border">
+                                <label className="font-semibold text-text block">
+                                    Metode Pengiriman <span className="text-danger">*</span>
+                                </label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <div className="p-2.5 rounded border border-accent bg-accent/10 text-text space-y-1">
+                                        <div className="flex items-center gap-1.5 font-bold text-accent-text">
+                                            <span>STOCK</span>
+                                        </div>
+                                        <p className="text-[10px] text-text-2 leading-tight">
+                                            Kredensial instan di invoice
+                                        </p>
+                                    </div>
+                                    <div className="p-2.5 rounded border border-border bg-surface-2 opacity-60 text-text-muted space-y-1">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-bold">INVITE</span>
+                                            <span className="text-[9px] px-1 py-0.5 rounded bg-surface border border-border">Segera</span>
+                                        </div>
+                                        <p className="text-[10px] leading-tight">Undangan link/email</p>
+                                    </div>
+                                    <div className="p-2.5 rounded border border-border bg-surface-2 opacity-60 text-text-muted space-y-1">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-bold">MANUAL</span>
+                                            <span className="text-[9px] px-1 py-0.5 rounded bg-surface border border-border">Segera</span>
+                                        </div>
+                                        <p className="text-[10px] leading-tight">Diproses manual</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Stock Fields (Schema Kolom Stok Akun) */}
+                            <div className="space-y-2 p-3 bg-surface-2/60 border border-border rounded-md">
+                                <div className="flex items-center justify-between">
+                                    <label className="font-semibold text-text text-[11px] block">
+                                        Format Kolom Stok (Pemisah tanda '|')
+                                    </label>
+                                    <div className="flex gap-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => setVariantForm({ ...variantForm, stock_fields: ['email', 'password'] })}
+                                            className="px-1.5 py-0.5 text-[9px] rounded bg-surface border border-border hover:bg-surface-hover text-text"
+                                        >
+                                            Akun
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setVariantForm({ ...variantForm, stock_fields: ['code'] })}
+                                            className="px-1.5 py-0.5 text-[9px] rounded bg-surface border border-border hover:bg-surface-hover text-text"
+                                        >
+                                            Voucher
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setVariantForm({ ...variantForm, stock_fields: ['url'] })}
+                                            className="px-1.5 py-0.5 text-[9px] rounded bg-surface border border-border hover:bg-surface-hover text-text"
+                                        >
+                                            Link
+                                        </button>
+                                    </div>
+                                </div>
+                                <input
+                                    type="text"
+                                    value={variantForm.stock_fields.join(', ')}
+                                    onChange={(e) => setVariantForm({
+                                        ...variantForm,
+                                        stock_fields: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+                                    })}
+                                    placeholder="Contoh: email, password, pin"
+                                    className="w-full h-8 px-2.5 font-mono text-[11px] bg-surface border border-border rounded text-text focus:outline-none focus:border-accent"
+                                />
+                                <p className="text-[10px] text-text-3">
+                                    Format saat import akun: <span className="font-mono">{variantForm.stock_fields.join(' | ')}</span>
+                                </p>
+                            </div>
+
+                            {/* Buyer Fields Editor */}
+                            <div className="space-y-2 p-3 bg-surface-2/60 border border-border rounded-md">
+                                <div className="flex items-center justify-between">
+                                    <label className="font-semibold text-text text-[11px] block">
+                                        Data Tambahan dari Pembeli (Maks 5)
+                                    </label>
+                                    {variantForm.buyer_fields.length < 5 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setVariantForm({
+                                                ...variantForm,
+                                                buyer_fields: [
+                                                    ...variantForm.buyer_fields,
+                                                    { key: `field_${variantForm.buyer_fields.length + 1}`, label: '', type: 'text', required: true, placeholder: '' }
+                                                ]
+                                            })}
+                                            className="px-2 py-0.5 text-[10px] rounded bg-accent/10 border border-accent/30 text-accent-text hover:bg-accent/20 font-semibold"
+                                        >
+                                            + Tambah Field
+                                        </button>
+                                    )}
+                                </div>
+                                {variantForm.buyer_fields.length > 0 && (
+                                    <div className="space-y-2 pt-1">
+                                        {variantForm.buyer_fields.map((f, idx) => (
+                                            <div key={idx} className="p-2 bg-surface border border-border rounded flex flex-col gap-1.5">
+                                                <div className="flex items-center gap-1.5">
+                                                    <input
+                                                        type="text"
+                                                        value={f.label}
+                                                        onChange={(e) => {
+                                                            const updated = [...variantForm.buyer_fields];
+                                                            updated[idx].label = e.target.value;
+                                                            updated[idx].key = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 24);
+                                                            setVariantForm({ ...variantForm, buyer_fields: updated });
+                                                        }}
+                                                        placeholder="Label (Contoh: ID Akun)"
+                                                        className="flex-1 h-7 px-2 text-[11px] bg-surface-2 border border-border rounded text-text"
+                                                    />
+                                                    <select
+                                                        value={f.type}
+                                                        onChange={(e) => {
+                                                            const updated = [...variantForm.buyer_fields];
+                                                            updated[idx].type = e.target.value as any;
+                                                            setVariantForm({ ...variantForm, buyer_fields: updated });
+                                                        }}
+                                                        className="h-7 px-1.5 text-[11px] bg-surface-2 border border-border rounded text-text"
+                                                    >
+                                                        <option value="text">Teks</option>
+                                                        <option value="email">Email</option>
+                                                        <option value="tel">Telepon</option>
+                                                        <option value="url">URL</option>
+                                                    </select>
+                                                    <label className="flex items-center gap-1 text-[10px] text-text-2 shrink-0">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={f.required}
+                                                            onChange={(e) => {
+                                                                const updated = [...variantForm.buyer_fields];
+                                                                updated[idx].required = e.target.checked;
+                                                                setVariantForm({ ...variantForm, buyer_fields: updated });
+                                                            }}
+                                                            className="rounded border-border text-accent"
+                                                        />
+                                                        <span>Wajib</span>
+                                                    </label>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const updated = variantForm.buyer_fields.filter((_, i) => i !== idx);
+                                                            setVariantForm({ ...variantForm, buyer_fields: updated });
+                                                        }}
+                                                        className="text-danger hover:opacity-80 p-1"
+                                                    >
+                                                        <X className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <p className="text-[10px] text-warning">
+                                    Catatan: Jangan meminta kata sandi pembeli demi keamanan.
+                                </p>
+                            </div>
+
+                            {/* Delivery Instructions & ETA */}
+                            <div className="space-y-2 pt-2 border-t border-border">
+                                <div className="space-y-1">
+                                    <label className="font-semibold text-text text-[11px] block">
+                                        Panduan / Instruksi Pengiriman (Tampil di Invoice)
+                                    </label>
+                                    <textarea
+                                        value={variantForm.delivery_instructions}
+                                        onChange={(e) => setVariantForm({ ...variantForm, delivery_instructions: e.target.value })}
+                                        rows={2}
+                                        placeholder="Contoh: Buka link login, masukkan email & password di atas..."
+                                        className="w-full p-2 bg-surface-2 border border-border rounded text-[11px] text-text resize-none focus:outline-none focus:border-accent"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="font-semibold text-text text-[11px] block">
+                                        Estimasi Pengiriman (ETA)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={variantForm.eta_text}
+                                        onChange={(e) => setVariantForm({ ...variantForm, eta_text: e.target.value })}
+                                        maxLength={60}
+                                        placeholder="Contoh: Instan 1-5 detik"
+                                        className="w-full h-8 px-2.5 bg-surface-2 border border-border rounded text-[11px] text-text focus:outline-none focus:border-accent"
+                                    />
+                                </div>
+                            </div>
 
                             {/* Price (Rupiah) & Sort Order */}
                             <div className="grid grid-cols-2 gap-3">

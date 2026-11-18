@@ -11,7 +11,7 @@ Route::get('/', [StorefrontController::class, 'index'])->name('home');
 Route::get('/p/{slug}', [ProductController::class, 'show'])->name('product.show');
 
 Route::post('/checkout', [CheckoutController::class, 'store'])
-    ->middleware('throttle:30,1')
+    ->middleware('throttle:5,1')
     ->name('checkout.store');
 
 Route::get('/invoice/{invoiceCode}', [InvoiceController::class, 'show'])->name('invoice.show');

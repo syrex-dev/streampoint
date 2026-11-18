@@ -65,6 +65,18 @@ export interface BannerData {
     tone: 'neutral' | 'accent' | 'warning';
 }
 
+export type DeliveryType = 'STOCK' | 'INVITE' | 'MANUAL';
+export type FulfillmentStatus = 'AWAITING_ACTION' | 'INVITE_SENT' | 'ACTIVE' | 'DELIVERED' | 'DONE' | 'ENDED';
+
+export interface BuyerFieldDefinition {
+    key: string;
+    label: string;
+    type: 'text' | 'email' | 'tel' | 'url';
+    required: boolean;
+    placeholder?: string;
+    help_text?: string;
+}
+
 export interface ProductVariantData {
     id: number;
     product_id: number;
@@ -75,6 +87,12 @@ export interface ProductVariantData {
     price: number;
     is_active: boolean;
     sort_order: number;
+    delivery_type?: DeliveryType;
+    buyer_fields?: BuyerFieldDefinition[] | null;
+    stock_fields?: string[] | null;
+    delivery_instructions?: string | null;
+    eta_text?: string | null;
+    stock_limit?: number | null;
 }
 
 export interface ProductDetail {
@@ -103,12 +121,20 @@ export interface PaymentMethodItem {
     instructions: string | null;
 }
 
+export interface OrderCredentialItem {
+    key: string;
+    label: string;
+    value: string;
+    is_secret: boolean;
+}
+
 export interface OrderCredentials {
     email?: string;
     password?: string;
     profile?: string;
     pin?: string;
     raw?: string;
+    items?: OrderCredentialItem[];
 }
 
 export type OrderStatusType = 'PENDING' | 'VERIFYING' | 'PAID' | 'EXPIRED' | 'CANCELLED';
@@ -141,6 +167,13 @@ export interface OrderInvoiceData {
     access_expires_at: string | null;
     has_payment_proof: boolean;
     credentials: OrderCredentials | null;
+    delivery_type?: DeliveryType;
+    fulfillment_status?: FulfillmentStatus;
+    delivery_instructions?: string | null;
+    eta_text?: string | null;
+    buyer_inputs?: Record<string, string> | null;
+    delivery_message?: string | null;
+    fulfilled_at?: string | null;
     created_at: string;
 }
 

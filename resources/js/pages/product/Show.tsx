@@ -57,6 +57,11 @@ export default function ProductShow({
     const [rawPhone, setRawPhone] = useState<string>('');
     const [phoneTouched, setPhoneTouched] = useState<boolean>(false);
     const [customerNote, setCustomerNote] = useState<string>('');
+    const [buyerInputs, setBuyerInputs] = useState<Record<string, string>>({});
+
+    const handleBuyerInputChange = (key: string, val: string) => {
+        setBuyerInputs((prev) => ({ ...prev, [key]: val }));
+    };
 
     // 5. Payment Method (default null to ensure step-by-step selection)
     const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<number | null>(null);
@@ -201,6 +206,7 @@ export default function ProductShow({
                 customer_note: customerNote,
                 idempotency_key: idempotencyKey,
                 hp_website: honeypot,
+                buyer_inputs: buyerInputs,
             },
             {
                 preserveScroll: false,
@@ -581,6 +587,8 @@ export default function ProductShow({
                     phoneError={phoneTouched && !phoneValidation.isValid ? phoneValidation.error : null}
                     note={customerNote}
                     onNoteChange={setCustomerNote}
+                    buyerInputs={buyerInputs}
+                    onBuyerInputChange={handleBuyerInputChange}
                     onSubmit={handleSubmit}
                     isSubmitting={isSubmitting}
                     serverErrors={serverErrors}
@@ -653,7 +661,7 @@ function RentalRulesCard({ rules }: { rules?: string | null }) {
                             Syarat Sewa & Garansi
                         </h2>
                         <p className="text-[11px] text-text-3">
-                            Perlindungan resmi & ketentuan pemakaian
+                            Perlindungan penuh & ketentuan pemakaian
                         </p>
                     </div>
                 </div>
@@ -717,7 +725,7 @@ function RentalRulesCard({ rules }: { rules?: string | null }) {
             {/* Guarantee Footer */}
             <div className="pt-1 text-[11px] text-text-3 flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-accent-text shrink-0" />
-                <span>Ada kendala login atau akun bermasalah? Admin siap replace unit baru atau refund garansi 100%.</span>
+                <span>Ada kendala login atau akun bermasalah? Admin siap replace unit baru atau refund garansi penuh.</span>
             </div>
         </div>
     );

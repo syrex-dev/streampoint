@@ -18,6 +18,8 @@ interface CheckoutModalProps {
     phoneError?: string | null;
     note: string;
     onNoteChange: (val: string) => void;
+    buyerInputs?: Record<string, string>;
+    onBuyerInputChange?: (key: string, val: string) => void;
     onSubmit: () => void;
     isSubmitting: boolean;
     serverErrors: Record<string, string>;
@@ -36,6 +38,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     phoneError,
     note,
     onNoteChange,
+    buyerInputs = {},
+    onBuyerInputChange,
     onSubmit,
     isSubmitting,
     serverErrors,
@@ -78,7 +82,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         }
     };
 
-    const isReady = Boolean(phone.trim().length >= 9 && !phoneError && selectedPaymentMethodId);
+    const hasMissingBuyerFields = Boolean(
+        variant.buyer_fields?.some((f) => f.required && !(buyerInputs[f.key] || '').trim())
+    );
+    const isReady = Boolean(phone.trim().length >= 9 && !phoneError && selectedPaymentMethodId && !hasMissingBuyerFields);
 
     return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-overlay backdrop-blur-xs transition-opacity animate-in fade-in duration-200">
@@ -210,6 +217,39 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                             </p>
                         )}
                     </div>
+
+                    {/* Dynamic Buyer Fields (Phase 9A) */}
+                    {variant.buyer_fields && variant.buyer_fields.length > 0 && (
+                        <div className="space-y-3 p-3.5 rounded-xl bg-surface-2/40 border border-border">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-text">Data Tambahan Pesanan</span>
+                                <span className="text-[10px] text-text-muted">Dibutuhkan untuk pengiriman</span>
+                            </div>
+                            {variant.buyer_fields.map((field) => {
+                                const val = buyerInputs[field.key] || '';
+                                const err = serverErrors[`buyer_inputs.${field.key}`];
+                                return (
+                                    <div key={field.key} className="space-y-1">
+                                        <label className="text-xs font-semibold text-text flex items-center justify-between">
+                                            <span>
+                                                {field.label} {field.required && <span className="text-danger">*</span>}
+                                            </span>
+                                        </label>
+                                        <Input
+                                            type={field.type || 'text'}
+                                            value={val}
+                                            onChange={(e) => onBuyerInputChange?.(field.key, e.target.value)}
+                                            placeholder={field.placeholder || ''}
+                                            hasError={Boolean(err)}
+                                            className="h-10 text-xs sm:text-sm font-sans"
+                                        />
+                                        {err && <p className="text-[11px] text-danger">{err}</p>}
+                                        {field.help_text && <p className="text-[10px] text-text-muted">{field.help_text}</p>}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
 
                     {/* 4. Catatan Pesanan (Opsional) */}
                     <div className="space-y-1.5">

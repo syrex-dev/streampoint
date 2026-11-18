@@ -66,14 +66,14 @@ export function BrandMark({
                     src="/brand/logo-light.svg"
                     alt={storeName}
                     className="dark:hidden h-7 sm:h-8 w-auto object-contain shrink-0"
-                    width={126}
+                    width={116}
                     height={32}
                 />
                 <img
                     src="/brand/logo-dark.svg"
                     alt={storeName}
                     className="hidden dark:block h-7 sm:h-8 w-auto object-contain shrink-0"
-                    width={126}
+                    width={116}
                     height={32}
                 />
             </span>

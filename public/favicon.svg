@@ -1,16 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
   <title>StreamPoint</title>
   <style>
-    .sp-pin { fill: #0F4C5C; }
-    .sp-play { fill: #FFF4E6; stroke: #FFF4E6; }
+    .sp-bg { fill: #0F4C5C; }
     .sp-dot { fill: #EA5A3A; }
+    .sp-cursor { fill: #FFF4E6; stroke: #FFF4E6; stroke-width: 2.5; stroke-linejoin: round; }
     @media (prefers-color-scheme: dark) {
-      .sp-pin { fill: #3CC0B0; }
-      .sp-play { fill: #0B2530; stroke: #0B2530; }
+      .sp-bg { fill: #3CC0B0; }
       .sp-dot { fill: #FF7A5C; }
+      .sp-cursor { fill: #0B2530; stroke: #0B2530; stroke-width: 2.5; stroke-linejoin: round; }
     }
   </style>
-  <path class="sp-pin" d="M32 52C32 52 14 36 14 24A18 18 0 0 1 50 24C50 36 32 52 32 52Z"/>
-  <polygon class="sp-play" points="27,16 27,32 40,24" stroke-width="3" stroke-linejoin="round"/>
-  <circle class="sp-dot" cx="32" cy="59" r="4"/>
+  <rect class="sp-bg" x="6" y="6" width="52" height="52" rx="14"/>
+  <circle class="sp-dot" cx="24" cy="15" r="6.5"/>
+  <polygon class="sp-cursor" points="24,15 24,48 32,41 38,53 44,50 38,38 49,38"/>
 </svg>

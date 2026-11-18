@@ -33,20 +33,24 @@ class QuotaService
         return $query->count();
     }
 
+    public function isFull(string $date): bool
+    {
+        return false;
+    }
+
     /**
-     * Snapshot data kuota untuk ditampilkan ke publik
+     * Snapshot data kuota untuk ditampilkan ke publik (unlimited untuk digital store)
      */
     public function snapshot(): array
     {
         $d = $this->today();
-        $limit = $this->limitFor($d);
         $used = $this->used($d);
 
         return [
-            'limit' => $limit,
+            'limit' => 999999,
             'used' => $used,
-            'remaining' => max(0, $limit - $used),
-            'is_full' => $used >= $limit,
+            'remaining' => 999999,
+            'is_full' => false,
             'resets_at' => now()->addDay()->startOfDay()->toIso8601String(),
         ];
     }

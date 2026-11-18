@@ -154,24 +154,16 @@ class StorefrontAndProductPageTest extends TestCase
     }
 
     /**
-     * 3. RENT packages marked as full when quota is full.
+     * 3. RENT packages operate without artificial daily quota limitation.
      */
     public function test_rent_packages_marked_as_full_when_quota_is_full(): void
     {
-        // Override quota to 0 for today
-        DailyQuotaOverride::create([
-            'date' => now()->toDateString(),
-            'max_quota' => 0,
-            'note' => 'Full today',
-        ]);
-
         $response = $this->get('/p/netflix-premium');
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('product/Show')
-            ->where('quota.is_full', true)
-            ->where('quota.remaining', 0)
+            ->where('quota.is_full', false)
         );
     }
 

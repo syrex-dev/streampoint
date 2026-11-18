@@ -9,7 +9,8 @@ import {
     Hourglass, 
     ArrowRight, 
     FileText,
-    Image as ImageIcon
+    Image as ImageIcon,
+    ShoppingBag
 } from 'lucide-react';
 
 interface VerifyingOrder {
@@ -76,34 +77,15 @@ export default function Dashboard({ todayCounts, quota, verifyingOrders }: Dashb
                     </Link>
                 </PageHeader>
 
-                {/* Quota & Today Summary Cards (4 Kolom Desktop, 2 Kolom Mobile) */}
+                {/* Today Summary Cards (4 Kolom Desktop, 2 Kolom Mobile) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {/* Kartu Kuota Sewa */}
+                    {/* Kartu Total Transaksi Hari Ini */}
                     <StatCard
-                        label="Slot Sewa Hari Ini"
-                        badge={
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
-                                quota.is_full ? 'bg-danger/10 text-danger border border-danger/30' : 'bg-surface-2 text-text-2'
-                            }`}>
-                                {quota.is_full ? 'Penuh' : `${quota.remaining} Tersisa`}
-                            </span>
-                        }
-                    >
-                        <div>
-                            <div className="text-xl sm:text-2xl font-bold font-sans tracking-tight tabular-nums text-text leading-tight">
-                                Terpakai {quota.used} dari {quota.limit}
-                            </div>
-                            <div className="w-full bg-surface-2 h-1.5 rounded-full overflow-hidden border border-border mt-2.5">
-                                <div 
-                                    className={`h-full transition-all ${quota.is_full ? 'bg-danger' : 'bg-accent'}`}
-                                    style={{ width: `${Math.min(100, (quota.used / Math.max(1, quota.limit)) * 100)}%` }}
-                                />
-                            </div>
-                            <div className="text-xs text-text-2 mt-2">
-                                Reset otomatis pukul 00:00 WIB
-                            </div>
-                        </div>
-                    </StatCard>
+                        label="Total Transaksi Hari Ini"
+                        value={todayCounts.total}
+                        description={`${todayCounts.paid} pesanan lunas, ${todayCounts.pending + todayCounts.verifying} dalam proses`}
+                        icon={ShoppingBag}
+                    />
 
                     {/* Kartu Menunggu Bayar */}
                     <StatCard

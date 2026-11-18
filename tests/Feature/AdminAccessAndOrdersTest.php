@@ -344,10 +344,10 @@ class AdminAccessAndOrdersTest extends TestCase
         $this->assertEquals('Mutasi pembayaran tidak ditemukan di rekening.', $event->note);
     }
 
-    /** 6. Reactivate gagal jika kuota penuh atau unit habis dan berhasil jika tersedia */
+    /** 6. Reactivate berhasil jika unit tersedia tanpa pembatasan kuota */
     public function test_reactivate_order_fails_if_rent_quota_is_full(): void
     {
-        // Fill quota (3 slots used)
+        // 3 orders already exist
         $this->createOrder(OrderStatus::PAID, OrderType::RENT);
         $this->createOrder(OrderStatus::PAID, OrderType::RENT);
         $this->createOrder(OrderStatus::PAID, OrderType::RENT);
@@ -365,9 +365,9 @@ class AdminAccessAndOrdersTest extends TestCase
 
         $this->actingAs($this->adminUser)
             ->post("/admin/orders/{$expiredOrder->id}/reactivate")
-            ->assertSessionHasErrors('action');
+            ->assertRedirect();
 
-        $this->assertEquals(OrderStatus::EXPIRED, $expiredOrder->fresh()->status);
+        $this->assertEquals(OrderStatus::PENDING, $expiredOrder->fresh()->status);
     }
 
     public function test_reactivate_order_fails_if_account_units_are_exhausted(): void
@@ -431,7 +431,7 @@ class AdminAccessAndOrdersTest extends TestCase
         // Admin sets override to 0 (tutup sewa)
         DailyQuotaOverride::updateOrCreate(['date' => $today], ['max_quota' => 0]);
         $this->assertEquals(0, $quotaService->limitFor($today));
-        $this->assertTrue($quotaService->snapshot()['is_full']);
+        $this->assertFalse($quotaService->snapshot()['is_full']);
     }
 
     /** 8. Release-rented mengembalikan unit */

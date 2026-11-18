@@ -85,11 +85,7 @@ class ConcurrencyAndEdgeCasesTest extends TestCase
     }
 
     /**
-     * B.1: Concurrency simulation for the last quota slot.
-     * When quota is set to 2, 1 order is already active (1 slot remaining).
-     * Two concurrent requests try to checkout the last slot:
-     * Request A acquires Setting lock and reserves slot.
-     * Request B, serialized behind A, sees quota is now full and throws QuotaFullException.
+     * B.1: Rent orders succeed without artificial daily quota limitation as long as stock is available.
      */
     public function test_concurrency_simulation_for_last_quota_slot_serializes_and_rejects_second_request(): void
     {
@@ -105,34 +101,21 @@ class ConcurrencyAndEdgeCasesTest extends TestCase
 
         $createOrder = app(CreateOrder::class);
 
-        // First order occupies 1 of 2 slots
+        // First order
         $order1 = $createOrder->handle(new CreateOrderData($this->rentVariant->id, '081234567801', $this->paymentMethod->id));
         $this->assertNotNull($order1);
 
         $quotaService = app(QuotaService::class);
         $this->assertEquals(1, $quotaService->used($quotaService->today()));
 
-        // Simulate two competing requests A and B for the last slot
-        $requestASucceeded = false;
-        $requestBFailureReason = null;
+        // Competing requests A and B both succeed because daily quota limitation is removed
+        $orderA = $createOrder->handle(new CreateOrderData($this->rentVariant->id, '081234567802', $this->paymentMethod->id));
+        $orderB = $createOrder->handle(new CreateOrderData($this->rentVariant->id, '081234567803', $this->paymentMethod->id));
 
-        DB::transaction(function () use ($createOrder, &$requestASucceeded) {
-            // Request A executes inside transaction, acquiring Setting lock
-            $orderA = $createOrder->handle(new CreateOrderData($this->rentVariant->id, '081234567802', $this->paymentMethod->id));
-            $requestASucceeded = ($orderA !== null);
-        });
-
-        // Request B arrives right after
-        try {
-            $createOrder->handle(new CreateOrderData($this->rentVariant->id, '081234567803', $this->paymentMethod->id));
-        } catch (QuotaFullException $e) {
-            $requestBFailureReason = 'QuotaFullException';
-        }
-
-        $this->assertTrue($requestASucceeded, 'Request A must succeed and take the last quota slot.');
-        $this->assertEquals('QuotaFullException', $requestBFailureReason, 'Request B must fail with QuotaFullException because quota is serialized.');
-        $this->assertEquals(2, $quotaService->used($quotaService->today()));
-        $this->assertTrue($quotaService->snapshot()['is_full']);
+        $this->assertNotNull($orderA);
+        $this->assertNotNull($orderB);
+        $this->assertEquals(3, $quotaService->used($quotaService->today()));
+        $this->assertFalse($quotaService->snapshot()['is_full']);
     }
 
     /**
@@ -178,14 +161,12 @@ class ConcurrencyAndEdgeCasesTest extends TestCase
     }
 
     /**
-     * B.3: BUY orders succeed even when daily RENT quota is 100% full.
+     * B.3: BUY and RENT orders succeed based on stock availability.
      */
     public function test_buy_orders_succeed_even_when_daily_rent_quota_is_full(): void
     {
-        Setting::current()->update(['max_daily_rent_quota' => 1]);
-
         // 1 rent account, 1 buy account
-        ProductAccount::create([
+        $rentAccount = ProductAccount::create([
             'product_id' => $this->product->id,
             'kind' => OrderType::RENT,
             'credential' => 'rent@test.com | pass | P1 | 1111',
@@ -201,26 +182,16 @@ class ConcurrencyAndEdgeCasesTest extends TestCase
 
         $createOrder = app(CreateOrder::class);
 
-        // 1. Consume rent quota
+        // 1. Rent order succeeds
         $rentOrder = $createOrder->handle(new CreateOrderData($this->rentVariant->id, '081234567801', $this->paymentMethod->id));
         $this->assertNotNull($rentOrder);
+        $this->assertEquals($rentAccount->id, $rentOrder->account_id);
 
-        $quotaService = app(QuotaService::class);
-        $this->assertTrue($quotaService->snapshot()['is_full']);
-
-        // 2. Additional rent order is rejected
-        $this->expectException(QuotaFullException::class);
-        try {
-            $createOrder->handle(new CreateOrderData($this->rentVariant->id, '081234567802', $this->paymentMethod->id));
-        } catch (QuotaFullException $e) {
-            // 3. BUY order succeeds regardless of full rent quota!
-            $buyOrder = $createOrder->handle(new CreateOrderData($this->buyVariant->id, '081234567803', $this->paymentMethod->id));
-            $this->assertNotNull($buyOrder);
-            $this->assertEquals(OrderType::BUY, $buyOrder->order_type);
-            $this->assertEquals($buyAccount->id, $buyOrder->account_id);
-
-            throw $e;
-        }
+        // 2. Buy order succeeds
+        $buyOrder = $createOrder->handle(new CreateOrderData($this->buyVariant->id, '081234567803', $this->paymentMethod->id));
+        $this->assertNotNull($buyOrder);
+        $this->assertEquals(OrderType::BUY, $buyOrder->order_type);
+        $this->assertEquals($buyAccount->id, $buyOrder->account_id);
     }
 
     /**

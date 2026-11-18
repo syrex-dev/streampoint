@@ -338,7 +338,7 @@ export default function AdminSettings({ settings, overrides, telegramConfigured 
     // Synemax Style Tabs List
     const tabs = [
         { id: 'brand' as const, num: '1', label: 'Identitas & Brand', icon: Store },
-        { id: 'operational' as const, num: '2', label: 'Operasional & Kuota', icon: Clock },
+        { id: 'operational' as const, num: '2', label: 'Operasional & Layanan', icon: Clock },
         { id: 'contact' as const, num: '3', label: 'Kontak & CS', icon: Phone },
         { id: 'appearance' as const, num: '4', label: 'Tampilan & Banner', icon: Palette },
         { id: 'telegram' as const, num: '5', label: 'Notifikasi Telegram', icon: Send },
@@ -532,18 +532,18 @@ export default function AdminSettings({ settings, overrides, telegramConfigured 
                     </div>
                 )}
 
-                {/* TAB 2: OPERASIONAL & KUOTA */}
+                {/* TAB 2: OPERASIONAL & LAYANAN */}
                 {activeTab === 'operational' && (
                     <div className="space-y-6">
-                        {/* Jam Operasional & Batas Default */}
+                        {/* Jam Operasional & Layanan */}
                         <div className="bg-surface border border-border rounded-xl p-5 sm:p-6 space-y-5 shadow-sm">
                             <div className="border-b border-border pb-3">
                                 <h2 className="text-sm font-bold text-text flex items-center gap-2">
                                     <Clock className="w-4 h-4 text-accent-text" />
-                                    <span>Operasional & Kuota Sewa Harian</span>
+                                    <span>Operasional & Layanan Toko</span>
                                 </h2>
                                 <p className="text-xs text-text-3 mt-0.5">
-                                    Atur jam kerja layanan toko dan batasi pesanan sewa per hari agar operasional admin tetap terkendali.
+                                    Atur jam kerja layanan toko dan estimasi waktu pemrosesan pesanan produk digital.
                                 </p>
                             </div>
 
@@ -564,97 +564,17 @@ export default function AdminSettings({ settings, overrides, telegramConfigured 
 
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-semibold text-text block">
-                                        Batas Kuota Sewa Harian Default
+                                        Estimasi Pengiriman (SLA)
                                     </label>
                                     <input
-                                        type="number"
-                                        min={1}
-                                        max={999}
-                                        value={generalData.max_daily_rent_quota}
-                                        onChange={(e) => setGeneralData({ ...generalData, max_daily_rent_quota: Number(e.target.value) })}
-                                        className="w-full h-9 px-3 text-xs bg-surface-2 border border-border rounded-lg text-text focus:outline-none focus:border-accent font-mono"
+                                        type="text"
+                                        value={generalData.delivery_eta}
+                                        onChange={(e) => setGeneralData({ ...generalData, delivery_eta: e.target.value })}
+                                        className="w-full h-9 px-3 text-xs bg-surface-2 border border-border rounded-lg text-text focus:outline-none focus:border-accent"
+                                        placeholder="Instan 1-5 menit"
                                     />
-                                    <span className="text-[11px] text-text-3 block">Maksimal slot sewa yang bisa dipesan per hari secara global.</span>
+                                    <span className="text-[11px] text-text-3 block">Estimasi waktu pemrosesan pesanan kepada pembeli.</span>
                                 </div>
-                            </div>
-                        </div>
-
-                        {/* Override Kuota Tanggal Tertentu */}
-                        <div className="bg-surface border border-border rounded-xl p-5 sm:p-6 space-y-5 shadow-sm">
-                            <div className="border-b border-border pb-3">
-                                <h2 className="text-sm font-bold text-text flex items-center gap-2">
-                                    <Calendar className="w-4 h-4 text-accent-text" />
-                                    <span>Override Kuota Tanggal Tertentu</span>
-                                </h2>
-                                <p className="text-xs text-text-3 mt-0.5">
-                                    Sesuaikan kuota khusus untuk hari libur, tanggal merah, atau promo khusus.
-                                </p>
-                            </div>
-
-                            <form onSubmit={handleSaveOverride} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end p-4 bg-surface-2 rounded-xl border border-border">
-                                <div className="space-y-1">
-                                    <label className="text-xs font-semibold text-text block">Tanggal Override</label>
-                                    <input
-                                        type="date"
-                                        value={overrideData.date}
-                                        onChange={(e) => setOverrideData({ ...overrideData, date: e.target.value })}
-                                        required
-                                        className="w-full h-9 px-3 text-xs bg-surface border border-border rounded-lg text-text focus:outline-none focus:border-accent"
-                                    />
-                                </div>
-
-                                <div className="space-y-1">
-                                    <label className="text-xs font-semibold text-text block">Kuota Khusus</label>
-                                    <input
-                                        type="number"
-                                        min={0}
-                                        max={999}
-                                        value={overrideData.max_quota}
-                                        onChange={(e) => setOverrideData({ ...overrideData, max_quota: Number(e.target.value) })}
-                                        required
-                                        className="w-full h-9 px-3 text-xs bg-surface border border-border rounded-lg text-text focus:outline-none focus:border-accent font-mono"
-                                    />
-                                </div>
-
-                                <div>
-                                    <Button
-                                        type="submit"
-                                        size="sm"
-                                        disabled={isSavingOverride || !overrideData.date}
-                                        loading={isSavingOverride}
-                                        className="w-full h-9 cursor-pointer"
-                                    >
-                                        <Plus className="w-4 h-4 mr-1" />
-                                        <span>Tambah Override</span>
-                                    </Button>
-                                </div>
-                            </form>
-
-                            {/* Daftar Override */}
-                            <div className="space-y-2">
-                                {overrides.length === 0 ? (
-                                    <p className="text-xs text-text-3 text-center py-4">Belum ada tanggal override kuota yang ditetapkan.</p>
-                                ) : (
-                                    <div className="divide-y divide-border border border-border rounded-xl overflow-hidden">
-                                        {overrides.map((item) => (
-                                            <div key={item.id} className="p-3 bg-surface flex items-center justify-between gap-3 text-xs">
-                                                <div>
-                                                    <span className="font-semibold text-text">{item.date}</span>
-                                                    <span className="text-text-3 ml-2 font-mono">({item.max_quota} slot)</span>
-                                                    {item.note && <span className="text-text-2 text-[11px] block">{item.note}</span>}
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDeleteOverride(item.id)}
-                                                    className="p-1.5 text-text-3 hover:text-danger rounded-md transition-colors cursor-pointer"
-                                                    title="Hapus tanggal"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
                             </div>
                         </div>
                     </div>

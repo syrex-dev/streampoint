@@ -105,7 +105,7 @@ export default function ProductShow({
         if (tabVariants.length > 0 && !selectedVariant) {
             const firstAvailable = tabVariants.find((v) => {
                 if (v.type === 'RENT') {
-                    return !quota.is_full && product.available_rent_stock > 0;
+                    return product.available_rent_stock > 0 || v.delivery_type !== 'STOCK';
                 }
                 const isStock = v.delivery_type === 'STOCK' || !v.delivery_type;
                 return !isStock || product.available_buy_stock > 0;
@@ -151,8 +151,8 @@ export default function ProductShow({
         {
             id: 'RENT',
             label: 'Sewa Harian',
-            badge: quota.is_full ? 'Penuh' : `${quota.remaining}/${quota.limit}`,
-            badgeVariant: quota.is_full ? 'danger' : 'accent',
+            badge: product.available_rent_stock > 0 ? `${product.available_rent_stock} unit` : 'Habis',
+            badgeVariant: product.available_rent_stock > 0 ? 'accent' : 'danger',
         },
         {
             id: 'BUY',
@@ -183,7 +183,7 @@ export default function ProductShow({
         if (!selectedVariant && tabVariants.length > 0) {
             const available = tabVariants.find((v) => {
                 if (v.type === 'RENT') {
-                    return !quota.is_full && product.available_rent_stock > 0;
+                    return product.available_rent_stock > 0 || v.delivery_type !== 'STOCK';
                 }
                 const isStock = v.delivery_type === 'STOCK' || !v.delivery_type;
                 return !isStock || product.available_buy_stock > 0;
@@ -230,7 +230,7 @@ export default function ProductShow({
     // Current active variant for price display
     const activeVariant = selectedVariant || tabVariants[0] || null;
     const isOutOfStock = selectedTab === 'RENT'
-        ? (quota.is_full || product.available_rent_stock === 0)
+        ? (activeVariant?.delivery_type === 'STOCK' || !activeVariant?.delivery_type ? product.available_rent_stock === 0 : false)
         : (activeVariant?.delivery_type === 'STOCK' || !activeVariant?.delivery_type ? product.available_buy_stock === 0 : false);
 
     return (
@@ -421,10 +421,8 @@ export default function ProductShow({
                                             let disabledReason = '';
 
                                             if (isRent) {
-                                                if (quota.is_full) {
-                                                    isDisabled = true;
-                                                    disabledReason = 'Kuota sewa hari ini penuh';
-                                                } else if (product.available_rent_stock === 0) {
+                                                const isStock = variant.delivery_type === 'STOCK' || !variant.delivery_type;
+                                                if (isStock && product.available_rent_stock === 0) {
                                                     isDisabled = true;
                                                     disabledReason = 'Stok akun sewa habis';
                                                 }

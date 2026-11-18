@@ -70,12 +70,6 @@ class CreateOrder
 
             $date = $this->quota->today();
 
-            if ($variant->type === OrderType::RENT) {
-                if ($this->quota->used($date, lock: true) >= $this->quota->limitFor($date)) {
-                    throw new QuotaFullException();
-                }
-            }
-
             // Check availability according to delivery type
             $deliveryType = $variant->delivery_type ?? DeliveryType::STOCK;
 

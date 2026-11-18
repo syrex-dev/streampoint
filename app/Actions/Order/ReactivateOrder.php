@@ -49,18 +49,7 @@ class ReactivateOrder
                 throw new \DomainException('Nomor WhatsApp pembeli ini masih memiliki pesanan aktif lain yang belum selesai.');
             }
 
-            // 1. Quota check for RENT
-            if ($order->order_type === OrderType::RENT) {
-                $quotaDate = $order->quota_date ? $order->quota_date->toDateString() : now()->toDateString();
-                $limit = $this->quotaService->limitFor($quotaDate);
-                $used = $this->quotaService->used($quotaDate);
-
-                if ($used >= $limit) {
-                    throw new QuotaFullException('Slot kuota sewa untuk tanggal pesanan ini sudah penuh.');
-                }
-            }
-
-            // 2. Stock check
+            // Stock check according to delivery type
             $availableAccount = ProductAccount::where('product_id', $order->product_id)
                 ->where('kind', $order->order_type->value)
                 ->where('status', AccountStatus::AVAILABLE)

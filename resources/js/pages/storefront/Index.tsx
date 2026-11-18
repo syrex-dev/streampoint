@@ -13,7 +13,6 @@ import {
     HelpCircle,
 } from 'lucide-react';
 import { PublicLayout } from '@/layouts/PublicLayout';
-import { QuotaBar } from '@/components/shop/QuotaBar';
 import { ProductCard } from '@/components/shop/ProductCard';
 import { BannerSlider } from '@/components/shop/BannerSlider';
 import { BenefitsSection } from '@/components/shop/BenefitsSection';
@@ -82,19 +81,6 @@ export default function StorefrontIndex({
     categories = [],
     paymentMethods = [],
 }: StorefrontProps) {
-    // 30s Quota polling without flicker
-    useEffect(() => {
-        const intervalId = setInterval(() => {
-            if (document.visibilityState === 'visible') {
-                router.reload({
-                    only: ['quota'],
-                });
-            }
-        }, 30000);
-
-        return () => clearInterval(intervalId);
-    }, []);
-
     // Toolbar states
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedType, setSelectedType] = useState<CatalogTypeFilter>('ALL');
@@ -219,26 +205,20 @@ export default function StorefrontIndex({
             <Head title={`Sewa & Beli Akun Streaming - ${storeName}`} />
 
             <div className="w-full space-y-6 sm:space-y-7 pb-16 sm:pb-8">
-                {/* Above-the-fold Top Area: Banner/Hero + Quota Bar */}
-                <div className="space-y-2.5 sm:space-y-3">
-                    {/* 1. Banner Slider (DESIGN_SYSTEM 6.26) atau Hero Fungsional (6.2) */}
-                    {banners && banners.length > 0 ? (
-                        <BannerSlider banners={banners} />
-                    ) : (
-                        <Hero
-                            quota={quota}
-                            availableServicesCount={availableServicesCount ?? available_services_count}
-                            verificationMedianMinutes={verificationMedianMinutes ?? verification_median_minutes}
-                            deliveryEta={deliveryEta}
-                            products={products}
-                        />
-                    )}
+                {/* 1. Banner Slider (DESIGN_SYSTEM 6.26) atau Hero Fungsional (6.2) */}
+                {banners && banners.length > 0 ? (
+                    <BannerSlider banners={banners} />
+                ) : (
+                    <Hero
+                        quota={quota}
+                        availableServicesCount={availableServicesCount ?? available_services_count}
+                        verificationMedianMinutes={verificationMedianMinutes ?? verification_median_minutes}
+                        deliveryEta={deliveryEta}
+                        products={products}
+                    />
+                )}
 
-                    {/* 2. Bar Kuota (Above the Fold) */}
-                    <QuotaBar quota={quota} />
-                </div>
-
-                {/* 3. Toolbar Katalog & Grid Layanan */}
+                {/* 2. Toolbar Katalog & Grid Layanan */}
                 <section id="katalog" aria-label="Katalog Layanan Streaming" className="scroll-mt-20">
                     <SectionHeading
                         eyebrow="KATALOG LAYANAN"

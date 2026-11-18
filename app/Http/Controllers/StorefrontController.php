@@ -68,10 +68,7 @@ class StorefrontController extends Controller
             if (! $anyVariantAvailable) {
                 $status = 'out_of_stock';
                 $statusLabel = 'Habis';
-            } elseif ($hasRentVariant && ! $hasBuyVariant && $quota['is_full']) {
-                $status = 'rent_full';
-                $statusLabel = 'Sewa Penuh';
-            } elseif ($totalStock <= 2) {
+            } elseif ($totalStock <= 2 && $totalStock > 0) {
                 $status = 'low_stock';
                 $statusLabel = 'Stok Menipis';
             } else {
@@ -143,10 +140,8 @@ class StorefrontController extends Controller
             'url' => $setting->announcement_url,
         ] : null;
 
-        $availableServicesCount = $mappedProducts->filter(function ($p) use ($quota) {
-            $canBuy = $p['has_buy'] && $p['available_buy_stock'] > 0;
-            $canRent = $p['has_rent'] && $p['available_rent_stock'] > 0 && ! $quota['is_full'];
-            return $canBuy || $canRent;
+        $availableServicesCount = $mappedProducts->filter(function ($p) {
+            return $p['status'] !== 'out_of_stock';
         })->count();
 
         $verificationMedianMinutes = Cache::remember('storefront.verification_median_minutes', 600, function () {

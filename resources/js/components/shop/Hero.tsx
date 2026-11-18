@@ -121,19 +121,19 @@ export function Hero({
                     <div className="space-y-2 text-[13px] bg-surface-2/60 border border-border/70 rounded-md p-3 min-w-[210px]">
                         <div className="flex items-center justify-between gap-3 text-text">
                             <span className="flex items-center gap-2 text-text-2 text-xs">
-                                <Clock className="w-4 h-4 text-text-2 shrink-0" />
-                                <span>Slot sewa hari ini</span>
+                                <Clock className="w-4 h-4 text-accent-text shrink-0" />
+                                <span>Pengiriman</span>
                             </span>
-                            <span className="font-mono font-medium text-xs tabular-nums text-text">
-                                {available}/{max} tersisa
+                            <span className="font-medium text-xs text-text">
+                                Instan & Otomatis
                             </span>
                         </div>
 
                         {typeof availableServicesCount === 'number' && (
                             <div className="flex items-center justify-between gap-3 text-text">
                                 <span className="flex items-center gap-2 text-text-2 text-xs">
-                                    <Package className="w-4 h-4 text-text-2 shrink-0" />
-                                    <span>Layanan tersedia</span>
+                                    <Package className="w-4 h-4 text-info shrink-0" />
+                                    <span>Katalog</span>
                                 </span>
                                 <span className="font-mono font-medium text-xs tabular-nums text-text">
                                     {availableServicesCount} layanan
@@ -141,17 +141,15 @@ export function Hero({
                             </div>
                         )}
 
-                        {verificationText && (
-                            <div className="flex items-center justify-between gap-3 text-text">
-                                <span className="flex items-center gap-2 text-text-2 text-xs">
-                                    <ShieldCheck className="w-4 h-4 text-text-2 shrink-0" />
-                                    <span>Verifikasi biasanya</span>
-                                </span>
-                                <span className="font-mono font-medium text-xs tabular-nums text-text">
-                                    {verificationText}
-                                </span>
-                            </div>
-                        )}
+                        <div className="flex items-center justify-between gap-3 text-text">
+                            <span className="flex items-center gap-2 text-text-2 text-xs">
+                                <ShieldCheck className="w-4 h-4 text-accent-text shrink-0" />
+                                <span>Garansi</span>
+                            </span>
+                            <span className="font-medium text-xs text-text">
+                                {verificationText ? `Verifikasi ${verificationText}` : 'Layanan Bergaransi'}
+                            </span>
+                        </div>
                     </div>
 
                     {/* Logo Mosaic (Max 6 services, flat tint, no rotation, no gradient) */}
@@ -212,27 +210,23 @@ export function Hero({
                 {/* Horizontal scrollable status chips */}
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-surface-2 text-[11px] text-text whitespace-nowrap shrink-0">
-                        <Clock className="w-3.5 h-3.5 text-text-2" />
-                        <span>
-                            Slot sewa: <strong className="font-mono tabular-nums">{available}/{max}</strong>
-                        </span>
+                        <Clock className="w-3.5 h-3.5 text-accent-text" />
+                        <span>Pengiriman Instan</span>
                     </span>
 
                     {typeof availableServicesCount === 'number' && (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-surface-2 text-[11px] text-text whitespace-nowrap shrink-0">
-                            <Package className="w-3.5 h-3.5 text-text-2" />
+                            <Package className="w-3.5 h-3.5 text-info" />
                             <span>
                                 <strong className="font-mono tabular-nums">{availableServicesCount}</strong> layanan aktif
                             </span>
                         </span>
                     )}
 
-                    {verificationText && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-surface-2 text-[11px] text-text whitespace-nowrap shrink-0">
-                            <ShieldCheck className="w-3.5 h-3.5 text-text-2" />
-                            <span>Verifikasi {verificationText}</span>
-                        </span>
-                    )}
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-surface-2 text-[11px] text-text whitespace-nowrap shrink-0">
+                        <ShieldCheck className="w-3.5 h-3.5 text-accent-text" />
+                        <span>{verificationText ? `Verifikasi ${verificationText}` : 'Garansi Akun'}</span>
+                    </span>
                 </div>
             </div>
         </section>

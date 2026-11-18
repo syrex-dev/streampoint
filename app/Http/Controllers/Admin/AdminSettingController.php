@@ -72,7 +72,7 @@ class AdminSettingController extends Controller
     public function update(Request $request, \App\Services\ImageOptimizer $optimizer): RedirectResponse
     {
         $validated = $request->validate([
-            'max_daily_rent_quota' => ['required', 'integer', 'min:1', 'max:100'],
+            'max_daily_rent_quota' => ['nullable', 'integer', 'min:1'],
             'admin_whatsapp' => ['nullable', 'string', 'max:20'],
             'business_hours' => ['nullable', 'string', 'max:100'],
             'store_name' => ['nullable', 'string', 'max:100'],
@@ -124,7 +124,7 @@ class AdminSettingController extends Controller
         ];
 
         $updateData = [
-            'max_daily_rent_quota' => $validated['max_daily_rent_quota'],
+            'max_daily_rent_quota' => $validated['max_daily_rent_quota'] ?? 9999,
             'admin_whatsapp' => $validated['admin_whatsapp'] ?? null,
             'business_hours' => $validated['business_hours'] ?? null,
             'store_name' => $validated['store_name'] ?? null,

@@ -92,7 +92,7 @@ class CoreOrderLogicTest extends TestCase
     }
 
     /**
-     * Test 1: 3 active RENT orders -> 4th RENT order rejected, BUY still succeeds.
+     * Test 1: Multiple RENT orders succeed beyond 3 without artificial quota limitation.
      */
     public function test_three_active_rent_orders_rejects_fourth_rent_but_allows_buy(): void
     {
@@ -101,31 +101,25 @@ class CoreOrderLogicTest extends TestCase
 
         $createOrder = app(CreateOrder::class);
 
-        // Create 3 RENT orders
+        // Create 4 RENT orders - all must succeed because 3-transaction daily cap is removed
         $order1 = $createOrder->handle(new CreateOrderData($this->rentVariant->id, '081234567801', $this->paymentMethod->id));
         $order2 = $createOrder->handle(new CreateOrderData($this->rentVariant->id, '081234567802', $this->paymentMethod->id));
         $order3 = $createOrder->handle(new CreateOrderData($this->rentVariant->id, '081234567803', $this->paymentMethod->id));
+        $order4 = $createOrder->handle(new CreateOrderData($this->rentVariant->id, '081234567804', $this->paymentMethod->id));
 
         $this->assertNotNull($order1->id);
         $this->assertNotNull($order2->id);
         $this->assertNotNull($order3->id);
+        $this->assertNotNull($order4->id);
 
         $quotaService = app(QuotaService::class);
-        $this->assertEquals(3, $quotaService->used($quotaService->today()));
-        $this->assertTrue($quotaService->snapshot()['is_full']);
+        $this->assertEquals(4, $quotaService->used($quotaService->today()));
+        $this->assertFalse($quotaService->snapshot()['is_full']);
 
-        // 4th RENT order must throw QuotaFullException
-        $this->expectException(QuotaFullException::class);
-        try {
-            $createOrder->handle(new CreateOrderData($this->rentVariant->id, '081234567804', $this->paymentMethod->id));
-        } catch (QuotaFullException $e) {
-            // BUY order must succeed even when quota is full
-            $buyOrder = $createOrder->handle(new CreateOrderData($this->buyVariant->id, '081234567805', $this->paymentMethod->id));
-            $this->assertNotNull($buyOrder->id);
-            $this->assertEquals(OrderType::BUY, $buyOrder->order_type);
-
-            throw $e;
-        }
+        // BUY order also succeeds
+        $buyOrder = $createOrder->handle(new CreateOrderData($this->buyVariant->id, '081234567805', $this->paymentMethod->id));
+        $this->assertNotNull($buyOrder->id);
+        $this->assertEquals(OrderType::BUY, $buyOrder->order_type);
     }
 
     /**
@@ -213,7 +207,7 @@ class CoreOrderLogicTest extends TestCase
         Carbon::setTestNow(Carbon::parse('2026-11-02 00:01:00', 'Asia/Jakarta'));
 
         $this->assertEquals(0, $quotaService->used($quotaService->today()));
-        $this->assertEquals(3, $quotaService->snapshot()['remaining']);
+        $this->assertFalse($quotaService->snapshot()['is_full']);
 
         $order2 = $createOrder->handle(new CreateOrderData($this->rentVariant->id, '081234567802', $this->paymentMethod->id));
         $this->assertEquals('2026-11-02', $order2->quota_date->format('Y-m-d'));

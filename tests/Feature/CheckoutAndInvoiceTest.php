@@ -170,7 +170,7 @@ class CheckoutAndInvoiceTest extends TestCase
         $this->assertEquals(1, Order::count());
     }
 
-    public function test_checkout_returns_inline_validation_error_when_quota_full(): void
+    public function test_checkout_returns_inline_validation_error_when_rent_stock_exhausted(): void
     {
         Setting::current()->update(['max_daily_rent_quota' => 1]);
 

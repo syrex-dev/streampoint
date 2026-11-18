@@ -131,27 +131,32 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                     {/* Interactive Star Picker */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-text block">Bintang Penilaian</label>
-                        <div className="flex items-center gap-1.5">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                    key={star}
-                                    type="button"
-                                    onClick={() => setRating(star)}
-                                    onMouseEnter={() => setHoverRating(star)}
-                                    onMouseLeave={() => setHoverRating(0)}
-                                    className="p-1 text-surface-hover hover:scale-110 transition-transform cursor-pointer"
-                                    aria-label={`Beri ${star} bintang`}
-                                >
-                                    <Star
-                                        className={`w-6 h-6 transition-colors ${
-                                            (hoverRating || rating) >= star
-                                                ? 'fill-warning text-warning'
-                                                : 'text-border-strong fill-transparent'
-                                        }`}
-                                    />
-                                </button>
-                            ))}
-                            <span className="text-xs font-bold text-text ml-2">
+                        <div 
+                            className="flex items-center gap-1.5"
+                            onMouseLeave={() => setHoverRating(0)}
+                        >
+                            {[1, 2, 3, 4, 5].map((star) => {
+                                const isFilled = (hoverRating || rating) >= star;
+                                return (
+                                    <button
+                                        key={star}
+                                        type="button"
+                                        onClick={() => setRating(star)}
+                                        onMouseEnter={() => setHoverRating(star)}
+                                        className="w-8 h-8 rounded-md flex items-center justify-center transition-colors cursor-pointer hover:bg-surface-hover/80 active:scale-95 shrink-0"
+                                        aria-label={`Beri ${star} bintang`}
+                                    >
+                                        <Star
+                                            className={`w-6 h-6 transition-colors duration-150 ${
+                                                isFilled
+                                                    ? 'fill-warning text-warning'
+                                                    : 'text-border-strong fill-transparent hover:text-text-3'
+                                            }`}
+                                        />
+                                    </button>
+                                );
+                            })}
+                            <span className="text-xs font-bold text-text ml-2 font-mono tabular-nums min-w-[36px]">
                                 {hoverRating || rating} / 5
                             </span>
                         </div>

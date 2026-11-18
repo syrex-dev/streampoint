@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { X, Check, QrCode, Building2, Wallet, AlertCircle, ShieldCheck } from 'lucide-react';
+import { X, Check, QrCode, Building2, Wallet, AlertCircle, ShieldCheck, ArrowRight } from 'lucide-react';
 import { formatRupiah } from '@/lib/format';
 import { PaymentMethodItem, ProductDetail, ProductVariantData } from '@/types/shop';
 import { Button } from '@/components/ui/button';
@@ -328,27 +328,39 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </div>
 
                 {/* Footer Action Bar */}
-                <div className="p-4 sm:p-5 border-t border-border bg-surface flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
-                    <div>
-                        <span className="text-[11px] text-text-2 block">Total Pembayaran:</span>
-                        <span className="font-mono text-lg sm:text-xl font-bold text-accent-text tabular-nums">
-                            {formatRupiah(variant.price)}
-                        </span>
-                    </div>
+                <div className="p-4 sm:px-6 sm:py-4 border-t border-border bg-surface-2/40 flex flex-col gap-3 shrink-0">
+                    {/* Notice if payment method not selected */}
+                    {!selectedPaymentMethodId && phone.trim().length >= 9 && !phoneError && (
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-warning/10 border border-warning/25 text-[11px] text-warning font-medium">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                            <span>Pilih salah satu metode pembayaran di atas untuk melanjutkan</span>
+                        </div>
+                    )}
 
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
-                        {!selectedPaymentMethodId && phone.trim().length >= 9 && !phoneError && (
-                            <span className="text-[11px] text-warning text-center sm:text-right font-medium">
-                                Pilih salah satu metode pembayaran di atas
+                    <div className="flex items-center justify-between gap-3 sm:gap-4 w-full">
+                        {/* Price Display */}
+                        <div className="shrink-0 min-w-0">
+                            <span className="text-[10px] font-semibold text-text-3 uppercase tracking-wider block">
+                                Total Pembayaran
                             </span>
-                        )}
-                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
+                                <span className="text-xs font-bold text-accent-text tracking-tight select-none">
+                                    Rp
+                                </span>
+                                <span className="font-sans font-extrabold text-2xl sm:text-[26px] text-text tracking-tight tabular-nums leading-none">
+                                    {variant ? new Intl.NumberFormat('id-ID').format(variant.price) : '0'}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-2 shrink-0">
                             <Button
                                 type="button"
                                 variant="secondary"
                                 onClick={onClose}
                                 disabled={isSubmitting}
-                                className="flex-1 sm:flex-none text-xs"
+                                className="h-10 px-3.5 text-xs font-medium cursor-pointer"
                             >
                                 Batal
                             </Button>
@@ -358,9 +370,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                                 onClick={onSubmit}
                                 disabled={!isReady || isSubmitting}
                                 loading={isSubmitting}
-                                className="flex-2 sm:flex-none text-xs font-semibold px-6 shadow-xs"
+                                className="h-10 px-5 text-xs font-semibold shadow-xs cursor-pointer flex items-center gap-1.5"
                             >
-                                {isSubmitting ? 'Menyiapkan Pembayaran...' : 'Bayar Sekarang →'}
+                                <span>{isSubmitting ? 'Memproses...' : 'Bayar Sekarang'}</span>
+                                {!isSubmitting && <ArrowRight className="w-3.5 h-3.5" />}
                             </Button>
                         </div>
                     </div>
